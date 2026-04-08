@@ -203,7 +203,7 @@ export function SessionSidebar({
             <div
               role="button"
               tabIndex={0}
-              className={`mx-2 mt-2 flex items-center gap-2 px-3 py-2.5 min-h-[76px] rounded-md cursor-pointer transition-colors ${
+              className={`mx-2 mt-2 flex items-center gap-2 px-3 py-2.5 min-h-[60px] rounded-md cursor-pointer transition-colors ${
                 viewMode === "sessions"
                   ? "bg-amber-500/15 border-l-2 border-amber-500"
                   : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
