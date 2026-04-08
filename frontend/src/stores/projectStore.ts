@@ -25,15 +25,16 @@ interface ProjectStoreState {
   // Actions
   setViewMode: (mode: ViewMode) => void;
   setActiveRoom: (key: string | null) => void;
-  zoomToRoom: (key: string) => void;
-  zoomToOverview: () => void;
+  zoomToProject: (key: string) => void;
+  zoomToProjects: () => void;
+  zoomToSession: (key: string) => void;
   goBackToMultiRoom: () => void;
   updateFromServer: (state: MultiProjectGameState) => void;
   setSessions: (sessions: SessionInfo[]) => void;
 }
 
 export const useProjectStore = create<ProjectStoreState>((set) => ({
-  viewMode: "all-merged",
+  viewMode: "office",
   previousViewMode: null,
   activeRoomKey: null,
   projects: [],
@@ -48,13 +49,15 @@ export const useProjectStore = create<ProjectStoreState>((set) => ({
 
   setActiveRoom: (key) => set({ activeRoomKey: key }),
 
-  zoomToRoom: (key) => set({ viewMode: "room-detail", activeRoomKey: key }),
+  zoomToProject: (key) => set({ viewMode: "project", activeRoomKey: key }),
 
-  zoomToOverview: () => set({ viewMode: "overview", activeRoomKey: null }),
+  zoomToProjects: () => set({ viewMode: "projects", activeRoomKey: null }),
+
+  zoomToSession: (key) => set({ viewMode: "session", activeRoomKey: key }),
 
   goBackToMultiRoom: () =>
     set((state) => ({
-      viewMode: state.previousViewMode ?? "overview",
+      viewMode: state.previousViewMode ?? "projects",
       previousViewMode: null,
       activeRoomKey: null,
     })),

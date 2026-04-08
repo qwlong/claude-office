@@ -5,7 +5,7 @@
 
 import type { Agent, Boss, OfficeState, TodoItem } from "./generated";
 
-export type ViewMode = "overview" | "room-detail" | "all-merged" | "sessions";
+export type ViewMode = "office" | "projects" | "project" | "sessions" | "session";
 
 export interface ProjectGroup {
   key: string;

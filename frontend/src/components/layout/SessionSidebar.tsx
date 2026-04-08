@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import {
+  Building2,
+  ChevronDown,
+  ChevronRight,
   History,
   Radio,
   PlayCircle,
@@ -16,6 +20,8 @@ import { ProjectSidebar } from "@/components/layout/ProjectSidebar";
 import type { Session } from "@/hooks/useSessions";
 import { useDragResize } from "@/hooks/useDragResize";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useProjectStore, selectViewMode, selectActiveRoomKey } from "@/stores/projectStore";
+import { useGameStore, selectGitStatus } from "@/stores/gameStore";
 
 // ============================================================================
 // CONSTANTS
@@ -70,6 +76,14 @@ export function SessionSidebar({
         ? dateFnsEs
         : undefined;
 
+  const viewMode = useProjectStore(selectViewMode);
+  const activeRoomKey = useProjectStore(selectActiveRoomKey);
+  const setViewMode = useProjectStore((s) => s.setViewMode);
+  const zoomToSession = useProjectStore((s) => s.zoomToSession);
+  const gitStatus = useGameStore(selectGitStatus);
+  const isWholeOfficeActive = viewMode === "office";
+  const [gitExpanded, setGitExpanded] = useState(false);
+
   const {
     size: sidebarWidth,
     isDragging: isWidthDragging,
@@ -103,22 +117,38 @@ export function SessionSidebar({
       }`}
       style={{ width: isCollapsed ? 40 : sidebarWidth }}
     >
-      {/* Collapse Toggle */}
-      <button
-        onClick={onToggleCollapsed}
-        className="flex items-center justify-center p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-        title={
-          isCollapsed
-            ? t("sessions.expandSidebar")
-            : t("sessions.collapseSidebar")
-        }
-      >
-        {isCollapsed ? (
+      {/* Whole Office + Collapse Toggle */}
+      {isCollapsed ? (
+        <button
+          onClick={onToggleCollapsed}
+          className="flex items-center justify-center p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+          title={t("sessions.expandSidebar")}
+        >
           <PanelLeftOpen size={16} />
-        ) : (
-          <PanelLeftClose size={16} />
-        )}
-      </button>
+        </button>
+      ) : (
+        <button
+          onClick={() => setViewMode("office")}
+          className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors ${
+            isWholeOfficeActive
+              ? "bg-purple-600 border-purple-500 text-white"
+              : "bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white"
+          }`}
+        >
+          <Building2 size={14} />
+          <span className="text-xs font-bold flex-1 text-left">{t("sidebar.wholeOffice")}</span>
+          <span
+            role="button"
+            tabIndex={0}
+            className="p-0.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+            title={t("sessions.collapseSidebar")}
+            onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onToggleCollapsed(); } }}
+          >
+            <PanelLeftClose size={14} />
+          </span>
+        </button>
+      )}
 
       {!isCollapsed && (
         <>
@@ -129,8 +159,10 @@ export function SessionSidebar({
 
           {/* Session Browser */}
           <div
-            className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex-shrink-0 flex flex-col"
-            style={{ height: sessionsHeight }}
+            className={`bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex flex-col ${
+              gitStatus ? "flex-shrink-0" : "flex-grow"
+            }`}
+            style={gitStatus ? { height: sessionsHeight } : undefined}
           >
             <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center gap-2 flex-shrink-0">
               <History size={14} className="text-purple-500" />
@@ -139,6 +171,24 @@ export function SessionSidebar({
               </span>
               <span className="text-slate-600 text-xs">
                 ({sessions.length})
+              </span>
+            </div>
+
+            {/* All Sessions item */}
+            <div
+              role="button"
+              tabIndex={0}
+              className={`mx-2 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
+                viewMode === "sessions"
+                  ? "bg-amber-500/20 border-l-2 border-amber-500"
+                  : "hover:bg-slate-800/50"
+              }`}
+              onClick={() => setViewMode("sessions")}
+              onKeyDown={(e) => e.key === "Enter" && setViewMode("sessions")}
+            >
+              <Users size={10} className={viewMode === "sessions" ? "text-amber-400" : "text-slate-500"} />
+              <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-300" : "text-slate-400"}`}>
+                {t("sidebar.allSessions")}
               </span>
             </div>
 
@@ -153,9 +203,8 @@ export function SessionSidebar({
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {sessions.map((session) => {
-                    const isActive = session.id === sessionId;
-                    const isAllSessions = session.id === "__all__";
+                  {sessions.filter((s) => s.id !== "__all__").map((session) => {
+                    const isActive = viewMode === "session" && activeRoomKey === session.id;
                     const isLive = session.status === "active";
                     return (
                       <div
@@ -163,29 +212,24 @@ export function SessionSidebar({
                         tabIndex={0}
                         key={session.id}
                         className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md ${
-                          isAllSessions
-                            ? isActive
-                              ? "bg-amber-500/20 border-l-2 border-amber-500"
-                              : "bg-slate-800/30 hover:bg-amber-500/10 border-l-2 border-amber-500/30"
-                            : isActive
-                              ? "bg-purple-500/20 border-l-2 border-purple-500"
-                              : "hover:bg-slate-800/50"
+                          isActive
+                            ? "bg-purple-500/20 border-l-2 border-purple-500"
+                            : "hover:bg-slate-800/50"
                         }`}
-                        onClick={() => onSessionSelect(session.id)}
+                        onClick={() => {
+                          onSessionSelect(session.id);
+                          zoomToSession(session.id);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             onSessionSelect(session.id);
+                            zoomToSession(session.id);
                           }
                         }}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          {isAllSessions ? (
-                            <Users
-                              size={10}
-                              className="text-amber-400 flex-shrink-0"
-                            />
-                          ) : isLive ? (
+                          {isLive ? (
                             <Radio
                               size={10}
                               className="text-emerald-400 animate-pulse flex-shrink-0"
@@ -198,49 +242,39 @@ export function SessionSidebar({
                           )}
                           <span
                             className={`text-xs font-bold truncate flex-1 ${
-                              isAllSessions
-                                ? isActive
-                                  ? "text-amber-300"
-                                  : "text-amber-400/70"
-                                : isActive
-                                  ? "text-purple-300"
-                                  : "text-slate-300"
+                              isActive
+                                ? "text-purple-300"
+                                : "text-slate-300"
                             }`}
                           >
                             {session.projectName ||
                               t("sessions.unknownProject")}
                           </span>
-                          {!isAllSessions && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteSession(session);
-                              }}
-                              className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
-                              aria-label={`${t("sessions.deleteSession")} ${session.id}`}
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSession(session);
+                            }}
+                            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            aria-label={`${t("sessions.deleteSession")} ${session.id}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         </div>
-                        {!isAllSessions && (
-                          <div className="text-[10px] text-slate-500 font-mono truncate mb-1">
-                            {session.id}
-                          </div>
-                        )}
+                        <div className="text-[10px] text-slate-500 font-mono truncate mb-1">
+                          {session.id}
+                        </div>
                         <div className="flex justify-between text-[10px] text-slate-500">
                           <span>
                             {t("sessions.events", { count: session.eventCount })}
                           </span>
-                          {!isAllSessions && (
-                            <span>
-                              {formatDistanceToNow(new Date(session.updatedAt), {
-                                addSuffix: true,
-                                locale: dateFnsLocale,
-                              })}
-                            </span>
-                          )}
+                          <span>
+                            {formatDistanceToNow(new Date(session.updatedAt), {
+                              addSuffix: true,
+                              locale: dateFnsLocale,
+                            })}
+                          </span>
                         </div>
                       </div>
                     );
@@ -250,19 +284,33 @@ export function SessionSidebar({
             </div>
           </div>
 
-          {/* Vertical Resize Handle (sessions ↕ git status) */}
-          <div
-            className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
-            onMouseDown={handleHeightDragStart}
-            title={t("sessions.dragToResize")}
-          >
-            <div className="w-10 h-1 rounded-full bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
-          </div>
-
-          {/* Git Status Panel */}
-          <div className="flex-grow min-h-0">
-            <GitStatusPanel />
-          </div>
+          {/* Git Status Panel (only when git data exists, default collapsed) */}
+          {gitStatus && (
+            <>
+              <button
+                onClick={() => setGitExpanded(!gitExpanded)}
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                {gitExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <span className="text-xs font-bold uppercase tracking-wider">{t("git.title")}</span>
+                <span className="text-emerald-400 text-xs font-mono ml-auto">{gitStatus.branch}</span>
+              </button>
+              {gitExpanded && (
+                <>
+                  <div
+                    className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
+                    onMouseDown={handleHeightDragStart}
+                    title={t("sessions.dragToResize")}
+                  >
+                    <div className="w-10 h-1 rounded-full bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
+                  </div>
+                  <div className="flex-grow min-h-0">
+                    <GitStatusPanel />
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </>
       )}
 

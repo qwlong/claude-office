@@ -46,7 +46,7 @@ import {
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
-import { useProjectStore, selectViewMode, selectProjects, selectSessions } from "@/stores/projectStore";
+import { useProjectStore, selectViewMode, selectActiveRoomKey, selectProjects, selectSessions } from "@/stores/projectStore";
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -115,6 +115,7 @@ export function OfficeGame(): ReactNode {
 
   // Multi-project view state
   const viewMode = useProjectStore(selectViewMode);
+  const activeRoomKey = useProjectStore(selectActiveRoomKey);
   const projects = useProjectStore(selectProjects);
   const storeSessions = useProjectStore(selectSessions);
 
@@ -155,7 +156,7 @@ export function OfficeGame(): ReactNode {
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
 
   // Start animation system (disabled in overview mode — agents use static poses)
-  useAnimationSystem({ enabled: viewMode === "all-merged" });
+  useAnimationSystem({ enabled: viewMode === "office" });
 
   // Cleanup on unmount (HMR or navigation)
   useEffect(() => {
@@ -228,8 +229,13 @@ export function OfficeGame(): ReactNode {
   const canvasHeight = useMemo(() => getCanvasHeight(deskCount), [deskCount]);
 
   // Canvas dimensions for multi-room view
-  const isMultiRoom = viewMode === "overview" || viewMode === "sessions";
-  const multiRoomRooms = viewMode === "sessions" ? sessionRooms : projects;
+  const isMultiRoom = viewMode !== "office";
+  const multiRoomRooms = useMemo(() => {
+    if (viewMode === "sessions") return sessionRooms;
+    if (viewMode === "session") return sessionRooms.filter((r) => r.key === activeRoomKey);
+    if (viewMode === "project") return projects.filter((p) => p.key === activeRoomKey);
+    return projects; // "projects" mode
+  }, [viewMode, sessionRooms, projects, activeRoomKey]);
   const multiRoomSize = useMemo(
     () => getMultiRoomCanvasSize(Math.max(1, multiRoomRooms.length)),
     [multiRoomRooms.length]
@@ -281,7 +287,7 @@ export function OfficeGame(): ReactNode {
 
   const handleSessionRoomClick = useCallback((sessionId: string) => {
     window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
-    useProjectStore.getState().setViewMode("all-merged");
+    useProjectStore.getState().setViewMode("office");
   }, []);
 
   const handleProjectRoomClick = useCallback((projectKey: string) => {
@@ -295,7 +301,7 @@ export function OfficeGame(): ReactNode {
         window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
       }
     }
-    useProjectStore.getState().setViewMode("all-merged");
+    useProjectStore.getState().setViewMode("office");
   }, [projects]);
 
   return (
@@ -340,7 +346,7 @@ export function OfficeGame(): ReactNode {
                 <MultiRoomCanvas
                   textures={textures}
                   rooms={multiRoomRooms}
-                  onRoomClick={viewMode === "sessions" ? handleSessionRoomClick : handleProjectRoomClick}
+                  onRoomClick={viewMode === "sessions" || viewMode === "session" ? handleSessionRoomClick : handleProjectRoomClick}
                 />
               )}
 

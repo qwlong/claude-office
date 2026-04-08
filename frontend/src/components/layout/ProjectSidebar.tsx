@@ -1,18 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { Layers } from "lucide-react";
 import {
   useProjectStore,
   selectProjects,
+  selectViewMode,
+  selectActiveRoomKey,
 } from "@/stores/projectStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import type { ProjectGroup } from "@/types/projects";
 
 export function ProjectSidebar() {
+  const { t } = useTranslation();
   const projects = useProjectStore(selectProjects);
-  const zoomToRoom = useProjectStore((s) => s.zoomToRoom);
-  const zoomToOverview = useProjectStore((s) => s.zoomToOverview);
+  const viewMode = useProjectStore(selectViewMode);
+  const activeRoomKey = useProjectStore(selectActiveRoomKey);
+  const zoomToProjects = useProjectStore((s) => s.zoomToProjects);
+  const zoomToProject = useProjectStore((s) => s.zoomToProject);
 
   if (projects.length === 0) return null;
+
+  const isAllProjectsActive = viewMode === "projects";
 
   return (
     <div className="space-y-1">
@@ -20,30 +29,43 @@ export function ProjectSidebar() {
         <span className="text-xs font-semibold text-slate-400">
           PROJECTS ({projects.length})
         </span>
-        <button
-          className="text-xs text-slate-500 hover:text-slate-300"
-          onClick={zoomToOverview}
-        >
-          Overview
-        </button>
+      </div>
+      {/* All Projects item */}
+      <div
+        role="button"
+        tabIndex={0}
+        className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors ${
+          isAllProjectsActive
+            ? "bg-purple-500/20 border-l-2 border-purple-500"
+            : "hover:bg-slate-700"
+        }`}
+        onClick={zoomToProjects}
+        onKeyDown={(e) => e.key === "Enter" && zoomToProjects()}
+      >
+        <Layers size={12} className={isAllProjectsActive ? "text-purple-400" : "text-slate-500"} />
+        <span className={`truncate ${isAllProjectsActive ? "text-purple-300 font-bold" : "text-slate-300"}`}>
+          {t("sidebar.allProjects")}
+        </span>
       </div>
       {projects.map((project) => (
         <ProjectEntry
           key={project.key}
           project={project}
-          onClickProject={() => zoomToRoom(project.key)}
+          isActive={viewMode === "project" && activeRoomKey === project.key}
+          onClickProject={() => zoomToProject(project.key)}
         />
       ))}
-      <div className="border-t border-slate-700 my-2" />
     </div>
   );
 }
 
 function ProjectEntry({
   project,
+  isActive,
   onClickProject,
 }: {
   project: ProjectGroup;
+  isActive: boolean;
   onClickProject: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -51,7 +73,11 @@ function ProjectEntry({
   return (
     <div>
       <div
-        className="w-full flex items-center gap-2 px-2 py-1 text-sm hover:bg-slate-700 rounded cursor-pointer"
+        className={`w-full flex items-center gap-2 px-2 py-1 text-sm rounded cursor-pointer transition-colors ${
+          isActive
+            ? "bg-purple-500/20 border-l-2 border-purple-500"
+            : "hover:bg-slate-700"
+        }`}
         role="button"
         tabIndex={0}
         onClick={onClickProject}

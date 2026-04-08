@@ -68,6 +68,11 @@ const es: Record<TranslationKey, string> = {
   "sessions.collapseSidebar": "Contraer barra lateral",
   "sessions.dragToResize": "Arrastrar para redimensionar",
 
+  // Sidebar Navigation
+  "sidebar.wholeOffice": "Toda la Oficina",
+  "sidebar.allProjects": "Todos los Proyectos",
+  "sidebar.allSessions": "Todas las Sesiones",
+
   // Right Sidebar
   "sidebar.events": "Eventos",
   "sidebar.conversation": "Conversación",

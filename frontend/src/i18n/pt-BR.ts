@@ -68,6 +68,11 @@ const ptBR: Record<TranslationKey, string> = {
   "sessions.collapseSidebar": "Recolher barra lateral",
   "sessions.dragToResize": "Arraste para redimensionar",
 
+  // Sidebar Navigation
+  "sidebar.wholeOffice": "Escritório Completo",
+  "sidebar.allProjects": "Todos os Projetos",
+  "sidebar.allSessions": "Todas as Sessões",
+
   // Right Sidebar
   "sidebar.events": "Eventos",
   "sidebar.conversation": "Conversa",

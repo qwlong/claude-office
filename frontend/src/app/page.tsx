@@ -206,6 +206,21 @@ export default function V2TestPage(): React.ReactNode {
   const handleToggleDebug = () =>
     useGameStore.getState().setDebugMode(!debugMode);
 
+  const handleCleanupAgents = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/agents/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const data = await res.json();
+      showStatus(`Cleaned up ${data.removed ?? 0} agents`, "success");
+    } catch {
+      showStatus("Failed to cleanup agents", "error");
+    }
+  };
+
   const handleConfirmClearDB = async () => {
     setIsClearModalOpen(false);
     await handleClearDB();
@@ -375,6 +390,7 @@ export default function V2TestPage(): React.ReactNode {
             onSimulate={handleSimulate}
             onReset={handleReset}
             onClearDB={() => setIsClearModalOpen(true)}
+            onCleanupAgents={handleCleanupAgents}
             onToggleDebug={handleToggleDebug}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenHelp={() => setIsHelpModalOpen(true)}
@@ -440,29 +456,31 @@ export default function V2TestPage(): React.ReactNode {
           <div className="flex-grow border border-slate-800 rounded-lg shadow-2xl bg-slate-900 overflow-hidden relative">
             {/* View Mode Toggle */}
             <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-slate-800/80 rounded-md p-0.5 backdrop-blur-sm">
-              {(["all-merged", "overview", "sessions"] as const).map((mode) => (
+              {(["office", "projects", "sessions"] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`px-2 py-1 text-xs rounded transition-colors ${
                     viewMode === mode
+                      || (mode === "projects" && viewMode === "project")
+                      || (mode === "sessions" && viewMode === "session")
                       ? "bg-purple-600 text-white"
                       : "text-slate-400 hover:text-white hover:bg-slate-700"
                   }`}
                 >
-                  {mode === "all-merged"
+                  {mode === "office"
                     ? "Office"
-                    : mode === "overview"
+                    : mode === "projects"
                       ? "Projects"
                       : "Sessions"}
                 </button>
               ))}
-              {viewMode === "all-merged" && previousViewMode && (previousViewMode === "sessions" || previousViewMode === "overview") && (
+              {(viewMode === "project" || viewMode === "session") && (
                 <button
                   onClick={goBackToMultiRoom}
                   className="ml-1 px-2 py-1 text-xs rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border-l border-slate-600"
                 >
-                  {previousViewMode === "sessions" ? "\u2190 Sessions" : "\u2190 Projects"}
+                  {viewMode === "session" ? "\u2190 Sessions" : "\u2190 Projects"}
                 </button>
               )}
             </div>

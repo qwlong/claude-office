@@ -66,6 +66,11 @@ const en = {
   "sessions.collapseSidebar": "Collapse sidebar",
   "sessions.dragToResize": "Drag to resize",
 
+  // Sidebar Navigation
+  "sidebar.wholeOffice": "Whole Office",
+  "sidebar.allProjects": "All Projects",
+  "sidebar.allSessions": "All Sessions",
+
   // Right Sidebar
   "sidebar.events": "Events",
   "sidebar.conversation": "Conversation",
