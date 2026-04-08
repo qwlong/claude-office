@@ -67,15 +67,11 @@ export function HeaderControls({
 
   useEffect(() => setMounted(true), []);
 
-  const cycleTheme = () => {
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("system");
-    else setTheme("light");
-  };
-
-  // Avoid hydration mismatch: render neutral icon until mounted
-  const ThemeIcon = !mounted ? Sun : theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
-  const themeLabel = !mounted ? "Light" : theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
+  const themeOptions = [
+    { value: "light" as const, icon: Sun, label: "Light" },
+    { value: "dark" as const, icon: Moon, label: "Dark" },
+    { value: "system" as const, icon: Monitor, label: "System" },
+  ];
 
   const handleSpawn = async (projectId: string, issue: string) => {
     const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
@@ -148,13 +144,26 @@ export function HeaderControls({
         {debugMode ? t("header.debugOn") : t("header.debugOff")}
       </button>
 
-      <button
-        onClick={cycleTheme}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors"
-        title={`Theme: ${themeLabel}`}
-      >
-        <ThemeIcon size={14} />
-      </button>
+      <div className="flex items-center border border-slate-500/30 rounded overflow-hidden">
+        {themeOptions.map(({ value, icon: Icon, label }) => {
+          const isActive = mounted && theme === value;
+          return (
+            <button
+              key={value}
+              onClick={() => setTheme(value)}
+              className={`flex items-center justify-center px-2.5 py-1.5 text-xs font-bold transition-colors ${
+                isActive
+                  ? "bg-purple-500/30 text-purple-400"
+                  : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20"
+              }`}
+              title={`${label} theme`}
+              aria-label={`${label} theme`}
+            >
+              <Icon size={14} />
+            </button>
+          );
+        })}
+      </div>
 
       <button
         onClick={onOpenSettings}
