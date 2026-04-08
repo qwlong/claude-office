@@ -86,14 +86,14 @@ export function MobileDrawer({
       />
 
       {/* Drawer Panel */}
-      <div className="absolute left-0 top-0 bottom-0 w-80 bg-slate-900 border-r border-slate-800 overflow-y-auto animate-in slide-in-from-left duration-300">
+      <div className="absolute left-0 top-0 bottom-0 w-80 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 overflow-y-auto animate-in slide-in-from-left duration-300">
         <div className="p-4">
           {/* Drawer Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">{t("mobile.menu")}</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("mobile.menu")}</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-400"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400"
             >
               <X size={20} />
             </button>
@@ -128,20 +128,20 @@ export function MobileDrawer({
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
               <History size={14} className="text-purple-500" />
-              <span className="text-slate-300 font-bold uppercase tracking-wider text-xs">
+              <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-xs">
                 {t("sessions.title")}
               </span>
-              <span className="text-slate-600 text-xs">
+              <span className="text-slate-400 dark:text-slate-600 text-xs">
                 ({sessions.length})
               </span>
             </div>
             <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
               {sessionsLoading && sessions.length === 0 ? (
-                <div className="p-4 text-center text-slate-600 text-xs italic">
+                <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
                   {t("sessions.loading")}
                 </div>
               ) : sessions.length === 0 ? (
-                <div className="p-4 text-center text-slate-600 text-xs italic">
+                <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
                   {t("sessions.noSessions")}
                 </div>
               ) : (
@@ -156,7 +156,7 @@ export function MobileDrawer({
                       className={`px-3 py-2.5 rounded-md cursor-pointer transition-colors ${
                         isActive
                           ? "bg-purple-500/20 border-l-2 border-purple-500"
-                          : "hover:bg-slate-800/50"
+                          : "hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
                       }`}
                       onClick={() => {
                         onSessionSelect(session.id);
@@ -181,13 +181,13 @@ export function MobileDrawer({
                         )}
                         <span
                           className={`text-xs font-bold truncate ${
-                            isActive ? "text-purple-300" : "text-slate-300"
+                            isActive ? "text-purple-300" : "text-slate-700 dark:text-slate-300"
                           }`}
                         >
                           {session.projectName || t("sessions.unknownProject")}
                         </span>
                       </div>
-                      <div className="flex justify-between text-[10px] text-slate-500">
+                      <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                         <span>
                           {t("sessions.events", { count: session.eventCount })}
                         </span>
