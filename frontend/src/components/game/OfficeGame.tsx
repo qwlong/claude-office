@@ -280,6 +280,20 @@ export function OfficeGame(): ReactNode {
     useProjectStore.getState().setViewMode("all-merged");
   }, []);
 
+  const handleProjectRoomClick = useCallback((projectKey: string) => {
+    // Find the first session of this project and switch to it
+    const project = projects.find((p) => p.key === projectKey);
+    if (project && project.agents.length > 0) {
+      // Use the session_id from the first agent if available
+      const firstAgent = project.agents[0];
+      const sessionId = (firstAgent as Record<string, unknown>).sessionId as string | undefined;
+      if (sessionId) {
+        window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
+      }
+    }
+    useProjectStore.getState().setViewMode("all-merged");
+  }, [projects]);
+
   return (
     <div
       ref={containerRef}
@@ -321,7 +335,7 @@ export function OfficeGame(): ReactNode {
                 <MultiRoomCanvas
                   textures={textures}
                   rooms={multiRoomRooms}
-                  onRoomClick={viewMode === "sessions" ? handleSessionRoomClick : undefined}
+                  onRoomClick={viewMode === "sessions" ? handleSessionRoomClick : handleProjectRoomClick}
                 />
               )}
 
