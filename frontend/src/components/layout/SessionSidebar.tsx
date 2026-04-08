@@ -3,6 +3,8 @@
 import { useState } from "react";
 import {
   Building2,
+  ChevronDown,
+  ChevronRight,
   History,
   Radio,
   PlayCircle,
@@ -80,6 +82,8 @@ export function SessionSidebar({
   const zoomToSession = useProjectStore((s) => s.zoomToSession);
   const gitStatus = useGameStore(selectGitStatus);
   const isWholeOfficeActive = viewMode === "office";
+  const [projectsCollapsed, setProjectsCollapsed] = useState(false);
+  const [sessionsCollapsed, setSessionsCollapsed] = useState(false);
 
   const {
     size: sidebarWidth,
@@ -156,6 +160,8 @@ export function SessionSidebar({
           {/* Project Groups */}
           <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0">
             <ProjectSidebar
+              collapsed={projectsCollapsed}
+              onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
               onDeleteProject={(project) => {
                 const projectSessions = sessions.filter(
                   (s) => s.id !== "__all__" && s.projectName === project.name
@@ -172,34 +178,41 @@ export function SessionSidebar({
           {/* Session Browser */}
           <div
             className={`bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex flex-col ${
-              gitStatus ? "flex-shrink-0" : "flex-grow"
+              sessionsCollapsed ? "flex-shrink-0" : gitStatus ? "flex-shrink-0" : "flex-grow"
             }`}
-            style={gitStatus ? { height: sessionsHeight } : undefined}
+            style={!sessionsCollapsed && gitStatus ? { height: sessionsHeight } : undefined}
           >
-            <div className="bg-slate-50 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 flex-shrink-0">
-              <History size={14} className="text-purple-500" />
+            <button
+              onClick={() => setSessionsCollapsed(!sessionsCollapsed)}
+              className="w-full bg-slate-50 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 flex-shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+            >
               <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-xs">
                 {t("sessions.title")}
               </span>
               <span className="text-slate-400 dark:text-slate-600 text-xs">
                 ({sessions.length})
               </span>
-            </div>
+              <span className="ml-auto text-slate-400">
+                {sessionsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+              </span>
+            </button>
 
+            {!sessionsCollapsed && (
+            <>
             {/* All Sessions item */}
             <div
               role="button"
               tabIndex={0}
               className={`mx-2 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors ${
                 viewMode === "sessions"
-                  ? "bg-amber-500/20 border-l-2 border-amber-500"
-                  : "hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
+                  ? "bg-amber-500/15 border-l-2 border-amber-500"
+                  : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
               }`}
               onClick={() => setViewMode("sessions")}
               onKeyDown={(e) => e.key === "Enter" && setViewMode("sessions")}
             >
-              <Users size={10} className={viewMode === "sessions" ? "text-amber-400" : "text-slate-400 dark:text-slate-500"} />
-              <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+              <Users size={10} className={viewMode === "sessions" ? "text-amber-500" : "text-slate-400 dark:text-slate-500"} />
+              <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
                 {t("sidebar.allSessions")}
               </span>
             </div>
@@ -225,8 +238,8 @@ export function SessionSidebar({
                         key={session.id}
                         className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md ${
                           isActive
-                            ? "bg-purple-500/20 border-l-2 border-purple-500"
-                            : "hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
+                            ? "bg-amber-500/15 border-l-2 border-amber-500"
+                            : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
                         }`}
                         onClick={() => {
                           onSessionSelect(session.id);
@@ -255,7 +268,7 @@ export function SessionSidebar({
                           <span
                             className={`text-xs font-bold truncate flex-1 ${
                               isActive
-                                ? "text-purple-300"
+                                ? "text-amber-600 dark:text-amber-300"
                                 : "text-slate-700 dark:text-slate-300"
                             }`}
                           >
@@ -296,6 +309,8 @@ export function SessionSidebar({
                 </div>
               )}
             </div>
+            </>
+            )}
           </div>
 
           {/* Git Status Panel (drag handle + full panel, no collapse) */}
@@ -308,7 +323,7 @@ export function SessionSidebar({
               >
                 <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
               </div>
-              <div className="flex-grow min-h-0">
+              <div className="flex-shrink-0 overflow-y-auto" style={{ maxHeight: 160 }}>
                 <GitStatusPanel />
               </div>
             </>
