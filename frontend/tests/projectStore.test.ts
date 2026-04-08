@@ -39,7 +39,7 @@ function makeProject(key: string, agentCount = 0): ProjectGroup {
 describe("projectStore", () => {
   beforeEach(() => {
     useProjectStore.setState({
-      viewMode: "all-merged",
+      viewMode: "office",
       activeRoomKey: null,
       projects: [],
       lastUpdated: null,
@@ -47,8 +47,8 @@ describe("projectStore", () => {
   });
 
   describe("initial state", () => {
-    it("starts with all-merged view mode", () => {
-      expect(selectViewMode(useProjectStore.getState())).toBe("all-merged");
+    it("starts with office view mode", () => {
+      expect(selectViewMode(useProjectStore.getState())).toBe("office");
     });
 
     it("starts with no active room", () => {
@@ -72,21 +72,21 @@ describe("projectStore", () => {
     });
   });
 
-  describe("zoomToRoom", () => {
-    it("sets view mode to room-detail and active room key", () => {
-      useProjectStore.getState().zoomToRoom("proj-a");
+  describe("zoomToProject", () => {
+    it("sets view mode to project and active room key", () => {
+      useProjectStore.getState().zoomToProject("proj-a");
       const state = useProjectStore.getState();
-      expect(selectViewMode(state)).toBe("room-detail");
+      expect(selectViewMode(state)).toBe("project");
       expect(selectActiveRoomKey(state)).toBe("proj-a");
     });
   });
 
-  describe("zoomToOverview", () => {
-    it("sets view mode to overview and clears active room", () => {
-      useProjectStore.getState().zoomToRoom("proj-a");
-      useProjectStore.getState().zoomToOverview();
+  describe("zoomToProjects", () => {
+    it("sets view mode to projects and clears active room", () => {
+      useProjectStore.getState().zoomToProject("proj-a");
+      useProjectStore.getState().zoomToProjects();
       const state = useProjectStore.getState();
-      expect(selectViewMode(state)).toBe("overview");
+      expect(selectViewMode(state)).toBe("projects");
       expect(selectActiveRoomKey(state)).toBeNull();
     });
   });
