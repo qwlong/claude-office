@@ -104,6 +104,48 @@ class TestTaskServiceUpdateTasks:
         changed = service._update_tasks(sessions)
         assert changed is False
 
+    def test_deduplicates_tasks_with_same_session_id(self, service):
+        """If spawn + poll both create a task for the same session, deduplicate."""
+        from datetime import datetime, UTC
+        from uuid import uuid4
+        from app.models.tasks import Task
+
+        # Simulate spawn creating a task
+        now = datetime.now(UTC)
+        spawned_task = Task(
+            id=str(uuid4()),
+            external_session_id="ao-1",
+            adapter_type="ao",
+            project_key="proj-a",
+            issue="do something",
+            status=TaskStatus.spawning,
+            created_at=now,
+            updated_at=now,
+        )
+        service.tasks[spawned_task.id] = spawned_task
+
+        # Simulate poll also seeing ao-1 (creates duplicate internally)
+        dup_task = Task(
+            id=str(uuid4()),
+            external_session_id="ao-1",
+            adapter_type="ao",
+            project_key="proj-a",
+            issue=None,
+            status=TaskStatus.working,
+            created_at=now,
+            updated_at=now,
+        )
+        service.tasks[dup_task.id] = dup_task
+
+        # Now _update_tasks should deduplicate
+        sessions = [
+            ExternalSession(session_id="ao-1", project_id="proj-a", status="working"),
+        ]
+        changed = service._update_tasks(sessions)
+        assert changed is True
+        matching = [t for t in service.tasks.values() if t.external_session_id == "ao-1"]
+        assert len(matching) == 1
+
 
 class TestTaskServiceMatchSessions:
     def test_match_by_worktree_path(self, service):

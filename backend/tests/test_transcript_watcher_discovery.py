@@ -27,6 +27,24 @@ def test_extract_project_name_no_hash():
     assert extract_project_name(path) == "myapp"
 
 
+def test_extract_project_name_worktree_co():
+    """AO worktree path with co- session ID should become project/session-id."""
+    path = "/Users/apple/.claude/projects/-Users-apple--worktrees-claude-office-co-10/abc.jsonl"
+    assert extract_project_name(path) == "claude-office/co-10"
+
+
+def test_extract_project_name_worktree_ao():
+    """AO worktree path with ao- session ID."""
+    path = "/Users/apple/.claude/projects/-Users-apple--worktrees-agent-orchestrator-ao-141/abc.jsonl"
+    assert extract_project_name(path) == "agent-orchestrator/ao-141"
+
+
+def test_extract_project_name_worktree_with_hash():
+    """Worktree path with trailing hex hash."""
+    path = "/Users/apple/.claude/projects/-Users-apple--worktrees-claude-office-co-7-abc12345/abc.jsonl"
+    assert extract_project_name(path) == "claude-office/co-7"
+
+
 @pytest.mark.asyncio
 async def test_scan_discovers_sessions():
     with tempfile.TemporaryDirectory() as tmpdir:

@@ -25,26 +25,21 @@ def extract_project_name(path: str) -> str:
     dirname = Path(path).parent.name
 
     # Detect worktree paths: .worktrees/<project>/<session-id>
-    # dirname looks like: -Users-apple-.worktrees-claude-office-co-7-abc123
-    # or the real path contains .worktrees
-    if ".worktrees" in dirname or "worktrees" in dirname.lower():
-        # Try to extract: <project>-<session-id> from worktree path
+    # dirname looks like: -Users-apple--worktrees-claude-office-co-10
+    # or: -Users-apple-.worktrees-claude-office-co-7-abc12345
+    if "worktrees" in dirname.lower():
+        # Try regex: everything after "worktrees-" should be <project>-<session-id>
+        m = re.search(r'worktrees-(.+?)-((?:co|ao|sess|s)-\d+)(?:-[a-f0-9]+)?$', dirname)
+        if m:
+            return f"{m.group(1)}/{m.group(2)}"
+        # Fallback: strip prefix up to worktrees, return the rest
         parts = dirname.split("-")
         parts = [p for p in parts if p]
-        # Strip trailing hex hash
         if parts and re.fullmatch(r"[a-f0-9]{8,}", parts[-1]):
             parts = parts[:-1]
-        # Find "worktrees" or ".worktrees" index
-        wt_idx = None
-        for i, p in enumerate(parts):
-            if p.lower() in ("worktrees", ".worktrees"):
-                wt_idx = i
-                break
+        wt_idx = next((i for i, p in enumerate(parts) if "worktrees" in p.lower()), None)
         if wt_idx is not None and wt_idx + 1 < len(parts):
-            # Everything after worktrees is: project-name / session-id
-            after = parts[wt_idx + 1:]
-            return "-".join(after)
-        # Fallback: use last 2 parts
+            return "-".join(parts[wt_idx + 1:])
         return "-".join(parts[-2:]) if len(parts) >= 2 else parts[-1] if parts else "unknown"
 
     # The dirname encodes a full path like:

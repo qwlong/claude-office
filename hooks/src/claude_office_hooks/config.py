@@ -26,7 +26,15 @@ CONFIG_FILE = Path.home() / ".claude" / "claude-office-config.env"
 # Prefixes to strip from project names derived from transcript paths.
 # These path fragments appear because Claude names projects after the
 # filesystem path where the session was started (with slashes → dashes).
-STRIP_PREFIXES = ["-Users-probello-Repos-", "-Users-probello-"]
+# Auto-detect from current user's home directory so it works on any machine.
+_HOME_PREFIX = str(Path.home()).replace("/", "-")  # e.g. "-Users-apple"
+STRIP_PREFIXES = [
+    f"{_HOME_PREFIX}-Repos-",
+    f"{_HOME_PREFIX}-Projects-others-random-",
+    f"{_HOME_PREFIX}-Projects-others-",
+    f"{_HOME_PREFIX}-Projects-",
+    f"{_HOME_PREFIX}-",
+]
 
 
 def load_config() -> dict[str, str]:

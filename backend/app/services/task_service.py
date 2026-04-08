@@ -4,17 +4,46 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from app.config import get_settings
 from app.core.broadcast_service import broadcast_tasks_update
 from app.core.project_registry import normalize_project_key
+from app.db.models import SessionRecord
 from app.models.tasks import Task, TaskStatus
 from app.services.adapters import ExternalSession
 from app.services.adapters.ao import AOAdapter
 
 logger = logging.getLogger(__name__)
+
+# How long after completion before a worktree session is auto-deleted from DB
+_CLEANUP_GRACE_PERIOD = timedelta(minutes=5)
+
+
+def _should_cleanup_session(rec: SessionRecord) -> bool:
+    """Return True if this DB session record is a completed worktree session
+    that should be auto-deleted."""
+    if rec.status not in ("completed", "ended"):
+        return False
+    # Only clean up worktree sessions (identified by project_root or project_name)
+    project_root = rec.project_root or ""
+    project_name = rec.project_name or ""
+    is_worktree = (
+        ".worktrees" in project_root
+        or "/worktrees/" in project_root
+        or "/" in project_name  # e.g. "claude-office/co-10"
+    )
+    if not is_worktree:
+        return False
+    # Only clean up if updated_at is older than grace period
+    now = datetime.now(UTC)
+    updated = rec.updated_at
+    if updated and updated.tzinfo is None:
+        updated = updated.replace(tzinfo=UTC)
+    if updated and (now - updated) < _CLEANUP_GRACE_PERIOD:
+        return False
+    return True
 
 
 def _get_session_working_dirs() -> dict[str, str | None]:
@@ -101,6 +130,8 @@ class TaskService:
                     self._match_all_sessions()
                     await self._broadcast()
                 self.adapter.connected = True
+                # Periodically clean up completed worktree sessions from DB
+                await cleanup_worktree_db_sessions()
             except Exception:
                 logger.warning("AO poll failed", exc_info=True)
                 self.adapter.connected = False
@@ -110,12 +141,19 @@ class TaskService:
         changed = False
 
         for ext in sessions:
-            # Find existing task by external_session_id
+            # Find existing task(s) by external_session_id
+            matches = [t for t in self.tasks.values() if t.external_session_id == ext.session_id]
+
+            # Deduplicate: if multiple tasks share the same external_session_id,
+            # keep the oldest one and remove the rest.
             existing = None
-            for task in self.tasks.values():
-                if task.external_session_id == ext.session_id:
-                    existing = task
-                    break
+            if matches:
+                matches.sort(key=lambda t: t.created_at)
+                existing = matches[0]
+                for dup in matches[1:]:
+                    del self.tasks[dup.id]
+                    changed = True
+                    logger.info(f"Removed duplicate task {dup.id} for session {ext.session_id}")
 
             if existing is None:
                 now = datetime.now(UTC)
@@ -212,3 +250,33 @@ def get_task_service() -> TaskService:
     if _task_service is None:
         _task_service = TaskService()
     return _task_service
+
+
+async def cleanup_worktree_db_sessions() -> int:
+    """Delete completed worktree sessions (and their events) from the DB.
+
+    Called periodically from the poll loop. Only removes sessions that:
+    - Are completed/ended
+    - Have a worktree-style project_name or project_root
+    - Have been completed for longer than _CLEANUP_GRACE_PERIOD
+    """
+    from sqlalchemy import select, delete as sa_delete
+
+    from app.db.database import AsyncSessionLocal
+    from app.db.models import EventRecord
+
+    count = 0
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(SessionRecord))
+            to_delete = [rec.id for rec in result.scalars() if _should_cleanup_session(rec)]
+            for sid in to_delete:
+                await db.execute(sa_delete(EventRecord).where(EventRecord.session_id == sid))
+                await db.execute(sa_delete(SessionRecord).where(SessionRecord.id == sid))
+                count += 1
+            if count:
+                await db.commit()
+                logger.info(f"Auto-cleaned {count} completed worktree session(s) from DB")
+    except Exception:
+        logger.warning("Failed to cleanup worktree sessions", exc_info=True)
+    return count

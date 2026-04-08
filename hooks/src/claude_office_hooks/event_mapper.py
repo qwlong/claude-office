@@ -58,6 +58,19 @@ def get_project_name(raw_data: dict[str, Any], strip_prefixes: list[str] | None 
                             project_name = project_name[len(prefix):]
                             break
 
+                # Strip leading dashes left after prefix removal
+                project_name = project_name.lstrip("-")
+
+                # Handle worktree paths: worktrees-<project>-<session-id>
+                # Convert to: <project>/<session-id>
+                import re
+                wt_match = re.match(
+                    r"\.?worktrees-(.+?)-((?:co|ao|sess|s)-\d+)(?:-[a-f0-9]+)?$",
+                    project_name,
+                )
+                if wt_match:
+                    return f"{wt_match.group(1)}/{wt_match.group(2)}"
+
                 return project_name
         except (ValueError, IndexError):
             pass  # Fall through to cwd fallback
