@@ -46,7 +46,7 @@ import {
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
-import { useProjectStore, selectViewMode, selectProjects } from "@/stores/projectStore";
+import { useProjectStore, selectViewMode, selectProjects, selectSessionRooms } from "@/stores/projectStore";
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -116,6 +116,7 @@ export function OfficeGame(): ReactNode {
   // Multi-project view state
   const viewMode = useProjectStore(selectViewMode);
   const projects = useProjectStore(selectProjects);
+  const sessionRooms = useProjectStore(useShallow(selectSessionRooms));
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
@@ -194,12 +195,14 @@ export function OfficeGame(): ReactNode {
   const canvasHeight = useMemo(() => getCanvasHeight(deskCount), [deskCount]);
 
   // Canvas dimensions for multi-room view
+  const isMultiRoom = viewMode === "overview" || viewMode === "sessions";
+  const multiRoomRooms = viewMode === "sessions" ? sessionRooms : projects;
   const multiRoomSize = useMemo(
-    () => getMultiRoomCanvasSize(Math.max(1, projects.length)),
-    [projects.length]
+    () => getMultiRoomCanvasSize(Math.max(1, multiRoomRooms.length)),
+    [multiRoomRooms.length]
   );
-  const appWidth = viewMode === "overview" ? multiRoomSize.width : CANVAS_WIDTH;
-  const appHeight = viewMode === "overview" ? multiRoomSize.height : canvasHeight;
+  const appWidth = isMultiRoom ? multiRoomSize.width : CANVAS_WIDTH;
+  const appHeight = isMultiRoom ? multiRoomSize.height : canvasHeight;
 
   // Desk positions for Y-sorted rendering
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
@@ -243,6 +246,11 @@ export function OfficeGame(): ReactNode {
     return () => observer.disconnect();
   }, []);
 
+  const handleSessionRoomClick = useCallback((sessionId: string) => {
+    window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
+    useProjectStore.getState().setViewMode("all-merged");
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -280,11 +288,15 @@ export function OfficeGame(): ReactNode {
               {!spritesLoaded && <LoadingScreen />}
 
               {/* Office content - hidden while loading */}
-              {spritesLoaded && viewMode === "overview" && (
-                <MultiRoomCanvas textures={textures} rooms={projects} />
+              {spritesLoaded && isMultiRoom && (
+                <MultiRoomCanvas
+                  textures={textures}
+                  rooms={multiRoomRooms}
+                  onRoomClick={viewMode === "sessions" ? handleSessionRoomClick : undefined}
+                />
               )}
 
-              {spritesLoaded && viewMode !== "overview" && (
+              {spritesLoaded && !isMultiRoom && (
                 <>
                   {/* Floor and walls */}
                   <OfficeBackground floorTileTexture={textures.floorTile} canvasHeight={canvasHeight} />
