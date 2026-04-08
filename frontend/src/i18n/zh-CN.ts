@@ -74,6 +74,22 @@ const zhCN: Record<TranslationKey, string> = {
   "sidebar.wholeOffice": "整个办公室",
   "sidebar.allProjects": "所有项目",
   "sidebar.allSessions": "所有会话",
+  "sidebar.projects": "项目",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "办公室",
+  "viewMode.projects": "项目",
+  "viewMode.sessions": "会话",
+  "viewMode.backToSessions": "\u2190 会话",
+  "viewMode.backToProjects": "\u2190 项目",
+
+  // Project Card
+  "project.sessions": "个会话",
+  "project.sessions_one": "{count} 个会话",
+  "project.sessions_other": "{count} 个会话",
+  "project.agents": "个智能体",
+  "project.agents_one": "{count} 个智能体",
+  "project.agents_other": "{count} 个智能体",
 
   // Right Sidebar
   "sidebar.events": "事件",
@@ -175,6 +191,31 @@ const zhCN: Record<TranslationKey, string> = {
   "status.sessionDeletedNoOthers": "会话已删除。没有其他可用会话。",
   "status.connectedTo": "已连接到 {sessionName}",
   "status.autoFollowed": "已自动跟随新会话：{sessionName}",
+
+  // Tasks
+  "tasks.title": "任务",
+  "tasks.spawn": "派发",
+  "tasks.spawning": "派发中...",
+  "tasks.spawnNewTask": "派发新任务",
+  "tasks.notConnected": "未连接",
+  "tasks.connected": "已连接",
+  "tasks.noActiveTasks": "暂无活跃任务",
+  "tasks.project": "项目",
+  "tasks.projectPlaceholder": "项目名称",
+  "tasks.taskDescription": "任务描述",
+  "tasks.taskPlaceholder": "描述智能体需要完成的工作...",
+
+  // Task Status
+  "taskStatus.spawning": "派发中",
+  "taskStatus.working": "工作中",
+  "taskStatus.prOpen": "PR 已开",
+  "taskStatus.ciFailed": "CI 失败",
+  "taskStatus.reviewPending": "等待审查",
+  "taskStatus.changesRequested": "需要修改",
+  "taskStatus.approved": "已通过",
+  "taskStatus.merged": "已合并",
+  "taskStatus.done": "已完成",
+  "taskStatus.error": "错误",
 };
 
 export default zhCN;

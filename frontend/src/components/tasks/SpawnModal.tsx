@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Modal from "@/components/overlay/Modal";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Props {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
+  const { t } = useTranslation();
   const [projectId, setProjectId] = useState("");
   const [issue, setIssue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,28 +43,28 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Spawn New Task"
+      title={t("tasks.spawnNewTask")}
       footer={
         <>
           <button
             onClick={onClose}
             className="px-4 py-2 text-slate-400 hover:text-white text-sm font-bold transition-colors"
           >
-            Cancel
+            {t("modal.cancel")}
           </button>
           <button
             onClick={handleSpawn}
             disabled={!projectId || !issue || loading}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 disabled:text-slate-500 text-white text-sm font-bold rounded-lg transition-colors"
           >
-            {loading ? "Spawning..." : "Spawn"}
+            {loading ? t("tasks.spawning") : t("tasks.spawn")}
           </button>
         </>
       }
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Project</label>
+          <label className="block text-sm text-slate-400 mb-1">{t("tasks.project")}</label>
           {projects.length > 0 ? (
             <select
               value={projectId}
@@ -80,17 +82,17 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
               type="text"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              placeholder="project-name"
+              placeholder={t("tasks.projectPlaceholder")}
               className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
             />
           )}
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Task Description</label>
+          <label className="block text-sm text-slate-400 mb-1">{t("tasks.taskDescription")}</label>
           <textarea
             value={issue}
             onChange={(e) => setIssue(e.target.value)}
-            placeholder="Describe what the agent should do..."
+            placeholder={t("tasks.taskPlaceholder")}
             rows={3}
             className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500 resize-none"
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSpawn())}

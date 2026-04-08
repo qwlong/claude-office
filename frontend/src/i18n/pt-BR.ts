@@ -76,6 +76,22 @@ const ptBR: Record<TranslationKey, string> = {
   "sidebar.wholeOffice": "Escritório Completo",
   "sidebar.allProjects": "Todos os Projetos",
   "sidebar.allSessions": "Todas as Sessões",
+  "sidebar.projects": "Projetos",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "Escritório",
+  "viewMode.projects": "Projetos",
+  "viewMode.sessions": "Sessões",
+  "viewMode.backToSessions": "\u2190 Sessões",
+  "viewMode.backToProjects": "\u2190 Projetos",
+
+  // Project Card
+  "project.sessions": "sessões",
+  "project.sessions_one": "{count} sessão",
+  "project.sessions_other": "{count} sessões",
+  "project.agents": "agentes",
+  "project.agents_one": "{count} agente",
+  "project.agents_other": "{count} agentes",
 
   // Right Sidebar
   "sidebar.events": "Eventos",
@@ -180,6 +196,31 @@ const ptBR: Record<TranslationKey, string> = {
     "Sessão excluída. Nenhuma outra sessão disponível.",
   "status.connectedTo": "Conectado a {sessionName}",
   "status.autoFollowed": "Seguindo nova sessão: {sessionName}",
+
+  // Tasks
+  "tasks.title": "Tarefas",
+  "tasks.spawn": "Criar",
+  "tasks.spawning": "Criando...",
+  "tasks.spawnNewTask": "Criar Nova Tarefa",
+  "tasks.notConnected": "Não conectado",
+  "tasks.connected": "Conectado",
+  "tasks.noActiveTasks": "Sem tarefas ativas",
+  "tasks.project": "Projeto",
+  "tasks.projectPlaceholder": "nome-projeto",
+  "tasks.taskDescription": "Descrição da Tarefa",
+  "tasks.taskPlaceholder": "Descreva o que o agente deve fazer...",
+
+  // Task Status
+  "taskStatus.spawning": "Criando",
+  "taskStatus.working": "Trabalhando",
+  "taskStatus.prOpen": "PR Aberto",
+  "taskStatus.ciFailed": "CI Falhou",
+  "taskStatus.reviewPending": "Revisão Pendente",
+  "taskStatus.changesRequested": "Alterações Solicitadas",
+  "taskStatus.approved": "Aprovado",
+  "taskStatus.merged": "Mesclado",
+  "taskStatus.done": "Concluído",
+  "taskStatus.error": "Erro",
 };
 
 export default ptBR;

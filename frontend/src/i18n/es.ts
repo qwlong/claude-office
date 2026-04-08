@@ -76,6 +76,22 @@ const es: Record<TranslationKey, string> = {
   "sidebar.wholeOffice": "Toda la Oficina",
   "sidebar.allProjects": "Todos los Proyectos",
   "sidebar.allSessions": "Todas las Sesiones",
+  "sidebar.projects": "Proyectos",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "Oficina",
+  "viewMode.projects": "Proyectos",
+  "viewMode.sessions": "Sesiones",
+  "viewMode.backToSessions": "\u2190 Sesiones",
+  "viewMode.backToProjects": "\u2190 Proyectos",
+
+  // Project Card
+  "project.sessions": "sesiones",
+  "project.sessions_one": "{count} sesión",
+  "project.sessions_other": "{count} sesiones",
+  "project.agents": "agentes",
+  "project.agents_one": "{count} agente",
+  "project.agents_other": "{count} agentes",
 
   // Right Sidebar
   "sidebar.events": "Eventos",
@@ -180,6 +196,31 @@ const es: Record<TranslationKey, string> = {
     "Sesión eliminada. No hay otras sesiones disponibles.",
   "status.connectedTo": "Conectado a {sessionName}",
   "status.autoFollowed": "Siguiendo nueva sesión: {sessionName}",
+
+  // Tasks
+  "tasks.title": "Tareas",
+  "tasks.spawn": "Crear",
+  "tasks.spawning": "Creando...",
+  "tasks.spawnNewTask": "Crear Nueva Tarea",
+  "tasks.notConnected": "No conectado",
+  "tasks.connected": "Conectado",
+  "tasks.noActiveTasks": "Sin tareas activas",
+  "tasks.project": "Proyecto",
+  "tasks.projectPlaceholder": "nombre-proyecto",
+  "tasks.taskDescription": "Descripción de la Tarea",
+  "tasks.taskPlaceholder": "Describe lo que el agente debe hacer...",
+
+  // Task Status
+  "taskStatus.spawning": "Creando",
+  "taskStatus.working": "Trabajando",
+  "taskStatus.prOpen": "PR Abierto",
+  "taskStatus.ciFailed": "CI Fallido",
+  "taskStatus.reviewPending": "Revisión Pendiente",
+  "taskStatus.changesRequested": "Cambios Solicitados",
+  "taskStatus.approved": "Aprobado",
+  "taskStatus.merged": "Fusionado",
+  "taskStatus.done": "Hecho",
+  "taskStatus.error": "Error",
 };
 
 export default es;

@@ -470,10 +470,10 @@ export default function V2TestPage(): React.ReactNode {
                   }`}
                 >
                   {mode === "office"
-                    ? "Office"
+                    ? t("viewMode.office")
                     : mode === "projects"
-                      ? "Projects"
-                      : "Sessions"}
+                      ? t("viewMode.projects")
+                      : t("viewMode.sessions")}
                 </button>
               ))}
               {(viewMode === "project" || viewMode === "session") && (
@@ -481,7 +481,7 @@ export default function V2TestPage(): React.ReactNode {
                   onClick={goBackToMultiRoom}
                   className="ml-1 px-2 py-1 text-xs rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border-l border-slate-300 dark:border-slate-600"
                 >
-                  {viewMode === "session" ? "\u2190 Sessions" : "\u2190 Projects"}
+                  {viewMode === "session" ? t("viewMode.backToSessions") : t("viewMode.backToProjects")}
                 </button>
               )}
             </div>
