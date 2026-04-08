@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ROOM_SCALE, ROOM_GAP, ROOM_GRID_COLS } from "../src/constants/rooms";
+import { ROOM_SCALE, ROOM_GAP, getRoomGridCols } from "../src/constants/rooms";
 import { CANVAS_WIDTH, getCanvasHeight } from "../src/constants/canvas";
 
+const ROOM_GRID_COLS = getRoomGridCols(4); // 2 cols for 4 rooms
 const FULL_ROOM_H = getCanvasHeight(8); // 1066
 const LABEL_H = 50; // label height inside scaled container
 
