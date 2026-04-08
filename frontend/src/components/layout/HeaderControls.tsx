@@ -83,14 +83,14 @@ export function HeaderControls({
   };
 
   return (
-    <div className="flex gap-4 items-center">
+    <div className="flex gap-2 items-center flex-nowrap flex-shrink min-w-0">
       {aoConnected && (
         <button
           onClick={() => setSpawnOpen(true)}
           className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 rounded text-xs font-bold transition-colors"
         >
           <Rocket size={14} />
-          {t("header.spawn")}
+          <span className="hidden xl:inline">{t("header.spawn")}</span>
         </button>
       )}
 
@@ -102,46 +102,51 @@ export function HeaderControls({
 
       <button
         onClick={onSimulate}
-        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        title={t("header.simulate")}
       >
         <Play size={14} fill="currentColor" />
-        {t("header.simulate")}
+        <span className="hidden xl:inline">{t("header.simulate")}</span>
       </button>
 
       <button
         onClick={onReset}
-        className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        title={t("header.reset")}
       >
         <RefreshCw size={14} />
-        {t("header.reset")}
+        <span className="hidden xl:inline">{t("header.reset")}</span>
       </button>
 
       <button
         onClick={onClearDB}
-        className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        title={t("header.clearDb")}
       >
         <Trash2 size={14} />
-        {t("header.clearDb")}
+        <span className="hidden xl:inline">{t("header.clearDb")}</span>
       </button>
 
       <button
         onClick={onCleanupAgents}
-        className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        title={t("header.cleanupAgents")}
       >
         <UserX size={14} />
-        {t("header.cleanupAgents")}
+        <span className="hidden xl:inline">{t("header.cleanupAgents")}</span>
       </button>
 
       <button
         onClick={onToggleDebug}
-        className={`flex items-center gap-2 px-3 py-1.5 border rounded text-xs font-bold transition-colors ${
+        className={`flex items-center gap-2 px-3 py-1.5 border rounded text-xs font-bold transition-colors whitespace-nowrap ${
           debugMode
             ? "bg-green-500/20 text-green-400 border-green-500/30"
             : "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20"
         }`}
+        title={debugMode ? t("header.debugOn") : t("header.debugOff")}
       >
         <Bug size={14} />
-        {debugMode ? t("header.debugOn") : t("header.debugOff")}
+        <span className="hidden xl:inline">{debugMode ? t("header.debugOn") : t("header.debugOff")}</span>
       </button>
 
       <div className="relative flex items-center bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-lg p-0.5">
@@ -178,22 +183,24 @@ export function HeaderControls({
 
       <button
         onClick={onOpenSettings}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        title={t("header.settings")}
       >
         <Settings size={14} />
-        {t("header.settings")}
+        <span className="hidden xl:inline">{t("header.settings")}</span>
       </button>
 
       <button
         onClick={onOpenHelp}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        title={t("header.help")}
       >
         <HelpCircle size={14} />
-        {t("header.help")}
+        <span className="hidden xl:inline">{t("header.help")}</span>
       </button>
 
       {/* Connection and AI status */}
-      <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-4">
+      <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-4 flex-shrink-0">
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">{t("header.serverLabel")}</span>
           <div
