@@ -50,6 +50,7 @@ import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   BACKGROUND_COLOR,
+  getCanvasHeight,
 } from "@/constants/canvas";
 import {
   EMPLOYEE_OF_MONTH_POSITION,
@@ -181,6 +182,9 @@ export function OfficeGame(): ReactNode {
     return Math.max(8, Math.ceil(agents.size / 4) * 4);
   }, [agents.size]);
 
+  // Dynamic canvas height based on desk count
+  const canvasHeight = useMemo(() => getCanvasHeight(deskCount), [deskCount]);
+
   // Desk positions for Y-sorted rendering
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
 
@@ -246,7 +250,7 @@ export function OfficeGame(): ReactNode {
             <Application
               key={`pixi-app-${hmrVersion}`}
               width={CANVAS_WIDTH}
-              height={CANVAS_HEIGHT}
+              height={canvasHeight}
               backgroundColor={BACKGROUND_COLOR}
               autoDensity={true}
               resolution={
@@ -263,7 +267,7 @@ export function OfficeGame(): ReactNode {
               {spritesLoaded && (
                 <>
                   {/* Floor and walls */}
-                  <OfficeBackground floorTileTexture={textures.floorTile} />
+                  <OfficeBackground floorTileTexture={textures.floorTile} canvasHeight={canvasHeight} />
 
                   {/* Boss area rug - rendered right after floor */}
                   {textures.bossRug && (

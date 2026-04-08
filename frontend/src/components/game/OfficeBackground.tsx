@@ -28,6 +28,7 @@ const WALL_TRIM_COLOR = 0x4a4a4a;
 
 interface OfficeBackgroundProps {
   floorTileTexture?: Texture | null;
+  canvasHeight?: number;
 }
 
 interface TileData {
@@ -70,13 +71,16 @@ function drawWalls(g: Graphics): void {
 
 export function OfficeBackground({
   floorTileTexture,
+  canvasHeight: height,
 }: OfficeBackgroundProps): ReactNode {
+  const effectiveHeight = height ?? CANVAS_HEIGHT;
+
   // Generate tile positions with alternating rotations and tints
   const tiles = useMemo(() => {
     const result: TileData[] = [];
     const startY = WALL_HEIGHT;
 
-    for (let y = startY; y < CANVAS_HEIGHT; y += FLOOR_TILE_SIZE) {
+    for (let y = startY; y < effectiveHeight; y += FLOOR_TILE_SIZE) {
       const rowIndex = Math.floor((y - startY) / FLOOR_TILE_SIZE);
       for (let x = 0; x < CANVAS_WIDTH; x += FLOOR_TILE_SIZE) {
         const colIndex = Math.floor(x / FLOOR_TILE_SIZE);
@@ -91,10 +95,21 @@ export function OfficeBackground({
       }
     }
     return result;
-  }, []);
+  }, [effectiveHeight]);
 
   // Stable reference for wall drawing
-  const drawWallsCallback = useCallback((g: Graphics) => drawWalls(g), []);
+  const drawWallsCallback = useCallback(
+    (g: Graphics) => {
+      g.clear();
+      g.rect(0, WALL_HEIGHT, CANVAS_WIDTH, effectiveHeight - WALL_HEIGHT);
+      g.fill(FLOOR_COLOR);
+      g.rect(0, 0, CANVAS_WIDTH, WALL_HEIGHT);
+      g.fill(WALL_COLOR);
+      g.rect(0, WALL_HEIGHT - WALL_TRIM_HEIGHT, CANVAS_WIDTH, WALL_TRIM_HEIGHT);
+      g.fill(WALL_TRIM_COLOR);
+    },
+    [effectiveHeight],
+  );
 
   return (
     <>
