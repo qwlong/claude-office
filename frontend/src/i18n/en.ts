@@ -52,6 +52,10 @@ const en = {
   "settings.clockTip":
     "Tip: Click the clock in the office to quickly cycle between modes.",
   "settings.language": "Language",
+  "settings.theme": "Theme",
+  "settings.themeLight": "Light",
+  "settings.themeDark": "Dark",
+  "settings.themeSystem": "System",
 
   // Sessions
   "sessions.title": "Sessions",

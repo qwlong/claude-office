@@ -156,6 +156,21 @@ export default function V2TestPage(): React.ReactNode {
     document.documentElement.lang = language;
   }, [language]);
 
+  // Listen for system theme changes when in "system" mode
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => {
+      const { themeMode } = usePreferencesStore.getState();
+      if (themeMode === "system") {
+        const isDark = mql.matches;
+        document.documentElement.classList.toggle("dark", isDark);
+        document.documentElement.classList.toggle("light", !isDark);
+      }
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
   // ------------------------------------------------------------------
   // Mobile breakpoint detection
   // ------------------------------------------------------------------

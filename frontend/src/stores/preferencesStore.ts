@@ -9,12 +9,14 @@ import { isLocale, type Locale } from "@/i18n";
 
 export type ClockType = "analog" | "digital";
 export type ClockFormat = "12h" | "24h";
+export type ThemeMode = "light" | "dark" | "system";
 
 interface PreferencesState {
   clockType: ClockType;
   clockFormat: ClockFormat;
   autoFollowNewSessions: boolean;
   language: Locale;
+  themeMode: ThemeMode;
   isLoaded: boolean;
 
   // Actions
@@ -23,6 +25,7 @@ interface PreferencesState {
   setClockFormat: (format: ClockFormat) => Promise<void>;
   setAutoFollowNewSessions: (enabled: boolean) => Promise<void>;
   setLanguage: (language: Locale) => Promise<void>;
+  setThemeMode: (mode: ThemeMode) => Promise<void>;
   cycleClockMode: () => Promise<void>;
 }
 
@@ -36,6 +39,9 @@ const DEFAULT_CLOCK_TYPE: ClockType = "analog";
 const DEFAULT_CLOCK_FORMAT: ClockFormat = "12h";
 const DEFAULT_AUTO_FOLLOW_NEW_SESSIONS = true;
 const DEFAULT_LANGUAGE: Locale = "en";
+const DEFAULT_THEME_MODE: ThemeMode = "dark";
+
+const VALID_THEME_MODES: ThemeMode[] = ["light", "dark", "system"];
 
 // ============================================================================
 // API HELPERS
@@ -66,6 +72,22 @@ async function setPreference(key: string, value: string): Promise<void> {
 }
 
 // ============================================================================
+// THEME HELPERS
+// ============================================================================
+
+function getSystemDark(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function applyThemeToDOM(mode: ThemeMode): void {
+  if (typeof document === "undefined") return;
+  const isDark = mode === "dark" || (mode === "system" && getSystemDark());
+  document.documentElement.classList.toggle("dark", isDark);
+  document.documentElement.classList.toggle("light", !isDark);
+}
+
+// ============================================================================
 // STORE
 // ============================================================================
 
@@ -74,6 +96,7 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
   clockFormat: DEFAULT_CLOCK_FORMAT,
   autoFollowNewSessions: DEFAULT_AUTO_FOLLOW_NEW_SESSIONS,
   language: DEFAULT_LANGUAGE,
+  themeMode: DEFAULT_THEME_MODE,
   isLoaded: false,
 
   loadPreferences: async () => {
@@ -87,6 +110,7 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
         ? DEFAULT_AUTO_FOLLOW_NEW_SESSIONS
         : autoFollowRaw === "true";
     const language = prefs.language || DEFAULT_LANGUAGE;
+    const themeModeRaw = prefs.theme_mode || DEFAULT_THEME_MODE;
 
     set({
       clockType:
@@ -99,8 +123,14 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
           : DEFAULT_CLOCK_FORMAT,
       autoFollowNewSessions,
       language: isLocale(language) ? language : DEFAULT_LANGUAGE,
+      themeMode: (VALID_THEME_MODES as string[]).includes(themeModeRaw)
+        ? (themeModeRaw as ThemeMode)
+        : DEFAULT_THEME_MODE,
       isLoaded: true,
     });
+
+    // Apply theme to DOM after loading
+    applyThemeToDOM(get().themeMode);
   },
 
   setClockType: async (clockType) => {
@@ -121,6 +151,12 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
   setLanguage: async (language) => {
     set({ language });
     await setPreference("language", language);
+  },
+
+  setThemeMode: async (themeMode) => {
+    set({ themeMode });
+    applyThemeToDOM(themeMode);
+    await setPreference("theme_mode", themeMode);
   },
 
   cycleClockMode: async () => {
@@ -160,4 +196,5 @@ export const selectClockFormat = (state: PreferencesState) => state.clockFormat;
 export const selectAutoFollowNewSessions = (state: PreferencesState) =>
   state.autoFollowNewSessions;
 export const selectLanguage = (state: PreferencesState) => state.language;
+export const selectThemeMode = (state: PreferencesState) => state.themeMode;
 export const selectIsLoaded = (state: PreferencesState) => state.isLoaded;

@@ -54,6 +54,10 @@ const es: Record<TranslationKey, string> = {
   "settings.clockTip":
     "Consejo: Haz clic en el reloj de la oficina para alternar rápidamente entre modos.",
   "settings.language": "Idioma",
+  "settings.theme": "Tema",
+  "settings.themeLight": "Claro",
+  "settings.themeDark": "Oscuro",
+  "settings.themeSystem": "Sistema",
 
   // Sessions
   "sessions.title": "Sesiones",
