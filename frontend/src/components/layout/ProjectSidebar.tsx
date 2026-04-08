@@ -38,7 +38,7 @@ export function ProjectSidebar() {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between px-2 py-1">
-        <span className="text-xs font-semibold text-slate-400">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
           PROJECTS ({projects.length})
         </span>
       </div>
@@ -49,13 +49,13 @@ export function ProjectSidebar() {
         className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors ${
           isAllProjectsActive
             ? "bg-purple-500/20 border-l-2 border-purple-500"
-            : "hover:bg-slate-700"
+            : "hover:bg-slate-200 dark:hover:bg-slate-700"
         }`}
         onClick={zoomToProjects}
         onKeyDown={(e) => e.key === "Enter" && zoomToProjects()}
       >
-        <Layers size={12} className={isAllProjectsActive ? "text-purple-400" : "text-slate-500"} />
-        <span className={`truncate ${isAllProjectsActive ? "text-purple-300 font-bold" : "text-slate-300"}`}>
+        <Layers size={12} className={isAllProjectsActive ? "text-purple-400" : "text-slate-400 dark:text-slate-500"} />
+        <span className={`truncate ${isAllProjectsActive ? "text-purple-300 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
           {t("sidebar.allProjects")}
         </span>
       </div>
@@ -88,7 +88,7 @@ function ProjectEntry({
         className={`w-full flex items-center gap-2 px-2 py-1 text-sm rounded cursor-pointer transition-colors ${
           isActive
             ? "bg-purple-500/20 border-l-2 border-purple-500"
-            : "hover:bg-slate-700"
+            : "hover:bg-slate-200 dark:hover:bg-slate-700"
         }`}
         role="button"
         tabIndex={0}
@@ -100,7 +100,7 @@ function ProjectEntry({
           style={{ backgroundColor: project.color }}
         />
         <span
-          className="text-slate-400 text-xs flex-shrink-0 cursor-pointer select-none"
+          className="text-slate-500 dark:text-slate-400 text-xs flex-shrink-0 cursor-pointer select-none"
           role="button"
           onClick={(e) => {
             e.stopPropagation();
@@ -109,14 +109,14 @@ function ProjectEntry({
         >
           {expanded ? "\u25BC" : "\u25B6"}
         </span>
-        <span className="truncate text-slate-200">{project.name}</span>
-        <span className="text-slate-500 text-xs ml-auto whitespace-nowrap">
+        <span className="truncate text-slate-800 dark:text-slate-200">{project.name}</span>
+        <span className="text-slate-400 dark:text-slate-500 text-xs ml-auto whitespace-nowrap">
           {project.sessionCount}s {project.agents.length}a
         </span>
       </div>
 
       {expanded && (
-        <div className="ml-6 text-xs text-slate-500">
+        <div className="ml-6 text-xs text-slate-400 dark:text-slate-500">
           {project.agents.length === 0 ? (
             <div className="py-0.5 italic">No agents</div>
           ) : (
