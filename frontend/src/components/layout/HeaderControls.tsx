@@ -87,10 +87,10 @@ export function HeaderControls({
       {aoConnected && (
         <button
           onClick={() => setSpawnOpen(true)}
-          className="group flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 rounded text-xs font-bold transition-colors"
+          className="group relative flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 rounded text-xs font-bold transition-colors"
         >
           <Rocket size={14} />
-          <span className="hidden xl:inline group-hover:inline">{t("header.spawn")}</span>
+          <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.spawn")}</span>
         </button>
       )}
 
@@ -102,43 +102,43 @@ export function HeaderControls({
 
       <button
         onClick={onSimulate}
-        className="group flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        className="group relative flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
         title={t("header.simulate")}
       >
         <Play size={14} fill="currentColor" />
-        <span className="hidden xl:inline group-hover:inline">{t("header.simulate")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.simulate")}</span>
       </button>
 
       <button
         onClick={onReset}
-        className="group flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        className="group relative flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
         title={t("header.reset")}
       >
         <RefreshCw size={14} />
-        <span className="hidden xl:inline group-hover:inline">{t("header.reset")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.reset")}</span>
       </button>
 
       <button
         onClick={onClearDB}
-        className="group flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        className="group relative flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
         title={t("header.clearDb")}
       >
         <Trash2 size={14} />
-        <span className="hidden xl:inline group-hover:inline">{t("header.clearDb")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.clearDb")}</span>
       </button>
 
       <button
         onClick={onCleanupAgents}
-        className="group flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        className="group relative flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
         title={t("header.cleanupAgents")}
       >
         <UserX size={14} />
-        <span className="hidden xl:inline group-hover:inline">{t("header.cleanupAgents")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.cleanupAgents")}</span>
       </button>
 
       <button
         onClick={onToggleDebug}
-        className={`group flex items-center gap-2 px-3 py-1.5 border rounded text-xs font-bold transition-colors whitespace-nowrap ${
+        className={`group relative flex items-center gap-2 px-3 py-1.5 border rounded text-xs font-bold transition-colors whitespace-nowrap ${
           debugMode
             ? "bg-green-500/20 text-green-400 border-green-500/30"
             : "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20"
@@ -146,7 +146,7 @@ export function HeaderControls({
         title={debugMode ? t("header.debugOn") : t("header.debugOff")}
       >
         <Bug size={14} />
-        <span className="hidden xl:inline group-hover:inline">{debugMode ? t("header.debugOn") : t("header.debugOff")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{debugMode ? t("header.debugOn") : t("header.debugOff")}</span>
       </button>
 
       <div className="relative flex items-center bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-lg p-0.5">
@@ -183,20 +183,20 @@ export function HeaderControls({
 
       <button
         onClick={onOpenSettings}
-        className="group flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        className="group relative flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
         title={t("header.settings")}
       >
         <Settings size={14} />
-        <span className="hidden xl:inline group-hover:inline">{t("header.settings")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.settings")}</span>
       </button>
 
       <button
         onClick={onOpenHelp}
-        className="group flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+        className="group relative flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
         title={t("header.help")}
       >
         <HelpCircle size={14} />
-        <span className="hidden xl:inline group-hover:inline">{t("header.help")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.help")}</span>
       </button>
 
       {/* Connection and AI status */}
