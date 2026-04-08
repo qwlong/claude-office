@@ -144,17 +144,28 @@ export function HeaderControls({
         {debugMode ? t("header.debugOn") : t("header.debugOff")}
       </button>
 
-      <div className="flex items-center border border-slate-500/30 rounded overflow-hidden">
+      <div className="relative flex items-center bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-lg p-0.5">
+        {/* Sliding pill indicator */}
+        {mounted && (
+          <div
+            className="absolute top-0.5 bottom-0.5 rounded-md bg-white dark:bg-slate-600 shadow-sm transition-transform duration-200 ease-out"
+            style={{
+              width: `calc(${100 / themeOptions.length}% - 2px)`,
+              transform: `translateX(calc(${themeOptions.findIndex((o) => o.value === theme)} * (100% + ${4 / (themeOptions.length - 0.5)}px)))`,
+              marginLeft: 1,
+            }}
+          />
+        )}
         {themeOptions.map(({ value, icon: Icon, label }) => {
           const isActive = mounted && theme === value;
           return (
             <button
               key={value}
               onClick={() => setTheme(value)}
-              className={`flex items-center justify-center px-2.5 py-1.5 text-xs font-bold transition-colors ${
+              className={`relative z-10 flex items-center justify-center w-8 h-7 rounded-md text-xs transition-colors duration-200 ${
                 isActive
-                  ? "bg-purple-500/30 text-purple-400"
-                  : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20"
+                  ? "text-slate-900 dark:text-slate-100"
+                  : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               }`}
               title={`${label} theme`}
               aria-label={`${label} theme`}
