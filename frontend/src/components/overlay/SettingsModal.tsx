@@ -9,6 +9,7 @@ import {
 } from "@/stores/preferencesStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { locales, type Locale } from "@/i18n";
+import { useTheme } from "next-themes";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function SettingsModal({
   );
 
   const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
 
   const handleLanguageChange = (locale: Locale) => {
     setLanguage(locale);
@@ -65,6 +67,55 @@ export default function SettingsModal({
       }
     >
       <div className="space-y-6">
+        {/* Theme */}
+        <div>
+          <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
+            {t("settings.theme")}
+          </label>
+          <div
+            className="flex gap-3"
+            role="radiogroup"
+            aria-label={t("settings.theme")}
+          >
+            {(["light", "dark", "system"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={theme === value}
+                tabIndex={theme === value ? 0 : -1}
+                onClick={() => setTheme(value)}
+                onKeyDown={(e) => {
+                  const values = ["light", "dark", "system"] as const;
+                  const parent = e.currentTarget.parentElement;
+                  if (!parent) return;
+                  const buttons = Array.from(parent.children) as HTMLElement[];
+                  const idx = buttons.indexOf(e.currentTarget);
+                  let nextIdx: number | null = null;
+                  if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                    e.preventDefault();
+                    nextIdx = (idx + 1) % values.length;
+                  } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    nextIdx = (idx - 1 + values.length) % values.length;
+                  }
+                  if (nextIdx !== null) {
+                    setTheme(values[nextIdx]);
+                    buttons[nextIdx].focus();
+                  }
+                }}
+                className={`flex-1 px-4 py-3 rounded-lg border text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 outline-none ${
+                  theme === value
+                    ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                    : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                }`}
+              >
+                {t(`settings.${value}` as const)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Language */}
         <div>
           <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
