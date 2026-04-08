@@ -61,6 +61,8 @@ class Agent(BaseModel):
     bubble: BubbleContent | None = None
     current_task: str | None = None
     position: dict[str, int] = {"x": 0, "y": 0}
+    project_key: str | None = None
+    session_id: str | None = None
 
 
 class Boss(BaseModel):
