@@ -6,7 +6,13 @@ export const ROOM_HEIGHT = 512;
 export const ROOM_GAP = 24;
 
 /** Max columns in overview grid */
-export const ROOM_GRID_COLS = 2;
+export const ROOM_GRID_COLS_MAX = 6;
+
+/** Compute optimal column count: prefer 2 rows, max 6 cols */
+export function getRoomGridCols(count: number): number {
+  if (count <= 3) return count;
+  return Math.min(Math.ceil(count / 2), ROOM_GRID_COLS_MAX);
+}
 
 /** Thumbnail size in overview mode */
 export const THUMBNAIL_WIDTH = 300;
@@ -34,8 +40,8 @@ export const SCALED_ROOM_H = ROOM_HEIGHT * ROOM_SCALE; // 256
 
 /** Calculate grid dimensions for N rooms */
 export function getRoomGridSize(roomCount: number) {
-  const cols = Math.min(roomCount, ROOM_GRID_COLS);
-  const rows = Math.ceil(roomCount / ROOM_GRID_COLS);
+  const cols = getRoomGridCols(roomCount);
+  const rows = Math.ceil(roomCount / cols);
   return {
     cols,
     rows,
@@ -60,8 +66,8 @@ export function getMultiRoomCanvasSize(
   fullRoomHeight: number = 1126, // getCanvasHeight(8)=1066 + 60 for boss overflow
   fullRoomWidth: number = 1280,
 ) {
-  const cols = Math.min(projectCount, ROOM_GRID_COLS);
-  const rows = Math.ceil(projectCount / ROOM_GRID_COLS);
+  const cols = getRoomGridCols(projectCount);
+  const rows = Math.ceil(projectCount / cols);
   // Each cell = (room + label) * scale
   const cellW = fullRoomWidth * ROOM_SCALE;
   const cellH = (fullRoomHeight + LABEL_H_FULL) * ROOM_SCALE;

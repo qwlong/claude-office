@@ -15,7 +15,7 @@ import { RoomLabel } from "./RoomLabel";
 import {
   ROOM_SCALE,
   ROOM_GAP,
-  ROOM_GRID_COLS,
+  getRoomGridCols,
 } from "@/constants/rooms";
 import { CANVAS_WIDTH, getCanvasHeight } from "@/constants/canvas";
 import type { OfficeTextures } from "@/hooks/useOfficeTextures";
@@ -30,9 +30,10 @@ const LABEL_H = 42;
 const EDGE_PAD = ROOM_GAP;
 
 /** Calculate the x,y position for a room cell (including label) at the given index. */
-export function getRoomPosition(index: number) {
-  const col = index % ROOM_GRID_COLS;
-  const row = Math.floor(index / ROOM_GRID_COLS);
+export function getRoomPosition(index: number, totalRooms: number) {
+  const cols = getRoomGridCols(totalRooms);
+  const col = index % cols;
+  const row = Math.floor(index / cols);
   const cellW = CANVAS_WIDTH * ROOM_SCALE;
   const cellH = (FULL_ROOM_H + LABEL_H) * ROOM_SCALE;
   return {
@@ -59,7 +60,7 @@ export function MultiRoomCanvas({
   return (
     <>
       {rooms.map((room, index) => {
-        const pos = getRoomPosition(index);
+        const pos = getRoomPosition(index, rooms.length);
         return (
           <pixiContainer
             key={room.key}

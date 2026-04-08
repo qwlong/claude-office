@@ -333,22 +333,12 @@ export function OfficeGame(): ReactNode {
 
   const handleSessionRoomClick = useCallback((sessionId: string) => {
     window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
-    useProjectStore.getState().setViewMode("office");
+    useProjectStore.getState().zoomToSession(sessionId);
   }, []);
 
   const handleProjectRoomClick = useCallback((projectKey: string) => {
-    // Find the first session of this project and switch to it
-    const project = projects.find((p) => p.key === projectKey);
-    if (project && project.agents.length > 0) {
-      // Use the session_id from the first agent if available
-      const firstAgent = project.agents[0];
-      const sessionId = (firstAgent as Record<string, unknown>).sessionId as string | undefined;
-      if (sessionId) {
-        window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
-      }
-    }
-    useProjectStore.getState().setViewMode("office");
-  }, [projects]);
+    useProjectStore.getState().zoomToProject(projectKey);
+  }, []);
 
   // Double-click resets to fit scale
   const handleDoubleClick = useCallback(() => {
