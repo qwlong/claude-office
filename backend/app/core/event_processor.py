@@ -61,6 +61,18 @@ from app.services.git_service import git_service
 logger = logging.getLogger(__name__)
 
 
+def derive_project_name_from_path(path: str | None) -> str | None:
+    """Derive a project name from a directory path.
+
+    Uses the last component of the path as the project name.
+    Returns None if path is empty/None or has no meaningful basename.
+    """
+    if not path:
+        return None
+    name = Path(path).name
+    return name if name else None
+
+
 def derive_git_root(working_dir: str) -> str | None:
     """Derive the git project root from a working directory.
 
@@ -373,12 +385,6 @@ class EventProcessor:
                     for rec in active_records:
                         if rec.id not in self.sessions:
                             await self._restore_session(rec.id)
-                        if rec.project_name and not self.project_registry.get_project_for_session(
-                            rec.id
-                        ):
-                            self.project_registry.register_session(
-                                rec.id, rec.project_name, rec.project_root
-                            )
             except Exception:
                 logger.debug("Could not restore sessions from DB for project view")
             self._db_sessions_restored = True
@@ -386,20 +392,42 @@ class EventProcessor:
         if not self.sessions:
             return None
 
-        # Lazy-register any sessions not yet in the registry
-        for session_id in self.sessions:
-            if not self.project_registry.get_project_for_session(session_id):
-                async with AsyncSessionLocal() as db:
-                    result = await db.execute(
-                        select(SessionRecord.project_name, SessionRecord.project_root).where(
-                            SessionRecord.id == session_id
-                        )
-                    )
-                    row = result.one_or_none()
-                    if row and row.project_name:
+        # Register ALL DB sessions with project registry so project counts
+        # match the sessions sidebar total (includes completed sessions)
+        # Register DB sessions (with session_start events) into project registry
+        # so project counts match the sessions sidebar total
+        try:
+            async with AsyncSessionLocal() as db:
+                # Only count sessions that have a session_start event (same
+                # filter as the sessions API sidebar list)
+                start_result = await db.execute(
+                    select(EventRecord.session_id)
+                    .where(EventRecord.event_type == "session_start")
+                    .distinct()
+                )
+                sessions_with_start: set[str] = {row[0] for row in start_result.all()}
+
+                all_result = await db.execute(select(SessionRecord))
+                all_records = all_result.scalars().all()
+                needs_commit = False
+                for rec in all_records:
+                    if rec.id not in sessions_with_start:
+                        continue
+                    if self.project_registry.get_project_for_session(rec.id):
+                        continue
+                    pname = rec.project_name or derive_project_name_from_path(rec.project_root)
+                    if pname:
                         self.project_registry.register_session(
-                            session_id, row.project_name, row.project_root
+                            rec.id, pname, rec.project_root
                         )
+                        # Backfill project_name in DB if it was derived
+                        if not rec.project_name:
+                            rec.project_name = pname
+                            needs_commit = True
+                if needs_commit:
+                    await db.commit()
+        except Exception:
+            logger.debug("Could not register DB sessions for project view")
 
         # Group sessions by project
         project_sessions: dict[str, list[tuple[str, StateMachine]]] = {}
@@ -448,6 +476,8 @@ class EventProcessor:
                 if latest_updated is None or state.last_updated > latest_updated:
                     latest_updated = state.last_updated
 
+            # Use registry session count (includes DB-only sessions) when available
+            registry_count = len(project.session_ids) if project else len(sessions)
             groups.append(
                 ProjectGroup(
                     key=key,
@@ -456,7 +486,7 @@ class EventProcessor:
                     root=root,
                     agents=all_agents,
                     boss=group_boss,
-                    session_count=len(sessions),
+                    session_count=max(registry_count, len(sessions)),
                     todos=all_todos,
                 )
             )
@@ -845,6 +875,15 @@ class EventProcessor:
                 row = result.one_or_none()
                 if row:
                     project_name = row.project_name
+                    if not project_name:
+                        project_name = derive_project_name_from_path(row.project_root)
+
+        if not project_name:
+            # Last resort: derive from event working_dir/project_dir
+            source_dir = None
+            if event.data:
+                source_dir = event.data.project_dir or event.data.working_dir
+            project_name = derive_project_name_from_path(source_dir)
 
         if project_name:
             project_root = await self.get_project_root(session_id)
@@ -864,6 +903,10 @@ class EventProcessor:
 
             source_dir = project_dir or working_dir
             project_root = derive_git_root(source_dir) if source_dir else None
+
+            # Derive project_name from project_root or source_dir when not provided
+            if not project_name:
+                project_name = derive_project_name_from_path(project_root or source_dir)
 
             # Check for existing session first.
             result = await db.execute(
