@@ -221,6 +221,7 @@ interface GameStore {
   setPrintReport: (printReport: boolean) => void;
   setGitStatus: (status: GitStatus | null) => void;
   addEventLog: (event: NonNullable<WebSocketMessage["event"]>) => void;
+  setEventHistory: (history: NonNullable<WebSocketMessage["event"]>[]) => void;
   conversation: ConversationEntry[];
   setConversation: (conversation: ConversationEntry[]) => void;
 
@@ -929,6 +930,16 @@ export const useGameStore = create<GameStore>()(
         return {
           eventLog: [entry, ...state.eventLog.slice(0, MAX_EVENT_LOG - 1)],
         };
+      }),
+
+    setEventHistory: (history) =>
+      set(() => {
+        const entries: EventLogEntry[] = history.map((event) => ({
+          ...event,
+          timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+        }));
+        // History is ordered oldest-first from backend; reverse for newest-first display
+        return { eventLog: entries.reverse().slice(0, MAX_EVENT_LOG) };
       }),
 
     setConversation: (conversation) => set({ conversation }),

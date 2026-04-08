@@ -287,6 +287,21 @@ export function useWebSocketEvents({
       if (state.conversation) {
         store.setConversation(state.conversation);
       }
+      // Sync event history from backend on initial connection / reconnection
+      // Only populate if frontend eventLog is empty (avoids overwriting live events)
+      if (state.history && state.history.length > 0 && store.eventLog.length === 0) {
+        // HistoryEntry shape matches WebSocketMessage.event; cast type from string to EventType
+        store.setEventHistory(
+          state.history.map((h) => ({
+            id: h.id,
+            type: h.type as import("@/types/generated").EventType,
+            agentId: h.agentId,
+            summary: h.summary,
+            timestamp: h.timestamp,
+            detail: h.detail,
+          })),
+        );
+      }
     },
     [enqueueBubble],
   );
