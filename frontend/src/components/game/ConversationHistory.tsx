@@ -82,12 +82,12 @@ function ThinkingEntry({ entry }: { entry: ConversationEntry }) {
 
 function ToolEntry({ entry }: { entry: ConversationEntry }) {
   return (
-    <div className="flex items-center gap-2 px-2 py-1 rounded bg-slate-800/40 border border-slate-700/30">
+    <div className="flex items-center gap-2 px-2 py-1 rounded bg-slate-100/40 dark:bg-slate-800/40 border border-slate-200/30 dark:border-slate-700/30">
       <Wrench size={10} className="text-amber-500/70 flex-shrink-0" />
       <span className="text-[10px] text-amber-400/80 font-mono flex-shrink-0">
         {getToolIcon(entry.toolName)} {entry.toolName}
       </span>
-      <span className="text-slate-400 text-[10px] truncate">{entry.text}</span>
+      <span className="text-slate-500 dark:text-slate-400 text-[10px] truncate">{entry.text}</span>
     </div>
   );
 }
@@ -101,7 +101,7 @@ function UserEntry({ entry }: { entry: ConversationEntry }) {
             {entry.text}
           </p>
         </div>
-        <div className="text-slate-600 text-[10px] mt-1 text-right">
+        <div className="text-slate-400 dark:text-slate-600 text-[10px] mt-1 text-right">
           {format(new Date(entry.timestamp), "HH:mm:ss")}
         </div>
       </div>
@@ -115,39 +115,39 @@ function MarkdownContent({ text }: { text: string }) {
       remarkPlugins={[remarkGfm]}
       components={{
         p: ({ children }) => (
-          <p className="text-slate-200 text-[11px] leading-relaxed mb-1.5 last:mb-0 break-words">
+          <p className="text-slate-800 dark:text-slate-200 text-[11px] leading-relaxed mb-1.5 last:mb-0 break-words">
             {children}
           </p>
         ),
         h1: ({ children }) => (
-          <h1 className="text-slate-100 text-[13px] font-bold mt-2 mb-1 border-b border-slate-700 pb-0.5">
+          <h1 className="text-slate-900 dark:text-slate-100 text-[13px] font-bold mt-2 mb-1 border-b border-slate-300 dark:border-slate-700 pb-0.5">
             {children}
           </h1>
         ),
         h2: ({ children }) => (
-          <h2 className="text-slate-100 text-[12px] font-bold mt-2 mb-1">
+          <h2 className="text-slate-900 dark:text-slate-100 text-[12px] font-bold mt-2 mb-1">
             {children}
           </h2>
         ),
         h3: ({ children }) => (
-          <h3 className="text-slate-200 text-[11px] font-bold mt-1.5 mb-0.5">
+          <h3 className="text-slate-800 dark:text-slate-200 text-[11px] font-bold mt-1.5 mb-0.5">
             {children}
           </h3>
         ),
         strong: ({ children }) => (
-          <strong className="text-slate-100 font-bold">{children}</strong>
+          <strong className="text-slate-900 dark:text-slate-100 font-bold">{children}</strong>
         ),
         em: ({ children }) => (
-          <em className="text-slate-300 italic">{children}</em>
+          <em className="text-slate-700 dark:text-slate-300 italic">{children}</em>
         ),
         code: ({ children, className }) => {
           const isBlock = className?.startsWith("language-");
           return isBlock ? (
-            <code className="block bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] font-mono text-emerald-300 overflow-x-auto whitespace-pre my-1">
+            <code className="block bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-[10px] font-mono text-emerald-300 overflow-x-auto whitespace-pre my-1">
               {children}
             </code>
           ) : (
-            <code className="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] font-mono text-emerald-300">
+            <code className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 py-0.5 text-[10px] font-mono text-emerald-300">
               {children}
             </code>
           );
@@ -156,18 +156,18 @@ function MarkdownContent({ text }: { text: string }) {
           <pre className="my-1 overflow-x-auto">{children}</pre>
         ),
         ul: ({ children }) => (
-          <ul className="list-disc list-inside text-[11px] text-slate-200 space-y-0.5 my-1 pl-1">
+          <ul className="list-disc list-inside text-[11px] text-slate-800 dark:text-slate-200 space-y-0.5 my-1 pl-1">
             {children}
           </ul>
         ),
         ol: ({ children }) => (
-          <ol className="list-decimal list-inside text-[11px] text-slate-200 space-y-0.5 my-1 pl-1">
+          <ol className="list-decimal list-inside text-[11px] text-slate-800 dark:text-slate-200 space-y-0.5 my-1 pl-1">
             {children}
           </ol>
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-slate-600 pl-2 my-1 text-slate-400 italic">
+          <blockquote className="border-l-2 border-slate-400 dark:border-slate-600 pl-2 my-1 text-slate-500 dark:text-slate-400 italic">
             {children}
           </blockquote>
         ),
@@ -176,12 +176,12 @@ function MarkdownContent({ text }: { text: string }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 underline"
+            className="text-cyan-400 hover:text-cyan-300 underline dark:text-cyan-400 dark:hover:text-cyan-300"
           >
             {children}
           </a>
         ),
-        hr: () => <hr className="border-slate-700 my-2" />,
+        hr: () => <hr className="border-slate-300 dark:border-slate-700 my-2" />,
       }}
     >
       {text}
@@ -198,7 +198,7 @@ function AssistantEntry({ entry }: { entry: ConversationEntry }) {
   return (
     <div className="flex flex-col items-start max-w-[90%] w-full">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
           {t("conversation.claude")}
         </span>
         {entry.agentId && entry.agentId !== "main" && (
@@ -207,12 +207,12 @@ function AssistantEntry({ entry }: { entry: ConversationEntry }) {
           </span>
         )}
       </div>
-      <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl rounded-tl-sm px-3 py-2 w-full">
+      <div className="bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 rounded-xl rounded-tl-sm px-3 py-2 w-full">
         <MarkdownContent text={expanded ? entry.text : preview} />
         {isLong && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-slate-400 text-[10px] mt-2 hover:text-slate-300 transition-colors"
+            className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px] mt-2 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
           >
             {expanded ? (
               <>
@@ -226,7 +226,7 @@ function AssistantEntry({ entry }: { entry: ConversationEntry }) {
           </button>
         )}
       </div>
-      <div className="text-slate-600 text-[10px] mt-1">
+      <div className="text-slate-400 dark:text-slate-600 text-[10px] mt-1">
         {format(new Date(entry.timestamp), "HH:mm:ss")}
       </div>
     </div>
@@ -299,13 +299,13 @@ export function ConversationHistory() {
   }, [expanded]);
 
   const header = (onExpand?: () => void) => (
-    <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
-      <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider">
+    <div className="bg-slate-50 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">
         <MessageSquare size={14} className="text-cyan-500" />
         {t("conversation.title")}
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-500">
+        <span className="text-[10px] text-slate-400 dark:text-slate-500">
           {t("conversation.msgs", { count: messageCount })}
         </span>
         <button
@@ -313,7 +313,7 @@ export function ConversationHistory() {
           className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${
             showTools
               ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
-              : "bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-300"
+              : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
           }`}
           title={
             showTools
@@ -327,7 +327,7 @@ export function ConversationHistory() {
         {onExpand ? (
           <button
             onClick={onExpand}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+            className="p-0.5 rounded text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             title={t("conversation.expandConversation")}
           >
             <Maximize2 size={12} />
@@ -335,7 +335,7 @@ export function ConversationHistory() {
         ) : (
           <button
             onClick={() => setExpanded(false)}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+            className="p-0.5 rounded text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             title={t("conversation.close")}
           >
             <X size={12} />
@@ -348,11 +348,11 @@ export function ConversationHistory() {
   return (
     <>
       {/* Inline panel */}
-      <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
+      <div className="flex flex-col h-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
         {header(() => setExpanded(true))}
         <div className="flex-grow overflow-y-auto p-3 space-y-2">
           {conversation.length === 0 ? (
-            <div className="text-slate-600 italic p-4 text-center">
+            <div className="text-slate-400 dark:text-slate-600 italic p-4 text-center">
               {t("conversation.noConversation")}
             </div>
           ) : (
@@ -368,14 +368,14 @@ export function ConversationHistory() {
           onClick={() => setExpanded(false)}
         >
           <div
-            className="flex flex-col bg-slate-950 border border-slate-700 rounded-xl shadow-2xl font-mono text-xs overflow-hidden"
+            className="flex flex-col bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl shadow-2xl font-mono text-xs overflow-hidden"
             style={{ width: "min(900px, 90vw)", height: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             {header()}
             <div className="flex-grow overflow-y-auto p-4 space-y-2">
               {conversation.length === 0 ? (
-                <div className="text-slate-600 italic p-4 text-center">
+                <div className="text-slate-400 dark:text-slate-600 italic p-4 text-center">
                   {t("conversation.noConversation")}
                 </div>
               ) : (
