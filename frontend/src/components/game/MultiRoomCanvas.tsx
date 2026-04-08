@@ -1,0 +1,75 @@
+/**
+ * MultiRoomCanvas - Renders multiple OfficeRoom instances in a 2-column grid.
+ *
+ * Each room is wrapped in a RoomProvider and rendered at ROOM_SCALE
+ * with a RoomLabel above it.
+ */
+
+"use client";
+
+import { type ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useProjectStore, selectProjects } from "@/stores/projectStore";
+import { RoomProvider } from "@/contexts/RoomContext";
+import { OfficeRoom } from "./OfficeRoom";
+import { RoomLabel } from "./RoomLabel";
+import {
+  ROOM_SCALE,
+  ROOM_GAP,
+  ROOM_GRID_COLS,
+  ROOM_LABEL_HEIGHT,
+} from "@/constants/rooms";
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/constants/canvas";
+import type { OfficeTextures } from "@/hooks/useOfficeTextures";
+
+/** Calculate the x,y position for a room at the given index. */
+export function getRoomPosition(index: number) {
+  const col = index % ROOM_GRID_COLS;
+  const row = Math.floor(index / ROOM_GRID_COLS);
+  const scaledW = CANVAS_WIDTH * ROOM_SCALE;
+  const scaledH = CANVAS_HEIGHT * ROOM_SCALE;
+  return {
+    x: ROOM_GAP + col * (scaledW + ROOM_GAP),
+    y: ROOM_GAP + row * (scaledH + ROOM_LABEL_HEIGHT + ROOM_GAP),
+  };
+}
+
+interface MultiRoomCanvasProps {
+  textures: OfficeTextures;
+}
+
+export function MultiRoomCanvas({
+  textures,
+}: MultiRoomCanvasProps): ReactNode {
+  const projects = useProjectStore(useShallow(selectProjects));
+
+  if (projects.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      {projects.map((project, index) => {
+        const pos = getRoomPosition(index);
+        return (
+          <pixiContainer
+            key={project.key}
+            x={pos.x}
+            y={pos.y}
+            scale={ROOM_SCALE}
+          >
+            <RoomLabel
+              name={project.name}
+              color={project.color}
+              agentCount={project.agents.length}
+              sessionCount={project.sessionCount}
+            />
+            <RoomProvider project={project}>
+              <OfficeRoom textures={textures} />
+            </RoomProvider>
+          </pixiContainer>
+        );
+      })}
+    </>
+  );
+}
