@@ -89,8 +89,8 @@ const en = {
   // Agent Status
   "agentStatus.title": "Agent State",
   "agentStatus.agents": "agents",
-  "agentStatus.agents_one": "{count} agent",
-  "agentStatus.agents_other": "{count} agents",
+  "agentStatus.agents_one": "agent",
+  "agentStatus.agents_other": "agents",
   "agentStatus.noAgents": "No agents",
   "agentStatus.agent": "Agent",
   "agentStatus.desk": "Desk",

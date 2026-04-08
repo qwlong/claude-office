@@ -91,8 +91,8 @@ const es: Record<TranslationKey, string> = {
   // Agent Status
   "agentStatus.title": "Estado del agente",
   "agentStatus.agents": "agentes",
-  "agentStatus.agents_one": "{count} agente",
-  "agentStatus.agents_other": "{count} agentes",
+  "agentStatus.agents_one": "agente",
+  "agentStatus.agents_other": "agentes",
   "agentStatus.noAgents": "Sin agentes",
   "agentStatus.agent": "Agente",
   "agentStatus.desk": "Escritorio",
