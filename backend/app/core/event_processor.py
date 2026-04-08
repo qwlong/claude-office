@@ -526,6 +526,12 @@ class EventProcessor:
 
         sm = self.sessions[event.session_id]
 
+        # Set session label for agent naming (e.g. "claude-office/co-7")
+        if not sm.session_label:
+            project = self.project_registry.get_project_for_session(event.session_id)
+            if project and project.name:
+                sm.session_label = self._make_session_label(project.name)
+
         sm.transition(event)
 
         agent_id = event.data.agent_id if event.data and event.data.agent_id else "main"
@@ -802,6 +808,23 @@ class EventProcessor:
             logger.debug(f"Restored {len(sm.todos)} tasks for session {session_id}")
 
             self.sessions[session_id] = sm
+
+    @staticmethod
+    def _make_session_label(project_name: str) -> str:
+        """Create a short label from project name for agent display.
+
+        Examples:
+            'claude-office-co-7' -> 'claude-office/co-7'
+            'claude-office'      -> 'claude-office'
+            'random'             -> 'random'
+        """
+        import re
+        # Detect AO worktree pattern: <project>-<session-id>
+        # Session IDs look like: co-7, ao-3, etc.
+        m = re.match(r'^(.+?)-((?:co|ao|sess|s)-\d+)$', project_name)
+        if m:
+            return f"{m.group(1)}/{m.group(2)}"
+        return project_name
 
     async def _auto_register_project(self, event: Event) -> None:
         """Try to register this session with the project registry.

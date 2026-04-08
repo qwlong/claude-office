@@ -19,6 +19,7 @@ def mock_adapter():
     adapter.connect = AsyncMock(return_value=True)
     adapter.poll = AsyncMock(return_value=[])
     adapter.spawn = AsyncMock()
+    adapter.send_message = AsyncMock(return_value=True)
     adapter.get_projects = AsyncMock(return_value=[])
     return adapter
 

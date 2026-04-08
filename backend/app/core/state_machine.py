@@ -166,6 +166,9 @@ class StateMachine:
     background_tasks: list[BackgroundTask] = field(default_factory=_empty_background_tasks)
     conversation: list[ConversationEntry] = field(default_factory=_empty_conversation)
 
+    # Short label for the session (e.g. "claude-office/co-7"), used as agent name prefix
+    session_label: str | None = None
+
     # Whiteboard tracking delegated to WhiteboardTracker
     whiteboard: WhiteboardTracker = field(default_factory=WhiteboardTracker)
 
@@ -768,6 +771,10 @@ class StateMachine:
         name_source = data.agent_name or data.task_description or ""
         summary_service = get_summary_service()
         short_name = summary_service.generate_agent_name_fallback(name_source)
+
+        # Prefix with session label (e.g. "co-7") for worktree/AO sessions
+        if self.session_label:
+            short_name = f"{self.session_label}"
 
         return Agent(
             id=agent_id,
