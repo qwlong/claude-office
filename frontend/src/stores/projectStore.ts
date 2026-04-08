@@ -65,35 +65,3 @@ export const selectActiveProject = (s: ProjectStoreState) =>
   s.projects.find((p) => p.key === s.activeRoomKey) ?? null;
 export const selectPreviousViewMode = (s: ProjectStoreState) =>
   s.previousViewMode;
-export const selectSessionRooms = (s: ProjectStoreState): ProjectGroup[] => {
-  const sessionMap = new Map<string, {
-    agents: ProjectGroup["agents"];
-    project: ProjectGroup;
-  }>();
-
-  for (const project of s.projects) {
-    const hasSessionIds = project.agents.some((a) => (a as Record<string, unknown>).sessionId);
-    if (!hasSessionIds) {
-      sessionMap.set(project.key, { agents: project.agents, project });
-      continue;
-    }
-    for (const agent of project.agents) {
-      const sid = String((agent as Record<string, unknown>).sessionId ?? "unknown");
-      if (!sessionMap.has(sid)) {
-        sessionMap.set(sid, { agents: [], project });
-      }
-      sessionMap.get(sid)!.agents.push(agent);
-    }
-  }
-
-  return Array.from(sessionMap.entries()).map(([sid, { agents, project }]) => ({
-    key: sid,
-    name: `${project.name} · ${sid.slice(0, 8)}`,
-    color: project.color,
-    root: project.root,
-    agents,
-    boss: project.boss,
-    sessionCount: 1,
-    todos: project.todos,
-  }));
-};
