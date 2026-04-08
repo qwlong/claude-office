@@ -105,8 +105,8 @@ const zhCN: Record<TranslationKey, string> = {
   // Agent Status
   "agentStatus.title": "智能体状态",
   "agentStatus.agents": "个智能体",
-  "agentStatus.agents_one": "{count} 个智能体",
-  "agentStatus.agents_other": "{count} 个智能体",
+  "agentStatus.agents_one": "个智能体",
+  "agentStatus.agents_other": "个智能体",
   "agentStatus.noAgents": "暂无智能体",
   "agentStatus.agent": "智能体",
   "agentStatus.desk": "工位",

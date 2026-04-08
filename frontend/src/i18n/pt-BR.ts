@@ -107,8 +107,8 @@ const ptBR: Record<TranslationKey, string> = {
   // Agent Status
   "agentStatus.title": "Estado dos Agentes",
   "agentStatus.agents": "agentes",
-  "agentStatus.agents_one": "{count} agente",
-  "agentStatus.agents_other": "{count} agentes",
+  "agentStatus.agents_one": "agente",
+  "agentStatus.agents_other": "agentes",
   "agentStatus.noAgents": "Sem agentes",
   "agentStatus.agent": "Agente",
   "agentStatus.desk": "Mesa",
