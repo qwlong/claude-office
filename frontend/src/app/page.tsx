@@ -121,6 +121,15 @@ export default function V2TestPage(): React.ReactNode {
   // Multi-project state
   // ------------------------------------------------------------------
   useProjectWebSocket();
+  // Sync sessions list into project store so OfficeGame can derive session rooms
+  const setSessions = useProjectStore((s) => s.setSessions);
+  useEffect(() => {
+    const filtered = sessions
+      .filter((s) => s.id !== "__all__")
+      .map((s) => ({ id: s.id, projectName: s.projectName }));
+    setSessions(filtered);
+  }, [sessions, setSessions]);
+
   const viewMode = useProjectStore(selectViewMode);
   const setViewMode = useProjectStore((s) => s.setViewMode);
   const previousViewMode = useProjectStore(selectPreviousViewMode);

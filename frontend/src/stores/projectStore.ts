@@ -7,12 +7,19 @@ import type {
   MultiProjectGameState,
 } from "@/types/projects";
 
+/** Minimal session info needed for session-room derivation. */
+export interface SessionInfo {
+  id: string;
+  projectName: string | null;
+}
+
 interface ProjectStoreState {
   // State
   viewMode: ViewMode;
   previousViewMode: ViewMode | null;
   activeRoomKey: string | null;
   projects: ProjectGroup[];
+  sessions: SessionInfo[];
   lastUpdated: string | null;
 
   // Actions
@@ -22,6 +29,7 @@ interface ProjectStoreState {
   zoomToOverview: () => void;
   goBackToMultiRoom: () => void;
   updateFromServer: (state: MultiProjectGameState) => void;
+  setSessions: (sessions: SessionInfo[]) => void;
 }
 
 export const useProjectStore = create<ProjectStoreState>((set) => ({
@@ -29,6 +37,7 @@ export const useProjectStore = create<ProjectStoreState>((set) => ({
   previousViewMode: null,
   activeRoomKey: null,
   projects: [],
+  sessions: [],
   lastUpdated: null,
 
   setViewMode: (mode) =>
@@ -55,12 +64,15 @@ export const useProjectStore = create<ProjectStoreState>((set) => ({
       projects: state.projects,
       lastUpdated: state.lastUpdated,
     }),
+
+  setSessions: (sessions) => set({ sessions }),
 }));
 
 // Selectors
 export const selectViewMode = (s: ProjectStoreState) => s.viewMode;
 export const selectActiveRoomKey = (s: ProjectStoreState) => s.activeRoomKey;
 export const selectProjects = (s: ProjectStoreState) => s.projects;
+export const selectSessions = (s: ProjectStoreState) => s.sessions;
 export const selectActiveProject = (s: ProjectStoreState) =>
   s.projects.find((p) => p.key === s.activeRoomKey) ?? null;
 export const selectPreviousViewMode = (s: ProjectStoreState) =>

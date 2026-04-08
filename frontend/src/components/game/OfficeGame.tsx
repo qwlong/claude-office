@@ -46,7 +46,7 @@ import {
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
-import { useProjectStore, selectViewMode, selectProjects } from "@/stores/projectStore";
+import { useProjectStore, selectViewMode, selectProjects, selectSessions } from "@/stores/projectStore";
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -116,36 +116,40 @@ export function OfficeGame(): ReactNode {
   // Multi-project view state
   const viewMode = useProjectStore(selectViewMode);
   const projects = useProjectStore(selectProjects);
+  const storeSessions = useProjectStore(selectSessions);
+
+  // Derive one room per session. Use the sessions list as the source of truth
+  // (not agents) so sessions with zero agents still get a room.
   const sessionRooms = useMemo(() => {
-    const sessionMap = new Map<string, {
-      agents: typeof projects[0]["agents"];
-      project: typeof projects[0];
-    }>();
+    // Build a lookup: projectName → ProjectGroup (for color, boss, todos)
+    const projectByName = new Map(projects.map((p) => [p.name, p]));
+
+    // Build agent lookup: sessionId → agents[]
+    const agentsBySession = new Map<string, typeof projects[0]["agents"]>();
     for (const project of projects) {
-      const hasSessionIds = project.agents.some((a) => (a as Record<string, unknown>).sessionId);
-      if (!hasSessionIds) {
-        sessionMap.set(project.key, { agents: project.agents, project });
-        continue;
-      }
       for (const agent of project.agents) {
-        const sid = String((agent as Record<string, unknown>).sessionId ?? "unknown");
-        if (!sessionMap.has(sid)) {
-          sessionMap.set(sid, { agents: [], project });
-        }
-        sessionMap.get(sid)!.agents.push(agent);
+        const sid = String((agent as Record<string, unknown>).sessionId ?? "");
+        if (!sid) continue;
+        if (!agentsBySession.has(sid)) agentsBySession.set(sid, []);
+        agentsBySession.get(sid)!.push(agent);
       }
     }
-    return Array.from(sessionMap.entries()).map(([sid, { agents, project }]) => ({
-      key: sid,
-      name: `${project.name} · ${sid.slice(0, 8)}`,
-      color: project.color,
-      root: project.root,
-      agents,
-      boss: project.boss,
-      sessionCount: 1,
-      todos: project.todos,
-    }));
-  }, [projects]);
+
+    return storeSessions.map((session) => {
+      const project = projectByName.get(session.projectName ?? "") ?? projects[0];
+      const agents = agentsBySession.get(session.id) ?? [];
+      return {
+        key: session.id,
+        name: `${session.projectName ?? "Unknown"} · ${session.id.slice(0, 8)}`,
+        color: project?.color ?? "#888888",
+        root: project?.root ?? null,
+        agents,
+        boss: project?.boss ?? { state: "idle" as const, currentTask: null, bubble: null, position: { x: 640, y: 830 } },
+        sessionCount: 1,
+        todos: project?.todos ?? [],
+      };
+    });
+  }, [projects, storeSessions]);
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
