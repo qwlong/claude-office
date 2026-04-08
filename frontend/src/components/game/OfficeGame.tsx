@@ -286,18 +286,14 @@ export function OfficeGame(): ReactNode {
     return () => observer.disconnect();
   }, []);
 
-  // Compute initial scale so the canvas fits within the container
+  // Compute scale to fit canvas within container (use shorter dimension)
   const fitScale = useMemo(() => {
     if (containerSize.width === 0 || containerSize.height === 0) return 1;
     return Math.min(containerSize.width / appWidth, containerSize.height / appHeight, 1);
   }, [appWidth, appHeight, containerSize]);
 
-  // Reset pan/zoom when fitScale changes (view mode switch, container resize)
-  useEffect(() => {
-    if (fitScale > 0) {
-      transformRef.current?.centerView(fitScale, 0);
-    }
-  }, [fitScale]);
+  // Round fitScale to 2 decimals to avoid unnecessary TransformWrapper remounts
+  const fitScaleKey = Math.round(fitScale * 100);
 
   const handleSessionRoomClick = useCallback((sessionId: string) => {
     window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
@@ -324,6 +320,7 @@ export function OfficeGame(): ReactNode {
       className="w-full h-full flex items-center justify-center overflow-hidden relative"
     >
       <TransformWrapper
+        key={`transform-${fitScaleKey}`}
         ref={transformRef}
         initialScale={fitScale}
         minScale={0.2}
