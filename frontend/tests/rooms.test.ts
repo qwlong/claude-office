@@ -31,10 +31,21 @@ describe("getRoomGridCols", () => {
     expect(getRoomGridCols(12)).toBe(6); // 6+6
   });
 
-  it("caps at 6 columns for 13+ rooms", () => {
-    expect(getRoomGridCols(13)).toBe(6);
-    expect(getRoomGridCols(20)).toBe(6);
-    expect(getRoomGridCols(100)).toBe(6);
+  it("uses 3 rows for 13-18 rooms", () => {
+    expect(getRoomGridCols(13)).toBe(5); // ceil(13/3)=5, 5+5+3
+    expect(getRoomGridCols(15)).toBe(5); // ceil(15/3)=5, 5+5+5
+    expect(getRoomGridCols(18)).toBe(6); // ceil(18/3)=6, 6+6+6
+  });
+
+  it("uses 4 rows for 19-24 rooms", () => {
+    expect(getRoomGridCols(19)).toBe(5); // ceil(19/4)=5, 5+5+5+4
+    expect(getRoomGridCols(24)).toBe(6); // ceil(24/4)=6, 6+6+6+6
+  });
+
+  it("scales rows for 25+ rooms", () => {
+    expect(getRoomGridCols(25)).toBe(5); // ceil(25/5)=5, 5 rows
+    expect(getRoomGridCols(30)).toBe(6); // ceil(30/5)=6, 5 rows
+    expect(getRoomGridCols(36)).toBe(6); // ceil(36/6)=6, 6 rows
   });
 });
 

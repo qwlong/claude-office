@@ -8,10 +8,11 @@ export const ROOM_GAP = 24;
 /** Max columns in overview grid */
 export const ROOM_GRID_COLS_MAX = 6;
 
-/** Compute optimal column count: prefer 2 rows, max 6 cols */
+/** Compute optimal column count: prefer fewest rows (min 2), distribute evenly, max 6 cols per row. */
 export function getRoomGridCols(count: number): number {
   if (count <= 3) return count;
-  return Math.min(Math.ceil(count / 2), ROOM_GRID_COLS_MAX);
+  const rows = Math.max(2, Math.ceil(count / ROOM_GRID_COLS_MAX));
+  return Math.min(Math.ceil(count / rows), ROOM_GRID_COLS_MAX);
 }
 
 /** Thumbnail size in overview mode */
