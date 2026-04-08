@@ -19,6 +19,9 @@ const ptBR: Record<TranslationKey, string> = {
   "header.aiOn": "LIGADO",
   "header.aiOff": "DESLIGADO",
   "header.agents": "agentes",
+  "header.themeLight": "Claro",
+  "header.themeDark": "Escuro",
+  "header.themeSystem": "Sistema",
 
   // Modals
   "modal.confirmDbWipe": "Confirmar Limpeza do Banco",
