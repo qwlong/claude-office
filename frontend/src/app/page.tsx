@@ -238,7 +238,7 @@ export default function V2TestPage(): React.ReactNode {
   // Render
   // ------------------------------------------------------------------
   return (
-    <main className="flex h-screen flex-col bg-slate-100 dark:bg-neutral-950 p-2 overflow-hidden relative">
+    <main className="flex h-screen flex-col bg-slate-100 dark:bg-slate-950 p-2 overflow-hidden relative">
       {/* ----------------------------------------------------------------
           Modals
       ---------------------------------------------------------------- */}
