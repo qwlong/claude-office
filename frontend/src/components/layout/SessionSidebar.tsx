@@ -140,7 +140,11 @@ export function SessionSidebar({
           <span
             role="button"
             tabIndex={0}
-            className="p-0.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className={`p-0.5 rounded transition-colors ${
+              isWholeOfficeActive
+                ? "text-white/70 hover:text-white hover:bg-white/20"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+            }`}
             title={t("sessions.collapseSidebar")}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onToggleCollapsed(); } }}

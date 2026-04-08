@@ -150,7 +150,7 @@ export function RightSidebar(): React.ReactNode {
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
             }`}
           >
-            Tasks
+            {t("tasks.title")}
             {activeTaskCount > 0 && (
               <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-purple-600 text-white rounded-full">
                 {activeTaskCount}
@@ -171,10 +171,10 @@ export function RightSidebar(): React.ReactNode {
                   {aoConnected ? (
                     <span className="text-emerald-500 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      AO Connected
+                      AO {t("tasks.connected")}
                     </span>
                   ) : (
-                    "AO Not Connected"
+                    `AO ${t("tasks.notConnected")}`
                   )}
                 </span>
                 {aoConnected && (
@@ -182,7 +182,7 @@ export function RightSidebar(): React.ReactNode {
                     onClick={() => setSpawnOpen(true)}
                     className="px-2 py-1 text-[10px] font-bold bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors"
                   >
-                    + SPAWN
+                    + {t("tasks.spawn")}
                   </button>
                 )}
               </div>

@@ -90,7 +90,7 @@ export function HeaderControls({
           className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 rounded text-xs font-bold transition-colors"
         >
           <Rocket size={14} />
-          SPAWN
+          {t("header.spawn")}
         </button>
       )}
 
@@ -193,28 +193,28 @@ export function HeaderControls({
       </button>
 
       {/* Connection and AI status */}
-      <div className="flex flex-col items-end border-l border-slate-200 dark:border-slate-800 pl-4">
-        <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest leading-none mb-1">
-          {t("header.status")}
-        </span>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-4">
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">{t("header.serverLabel")}</span>
           <div
-            className={`flex items-center gap-1.5 font-mono text-xs ${
+            className={`flex items-center gap-1 font-mono text-xs ${
               isConnected ? "text-emerald-400" : "text-rose-500"
             }`}
           >
             <Activity
-              size={12}
+              size={11}
               className={isConnected ? "animate-pulse" : ""}
             />
             {isConnected ? t("header.connected") : t("header.disconnected")}
           </div>
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">{t("header.aiSummaryLabel")}</span>
           <div
-            className={`flex items-center gap-1.5 font-mono text-xs ${
+            className={`font-mono text-xs ${
               aiSummaryEnabled ? "text-violet-400" : "text-slate-500"
             }`}
           >
-            <span className="text-[10px]">AI</span>
             {aiSummaryEnabled ? t("header.aiOn") : t("header.aiOff")}
           </div>
         </div>

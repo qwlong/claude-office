@@ -19,6 +19,10 @@ const es: Record<TranslationKey, string> = {
   "header.aiOn": "ON",
   "header.aiOff": "OFF",
   "header.agents": "agentes",
+  "header.cleanupAgents": "LIMPIAR AGENTES",
+  "header.spawn": "SPAWN",
+  "header.serverLabel": "SERVIDOR",
+  "header.aiSummaryLabel": "RESUMEN IA",
 
   // Modals
   "modal.confirmDbWipe": "Confirmar borrado de base de datos",

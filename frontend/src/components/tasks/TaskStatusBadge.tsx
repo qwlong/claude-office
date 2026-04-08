@@ -26,7 +26,7 @@ export function TaskStatusBadge({ status }: Props) {
   const { t } = useTranslation();
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.error;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs ${config.color}`}>
+    <span className={`inline-flex items-center gap-1 text-xs whitespace-nowrap ${config.color}`}>
       <span>{config.icon}</span>
       <span>{t(config.labelKey)}</span>
     </span>

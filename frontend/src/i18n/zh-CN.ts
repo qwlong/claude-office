@@ -19,6 +19,10 @@ const zhCN: Record<TranslationKey, string> = {
   "header.aiOn": "开",
   "header.aiOff": "关",
   "header.agents": "个智能体",
+  "header.cleanupAgents": "清理智能体",
+  "header.spawn": "派发",
+  "header.serverLabel": "服务器",
+  "header.aiSummaryLabel": "AI 摘要",
 
   // Modals
   "modal.confirmDbWipe": "确认清空数据库",

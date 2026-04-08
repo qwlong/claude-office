@@ -17,6 +17,10 @@ const en = {
   "header.aiOn": "ON",
   "header.aiOff": "OFF",
   "header.agents": "agents",
+  "header.cleanupAgents": "CLEANUP AGENTS",
+  "header.spawn": "SPAWN",
+  "header.serverLabel": "SERVER",
+  "header.aiSummaryLabel": "AI SUMMARY",
 
   // Modals
   "modal.confirmDbWipe": "Confirm Database Wipe",

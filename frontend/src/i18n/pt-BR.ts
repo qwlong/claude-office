@@ -19,6 +19,10 @@ const ptBR: Record<TranslationKey, string> = {
   "header.aiOn": "LIGADO",
   "header.aiOff": "DESLIGADO",
   "header.agents": "agentes",
+  "header.cleanupAgents": "LIMPAR AGENTES",
+  "header.spawn": "SPAWN",
+  "header.serverLabel": "SERVIDOR",
+  "header.aiSummaryLabel": "RESUMO IA",
 
   // Modals
   "modal.confirmDbWipe": "Confirmar Limpeza do Banco",
