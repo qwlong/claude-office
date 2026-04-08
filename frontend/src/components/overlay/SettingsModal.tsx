@@ -131,9 +131,21 @@ export default function SettingsModal({
           >
             {(
               [
-                { value: "light" as ThemeMode, icon: Sun, labelKey: "settings.themeLight" as const },
-                { value: "dark" as ThemeMode, icon: Moon, labelKey: "settings.themeDark" as const },
-                { value: "system" as ThemeMode, icon: Monitor, labelKey: "settings.themeSystem" as const },
+                {
+                  value: "light" as ThemeMode,
+                  icon: Sun,
+                  labelKey: "settings.themeLight" as const,
+                },
+                {
+                  value: "dark" as ThemeMode,
+                  icon: Moon,
+                  labelKey: "settings.themeDark" as const,
+                },
+                {
+                  value: "system" as ThemeMode,
+                  icon: Monitor,
+                  labelKey: "settings.themeSystem" as const,
+                },
               ] as const
             ).map(({ value, icon: Icon, labelKey }, idx, arr) => (
               <button
