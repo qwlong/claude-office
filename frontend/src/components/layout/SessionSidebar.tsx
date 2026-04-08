@@ -278,7 +278,9 @@ export function SessionSidebar({
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                           <span>
-                            {t("sessions.events", { count: session.eventCount })}
+                            {t("sessions.events", {
+                              count: session.eventCount,
+                            })}
                           </span>
                           <span>
                             {formatDistanceToNow(new Date(session.updatedAt), {
