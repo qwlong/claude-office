@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AgentStatus } from "@/components/game/AgentStatus";
 import { EventLog } from "@/components/game/EventLog";
 import { ConversationHistory } from "@/components/game/ConversationHistory";
+import { TaskList } from "@/components/tasks/TaskList";
+import { SpawnModal } from "@/components/tasks/SpawnModal";
 import { useDragResize } from "@/hooks/useDragResize";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useTaskStore, selectActiveTaskCount } from "@/stores/taskStore";
+import type { Task } from "@/types/tasks";
 
 // ============================================================================
 // CONSTANTS
@@ -31,9 +35,30 @@ const getMaxPanelHeight = () => Math.floor(window.innerHeight * 0.7);
  */
 export function RightSidebar(): React.ReactNode {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<"events" | "conversation">(
+  const [activeTab, setActiveTab] = useState<"events" | "conversation" | "tasks">(
     "events",
   );
+  const aoConnected = useTaskStore((s) => s.connected);
+  const tasks = useTaskStore((s) => s.tasks);
+  const activeTaskCount = useTaskStore(selectActiveTaskCount);
+  const tasksByProject = useMemo(() => {
+    const grouped: Record<string, Task[]> = {};
+    for (const task of tasks) {
+      if (!grouped[task.projectKey]) grouped[task.projectKey] = [];
+      grouped[task.projectKey].push(task);
+    }
+    return grouped;
+  }, [tasks]);
+  const [spawnOpen, setSpawnOpen] = useState(false);
+
+  const handleSpawn = async (projectId: string, issue: string) => {
+    const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project_id: projectId, issue }),
+    });
+    if (!res.ok) throw new Error("Spawn failed");
+  };
 
   const {
     size: sidebarWidth,
@@ -62,6 +87,7 @@ export function RightSidebar(): React.ReactNode {
   const isDragging = isWidthDragging || isHeightDragging;
 
   return (
+    <>
     <aside
       className={`relative flex flex-col gap-2 flex-shrink-0 overflow-hidden ${
         isDragging ? "select-none" : ""
@@ -108,7 +134,7 @@ export function RightSidebar(): React.ReactNode {
           </button>
           <button
             onClick={() => setActiveTab("conversation")}
-            className={`flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors rounded-tr-lg ${
+            className={`flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${
               activeTab === "conversation"
                 ? "text-cyan-400 border-b-2 border-cyan-500 bg-white/50 dark:bg-slate-950/50"
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -116,13 +142,65 @@ export function RightSidebar(): React.ReactNode {
           >
             {t("sidebar.conversation")}
           </button>
+          <button
+            onClick={() => setActiveTab("tasks")}
+            className={`flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors rounded-tr-lg ${
+              activeTab === "tasks"
+                ? "text-purple-400 border-b-2 border-purple-500 bg-white/50 dark:bg-slate-950/50"
+                : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            Tasks
+            {activeTaskCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-purple-600 text-white rounded-full">
+                {activeTaskCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Tab content */}
         <div className="flex-grow min-h-0">
-          {activeTab === "events" ? <EventLog /> : <ConversationHistory />}
+          {activeTab === "events" && <EventLog />}
+          {activeTab === "conversation" && <ConversationHistory />}
+          {activeTab === "tasks" && (
+            <div className="h-full flex flex-col bg-white dark:bg-slate-900 rounded-b-lg">
+              {/* Spawn button + status */}
+              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                <span className="text-xs text-slate-500">
+                  {aoConnected ? (
+                    <span className="text-emerald-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      AO Connected
+                    </span>
+                  ) : (
+                    "AO Not Connected"
+                  )}
+                </span>
+                {aoConnected && (
+                  <button
+                    onClick={() => setSpawnOpen(true)}
+                    className="px-2 py-1 text-[10px] font-bold bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors"
+                  >
+                    + SPAWN
+                  </button>
+                )}
+              </div>
+              {/* Task list */}
+              <div className="flex-1 overflow-y-auto px-1 py-1">
+                <TaskList tasksByProject={tasksByProject} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </aside>
+
+    <SpawnModal
+      isOpen={spawnOpen}
+      onClose={() => setSpawnOpen(false)}
+      onSpawn={handleSpawn}
+    />
+    </>
   );
 }

@@ -8,10 +8,12 @@ from app.models.agents import Agent, AgentState, BossState
 
 @pytest.fixture(autouse=True)
 def clean_processor():
-    event_processor.sessions.clear(); event_processor._db_sessions_restored = True
+    event_processor.sessions.clear()
+    event_processor._db_sessions_restored = True
     event_processor.project_registry = ProjectRegistry()
     yield
-    event_processor.sessions.clear(); event_processor._db_sessions_restored = True
+    event_processor.sessions.clear()
+    event_processor._db_sessions_restored = True
     event_processor.project_registry = ProjectRegistry()
 
 

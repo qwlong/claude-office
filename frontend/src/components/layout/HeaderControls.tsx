@@ -12,10 +12,13 @@ import {
   Sun,
   Moon,
   Monitor,
+  Rocket,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTheme } from "next-themes";
+import { useTaskStore } from "@/stores/taskStore";
+import { SpawnModal } from "@/components/tasks/SpawnModal";
 
 // ============================================================================
 // TYPES
@@ -59,6 +62,8 @@ export function HeaderControls({
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [spawnOpen, setSpawnOpen] = useState(false);
+  const aoConnected = useTaskStore((s) => s.connected);
 
   useEffect(() => setMounted(true), []);
 
@@ -72,8 +77,33 @@ export function HeaderControls({
   const ThemeIcon = !mounted ? Sun : theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
   const themeLabel = !mounted ? "Light" : theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
 
+  const handleSpawn = async (projectId: string, issue: string) => {
+    const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ project_id: projectId, issue }),
+    });
+    if (!res.ok) throw new Error("Spawn failed");
+  };
+
   return (
     <div className="flex gap-4 items-center">
+      {aoConnected && (
+        <button
+          onClick={() => setSpawnOpen(true)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 rounded text-xs font-bold transition-colors"
+        >
+          <Rocket size={14} />
+          SPAWN
+        </button>
+      )}
+
+      <SpawnModal
+        isOpen={spawnOpen}
+        onClose={() => setSpawnOpen(false)}
+        onSpawn={handleSpawn}
+      />
+
       <button
         onClick={onSimulate}
         className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold transition-colors"

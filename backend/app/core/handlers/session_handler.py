@@ -4,16 +4,19 @@ Responsible for:
 - Starting / stopping task-file polling on session boundaries.
 - Deriving the task-list identifier from the project root.
 - Triggering state broadcasts after handling.
+- Detecting and cleaning up orphaned agents after /clear.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
 
 from app.core.broadcast_service import broadcast_state
 from app.core.state_machine import StateMachine
 from app.core.task_file_poller import get_task_file_poller
+from app.core.transcript_poller import get_transcript_poller
 from app.models.events import Event, EventType
 
 __all__ = [
@@ -24,6 +27,9 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+# Grace period (seconds) before orphaned agents are removed.
+ORPHAN_GRACE_PERIOD = 10
+
 
 async def handle_session_start(
     sm: StateMachine,
@@ -32,7 +38,9 @@ async def handle_session_start(
 ) -> None:
     """Handle a SESSION_START event.
 
-    Starts task-file polling for the new session.
+    Starts task-file polling for the new session. If agents from a previous
+    session are still present (e.g. after /clear), marks them as orphaned and
+    schedules cleanup after a grace period.
 
     Args:
         sm: The StateMachine for this session.
@@ -40,12 +48,61 @@ async def handle_session_start(
         ensure_task_file_poller_fn: Callable that initialises the task-file
             poller if it has not been started yet.
     """
+    # Detect orphaned agents from a previous session (e.g. after /clear)
+    existing_agent_ids = sm.get_active_agent_ids()
+    if existing_agent_ids:
+        logger.info(
+            f"SESSION_START with {len(existing_agent_ids)} existing agents — "
+            f"scheduling orphan cleanup after {ORPHAN_GRACE_PERIOD}s"
+        )
+        sm.mark_agents_orphaned(existing_agent_ids)
+        asyncio.create_task(_cleanup_orphaned_agents(sm, event.session_id, existing_agent_ids))
+
     ensure_task_file_poller_fn()
     task_poller = get_task_file_poller()
     if task_poller:
         task_list_id = event.data.task_list_id if event.data else None
         await task_poller.start_polling(event.session_id, task_list_id=task_list_id)
     await broadcast_state(event.session_id, sm)
+
+
+async def _cleanup_orphaned_agents(
+    sm: StateMachine,
+    session_id: str,
+    orphaned_agent_ids: list[str],
+) -> None:
+    """Wait for the grace period, then remove agents that are still orphaned.
+
+    Agents that received new activity (subagent_info, tool events) during the
+    grace period will have their ``orphaned`` flag cleared, so they are skipped.
+    """
+    await asyncio.sleep(ORPHAN_GRACE_PERIOD)
+
+    transcript_poller = get_transcript_poller()
+    removed = 0
+    for agent_id in orphaned_agent_ids:
+        agent = sm.agents.get(agent_id)
+        if agent is None:
+            continue  # Already removed by a normal subagent_stop
+        if not agent.orphaned:
+            logger.info(f"Orphaned agent {agent_id} received activity — keeping")
+            continue
+
+        # Check if transcript is still being written to
+        if transcript_poller and await transcript_poller.is_polling(agent_id):
+            logger.info(f"Orphaned agent {agent_id} still has active transcript — keeping")
+            agent.orphaned = False
+            continue
+
+        sm.trigger_agent_departure(agent_id)
+        sm.remove_agent(agent_id)
+        if transcript_poller:
+            await transcript_poller.stop_polling(agent_id)
+        removed += 1
+
+    if removed:
+        logger.info(f"Cleaned up {removed} orphaned agents")
+        await broadcast_state(session_id, sm)
 
 
 async def handle_session_end(

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
-import { useTaskStore, selectTasksByProject, selectActiveTaskCount } from "@/stores/taskStore";
+import { useTaskStore, selectActiveTaskCount } from "@/stores/taskStore";
+import type { Task } from "@/types/tasks";
 import { TaskList } from "./TaskList";
 import { SpawnModal } from "./SpawnModal";
 
@@ -18,7 +18,15 @@ export function TaskDrawer() {
   const toggleDrawer = useTaskStore((s) => s.toggleDrawer);
   const setDrawerHeight = useTaskStore((s) => s.setDrawerHeight);
   const activeCount = useTaskStore(selectActiveTaskCount);
-  const tasksByProject = useTaskStore(useShallow(selectTasksByProject));
+
+  const tasksByProject = useMemo(() => {
+    const grouped: Record<string, Task[]> = {};
+    for (const task of tasks) {
+      if (!grouped[task.projectKey]) grouped[task.projectKey] = [];
+      grouped[task.projectKey].push(task);
+    }
+    return grouped;
+  }, [tasks]);
 
   const [spawnOpen, setSpawnOpen] = useState(false);
 
@@ -26,27 +34,22 @@ export function TaskDrawer() {
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  // Don't render if not connected and no tasks
-  if (!connected && tasks.length === 0) return null;
-
-  const handleDragStart = (e: React.MouseEvent) => {
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     draggingRef.current = true;
     startYRef.current = e.clientY;
     startHeightRef.current = drawerHeight;
-  };
+  }, [drawerHeight]);
 
-  const handleSpawn = async (projectId: string, issue: string) => {
+  const handleSpawn = useCallback(async (projectId: string, issue: string) => {
     const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_id: projectId, issue }),
     });
     if (!res.ok) throw new Error("Spawn failed");
-  };
+  }, []);
 
-  // Drag handlers
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!draggingRef.current) return;
@@ -68,6 +71,9 @@ export function TaskDrawer() {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [setDrawerHeight]);
+
+  // Don't render if not connected and no tasks
+  if (!connected && tasks.length === 0) return null;
 
   return (
     <>

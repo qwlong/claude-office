@@ -43,6 +43,23 @@ export function useProjectWebSocket() {
 
     connect();
 
+    // Fetch initial task state so TaskDrawer renders immediately
+    fetch("http://localhost:8000/api/v1/tasks/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((status) => {
+        if (!status) return;
+        fetch("http://localhost:8000/api/v1/tasks")
+          .then((r) => (r.ok ? r.json() : []))
+          .then((tasks) => {
+            updateTasks({
+              connected: status.connected,
+              adapterType: status.adapterType,
+              tasks,
+            });
+          });
+      })
+      .catch(() => {});
+
     return () => {
       const ws = wsRef.current;
       wsRef.current = null;

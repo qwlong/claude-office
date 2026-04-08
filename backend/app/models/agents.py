@@ -1,6 +1,7 @@
+from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from app.models.common import BubbleContent
@@ -63,6 +64,8 @@ class Agent(BaseModel):
     position: dict[str, int] = {"x": 0, "y": 0}
     project_key: str | None = None
     session_id: str | None = None
+    last_activity_time: datetime = Field(default_factory=datetime.now)
+    orphaned: bool = False
 
 
 class Boss(BaseModel):

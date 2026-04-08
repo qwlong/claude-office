@@ -63,13 +63,16 @@ class TaskService:
         if not self.adapter or not self.adapter.connected:
             raise RuntimeError("No orchestration system connected")
         external = await self.adapter.spawn(project_id, issue)
+        # Send the task description to the agent after spawn
+        if issue:
+            asyncio.create_task(self.adapter.send_message(external.session_id, issue))
         now = datetime.now(UTC)
         task = Task(
             id=str(uuid4()),
             external_session_id=external.session_id,
             adapter_type=self.adapter.adapter_type,
             project_key=normalize_project_key(project_id),
-            issue=external.issue,
+            issue=issue or external.issue,
             status=TaskStatus(external.status),
             pr_url=external.pr_url,
             pr_number=external.pr_number,
@@ -152,6 +155,17 @@ class TaskService:
                     existing.worktree_path = ext.worktree_path
                     existing.updated_at = datetime.now(UTC)
                     changed = True
+
+        # Mark tasks as done if their session disappeared from AO
+        active_session_ids = {ext.session_id for ext in sessions}
+        for task in self.tasks.values():
+            if (
+                task.external_session_id not in active_session_ids
+                and task.status not in (TaskStatus.done, TaskStatus.merged, TaskStatus.error)
+            ):
+                task.status = TaskStatus.done
+                task.updated_at = datetime.now(UTC)
+                changed = True
 
         return changed
 

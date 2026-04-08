@@ -25,6 +25,7 @@ _AO_STATUS_MAP: dict[str, str] = {
     "done": "done",
     "killed": "done",
     "exited": "done",
+    "stuck": "error",
     "error": "error",
     "failed": "error",
 }
@@ -75,6 +76,20 @@ class AOAdapter:
             # AO returns {"sessions": [...], ...} not a bare array
             sessions = data.get("sessions", []) if isinstance(data, dict) else data
             return [self._to_external_session(s) for s in sessions]
+
+    async def send_message(self, session_id: str, message: str) -> bool:
+        """Send a message to a running session via ao CLI."""
+        import asyncio
+        proc = await asyncio.create_subprocess_exec(
+            "ao", "send", session_id, message,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            logger.warning(f"ao send failed: {stderr.decode()}")
+            return False
+        return True
 
     async def get_projects(self) -> list[dict]:
         """GET /api/projects from AO."""

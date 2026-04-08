@@ -30,14 +30,11 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
 
   const handleSpawn = async () => {
     if (!projectId || !issue || loading) return;
-    setLoading(true);
-    try {
-      await onSpawn(projectId, issue);
-      setIssue("");
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+    const taskDesc = issue;
+    setIssue("");
+    onClose();
+    // Fire and forget — don't block UI
+    onSpawn(projectId, taskDesc).catch(() => {});
   };
 
   return (
@@ -89,14 +86,14 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
           )}
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Issue</label>
-          <input
-            type="text"
+          <label className="block text-sm text-slate-400 mb-1">Task Description</label>
+          <textarea
             value={issue}
             onChange={(e) => setIssue(e.target.value)}
-            placeholder="#123 Fix login bug"
-            className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
-            onKeyDown={(e) => e.key === "Enter" && handleSpawn()}
+            placeholder="Describe what the agent should do..."
+            rows={3}
+            className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500 resize-none"
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSpawn())}
           />
         </div>
       </div>

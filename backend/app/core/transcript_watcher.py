@@ -107,11 +107,13 @@ class TranscriptWatcher:
                     continue
 
                 project_name = extract_project_name(str(jsonl))
-                discovered.append(DiscoveredSession(
-                    dir_name=dir_name,
-                    jsonl_path=str(jsonl),
-                    project_name=project_name,
-                    last_modified=mtime,
-                ))
+                discovered.append(
+                    DiscoveredSession(
+                        dir_name=dir_name,
+                        jsonl_path=str(jsonl),
+                        project_name=project_name,
+                        last_modified=mtime,
+                    )
+                )
 
         return discovered

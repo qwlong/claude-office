@@ -105,6 +105,11 @@ class EventProcessor:
     - WebSocket broadcasting
     """
 
+    # Seconds of inactivity before an agent is considered stale.
+    STALE_AGENT_TIMEOUT = 60
+    # How often (seconds) to check for stale agents.
+    STALE_CHECK_INTERVAL = 30
+
     def __init__(self) -> None:
         self.sessions: dict[str, StateMachine] = {}
         self.project_registry = ProjectRegistry()
@@ -114,6 +119,7 @@ class EventProcessor:
         self._task_poller_initialized = False
         self._beads_poller_initialized = False
         self._beads_sessions: set[str] = set()  # Sessions with active beads polling
+        self._stale_checker_task: asyncio.Task[None] | None = None
 
     # ------------------------------------------------------------------
     # Poller lifecycle helpers
@@ -174,6 +180,45 @@ class EventProcessor:
         await self._process_event_internal(event)
 
     # ------------------------------------------------------------------
+    # Stale agent heartbeat checker
+    # ------------------------------------------------------------------
+
+    def start_stale_agent_checker(self) -> None:
+        """Start the periodic stale-agent checker if not already running."""
+        if self._stale_checker_task is None or self._stale_checker_task.done():
+            self._stale_checker_task = asyncio.create_task(self._stale_agent_loop())
+
+    async def _stale_agent_loop(self) -> None:
+        """Periodically check all sessions for agents with no recent activity."""
+        from app.core.transcript_poller import get_transcript_poller
+
+        while True:
+            await asyncio.sleep(self.STALE_CHECK_INTERVAL)
+            now = datetime.now()
+            for session_id, sm in list(self.sessions.items()):
+                removed = 0
+                for agent_id in list(sm.agents.keys()):
+                    agent = sm.agents.get(agent_id)
+                    if agent is None:
+                        continue
+                    elapsed = (now - agent.last_activity_time).total_seconds()
+                    if elapsed < self.STALE_AGENT_TIMEOUT:
+                        continue
+                    # Check transcript poller as a second signal
+                    transcript_poller = get_transcript_poller()
+                    if transcript_poller and await transcript_poller.is_polling(agent_id):
+                        continue
+                    logger.info(
+                        f"Stale agent {agent_id} in session {session_id} "
+                        f"(inactive {elapsed:.0f}s) — triggering departure"
+                    )
+                    sm.trigger_agent_departure(agent_id)
+                    sm.remove_agent(agent_id)
+                    removed += 1
+                if removed:
+                    await broadcast_state(session_id, sm)
+
+    # ------------------------------------------------------------------
     # Session management
     # ------------------------------------------------------------------
 
@@ -221,8 +266,14 @@ class EventProcessor:
         active_session_ids: list[str] = []
 
         colors = [
-            "#3B82F6", "#22C55E", "#A855F7", "#F97316",
-            "#EC4899", "#06B6D4", "#EAB308", "#EF4444",
+            "#3B82F6",
+            "#22C55E",
+            "#A855F7",
+            "#F97316",
+            "#EC4899",
+            "#06B6D4",
+            "#EAB308",
+            "#EF4444",
         ]
 
         for idx, (session_id, sm) in enumerate(self.sessions.items()):
@@ -253,11 +304,13 @@ class EventProcessor:
 
             # Namespace all agents from this session with compact desk numbers
             for agent in state.agents:
-                namespaced = agent.model_copy(update={
-                    "id": f"{short_id}:{agent.id}",
-                    "desk": next_desk,
-                    "number": next_desk,
-                })
+                namespaced = agent.model_copy(
+                    update={
+                        "id": f"{short_id}:{agent.id}",
+                        "desk": next_desk,
+                        "number": next_desk,
+                    }
+                )
                 all_agents.append(namespaced)
                 next_desk += 1
 
@@ -320,7 +373,9 @@ class EventProcessor:
                     for rec in active_records:
                         if rec.id not in self.sessions:
                             await self._restore_session(rec.id)
-                        if rec.project_name and not self.project_registry.get_project_for_session(rec.id):
+                        if rec.project_name and not self.project_registry.get_project_for_session(
+                            rec.id
+                        ):
                             self.project_registry.register_session(
                                 rec.id, rec.project_name, rec.project_root
                             )
@@ -336,8 +391,9 @@ class EventProcessor:
             if not self.project_registry.get_project_for_session(session_id):
                 async with AsyncSessionLocal() as db:
                     result = await db.execute(
-                        select(SessionRecord.project_name, SessionRecord.project_root)
-                        .where(SessionRecord.id == session_id)
+                        select(SessionRecord.project_name, SessionRecord.project_root).where(
+                            SessionRecord.id == session_id
+                        )
                     )
                     row = result.one_or_none()
                     if row and row.project_name:
@@ -376,12 +432,14 @@ class EventProcessor:
                     group_boss = state.boss
 
                 for agent in state.agents:
-                    updated = agent.model_copy(update={
-                        "project_key": key,
-                        "session_id": sid,
-                        "desk": desk_num,
-                        "number": desk_num,
-                    })
+                    updated = agent.model_copy(
+                        update={
+                            "project_key": key,
+                            "session_id": sid,
+                            "desk": desk_num,
+                            "number": desk_num,
+                        }
+                    )
                     all_agents.append(updated)
                     desk_num += 1
 
@@ -390,16 +448,18 @@ class EventProcessor:
                 if latest_updated is None or state.last_updated > latest_updated:
                     latest_updated = state.last_updated
 
-            groups.append(ProjectGroup(
-                key=key,
-                name=name,
-                color=color,
-                root=root,
-                agents=all_agents,
-                boss=group_boss,
-                session_count=len(sessions),
-                todos=all_todos,
-            ))
+            groups.append(
+                ProjectGroup(
+                    key=key,
+                    name=name,
+                    color=color,
+                    root=root,
+                    agents=all_agents,
+                    boss=group_boss,
+                    session_count=len(sessions),
+                    todos=all_todos,
+                )
+            )
 
         return MultiProjectGameState(
             projects=groups,
@@ -510,9 +570,7 @@ class EventProcessor:
             project_name = event.data.project_name if event.data else None
             project_root = await self.get_project_root(event.session_id)
             if project_name:
-                self.project_registry.register_session(
-                    event.session_id, project_name, project_root
-                )
+                self.project_registry.register_session(event.session_id, project_name, project_root)
             # Configure git service immediately so polling starts without waiting
             # for a WebSocket reconnect (avoids race condition where WS connects
             # before the session_start event is persisted to the DB).
@@ -757,8 +815,9 @@ class EventProcessor:
             # Try DB
             async with AsyncSessionLocal() as db:
                 result = await db.execute(
-                    select(SessionRecord.project_name, SessionRecord.project_root)
-                    .where(SessionRecord.id == session_id)
+                    select(SessionRecord.project_name, SessionRecord.project_root).where(
+                        SessionRecord.id == session_id
+                    )
                 )
                 row = result.one_or_none()
                 if row:

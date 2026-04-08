@@ -35,7 +35,7 @@ import SettingsModal from "@/components/overlay/SettingsModal";
 import { usePreferencesStore } from "@/stores/preferencesStore";
 import { useProjectStore, selectViewMode, selectPreviousViewMode } from "@/stores/projectStore";
 import { useProjectWebSocket } from "@/hooks/useProjectWebSocket";
-import { TaskDrawer } from "@/components/tasks/TaskDrawer";
+
 import { useTranslation } from "@/hooks/useTranslation";
 import type { Session } from "@/hooks/useSessions";
 
@@ -487,7 +487,6 @@ export default function V2TestPage(): React.ReactNode {
             </div>
 
             <OfficeGame />
-            <TaskDrawer />
           </div>
 
           <RightSidebar />

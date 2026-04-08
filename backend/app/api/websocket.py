@@ -97,7 +97,6 @@ class ConnectionManager:
                         if not self.active_connections[session_id]:
                             del self.active_connections[session_id]
 
-
     async def connect_all(self, websocket: WebSocket) -> None:
         """Register a WebSocket that wants merged state from all sessions."""
         await websocket.accept()
@@ -132,7 +131,6 @@ class ConnectionManager:
                 for conn in failed:
                     if conn in self.all_session_connections:
                         self.all_session_connections.remove(conn)
-
 
     async def connect_projects(self, websocket: WebSocket) -> None:
         """Register a WebSocket that wants project-grouped state."""
