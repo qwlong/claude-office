@@ -74,6 +74,22 @@ const zhCN: Record<TranslationKey, string> = {
   "sidebar.wholeOffice": "整个办公室",
   "sidebar.allProjects": "所有项目",
   "sidebar.allSessions": "所有会话",
+  "sidebar.projects": "项目",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "办公室",
+  "viewMode.projects": "项目",
+  "viewMode.sessions": "会话",
+  "viewMode.backToSessions": "\u2190 会话",
+  "viewMode.backToProjects": "\u2190 项目",
+
+  // Project Card
+  "project.sessions": "个会话",
+  "project.sessions_one": "{count} 个会话",
+  "project.sessions_other": "{count} 个会话",
+  "project.agents": "个智能体",
+  "project.agents_one": "{count} 个智能体",
+  "project.agents_other": "{count} 个智能体",
 
   // Right Sidebar
   "sidebar.events": "事件",

@@ -76,6 +76,22 @@ const ptBR: Record<TranslationKey, string> = {
   "sidebar.wholeOffice": "Escritório Completo",
   "sidebar.allProjects": "Todos os Projetos",
   "sidebar.allSessions": "Todas as Sessões",
+  "sidebar.projects": "Projetos",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "Escritório",
+  "viewMode.projects": "Projetos",
+  "viewMode.sessions": "Sessões",
+  "viewMode.backToSessions": "\u2190 Sessões",
+  "viewMode.backToProjects": "\u2190 Projetos",
+
+  // Project Card
+  "project.sessions": "sessões",
+  "project.sessions_one": "{count} sessão",
+  "project.sessions_other": "{count} sessões",
+  "project.agents": "agentes",
+  "project.agents_one": "{count} agente",
+  "project.agents_other": "{count} agentes",
 
   // Right Sidebar
   "sidebar.events": "Eventos",

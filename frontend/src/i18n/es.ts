@@ -76,6 +76,22 @@ const es: Record<TranslationKey, string> = {
   "sidebar.wholeOffice": "Toda la Oficina",
   "sidebar.allProjects": "Todos los Proyectos",
   "sidebar.allSessions": "Todas las Sesiones",
+  "sidebar.projects": "Proyectos",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "Oficina",
+  "viewMode.projects": "Proyectos",
+  "viewMode.sessions": "Sesiones",
+  "viewMode.backToSessions": "\u2190 Sesiones",
+  "viewMode.backToProjects": "\u2190 Proyectos",
+
+  // Project Card
+  "project.sessions": "sesiones",
+  "project.sessions_one": "{count} sesión",
+  "project.sessions_other": "{count} sesiones",
+  "project.agents": "agentes",
+  "project.agents_one": "{count} agente",
+  "project.agents_other": "{count} agentes",
 
   // Right Sidebar
   "sidebar.events": "Eventos",

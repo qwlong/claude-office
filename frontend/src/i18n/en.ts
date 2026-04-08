@@ -74,6 +74,22 @@ const en = {
   "sidebar.wholeOffice": "Whole Office",
   "sidebar.allProjects": "All Projects",
   "sidebar.allSessions": "All Sessions",
+  "sidebar.projects": "Projects",
+
+  // View Mode Tabs (mobile)
+  "viewMode.office": "Office",
+  "viewMode.projects": "Projects",
+  "viewMode.sessions": "Sessions",
+  "viewMode.backToSessions": "\u2190 Sessions",
+  "viewMode.backToProjects": "\u2190 Projects",
+
+  // Project Card
+  "project.sessions": "sessions",
+  "project.sessions_one": "{count} session",
+  "project.sessions_other": "{count} sessions",
+  "project.agents": "agents",
+  "project.agents_one": "{count} agent",
+  "project.agents_other": "{count} agents",
 
   // Right Sidebar
   "sidebar.events": "Events",

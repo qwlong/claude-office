@@ -30,7 +30,7 @@ export function ProjectSidebar({ onDeleteProject }: ProjectSidebarProps) {
     <div>
       <div className="bg-slate-100 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 flex-shrink-0">
         <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-xs">
-          PROJECTS
+          {t("sidebar.projects")}
         </span>
         <span className="text-slate-400 dark:text-slate-600 text-xs">
           ({projects.length})
@@ -102,10 +102,10 @@ export function ProjectSidebar({ onDeleteProject }: ProjectSidebarProps) {
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                   <span>
-                    {project.sessionCount} {project.sessionCount === 1 ? "session" : "sessions"}
+                    {t("project.sessions", { count: project.sessionCount })}
                   </span>
                   <span>
-                    {project.agents.length} {project.agents.length === 1 ? "agent" : "agents"}
+                    {t("project.agents", { count: project.agents.length })}
                   </span>
                 </div>
               </div>
