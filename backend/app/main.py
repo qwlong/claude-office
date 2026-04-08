@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from rich.logging import RichHandler
 
-from app.api.routes import events, preferences, projects, sessions
+from app.api.routes import agents, events, preferences, projects, sessions, tasks
 from app.api.websocket import manager
 from app.config import get_settings
 from app.core.event_processor import event_processor
@@ -37,9 +37,16 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await conn.run_sync(Base.metadata.create_all)
 
     git_service.start()
+    event_processor.start_stale_agent_checker()
+
+    from app.services.task_service import get_task_service
+
+    task_service = get_task_service()
+    await task_service.start()
 
     yield
 
+    await task_service.stop()
     await git_service.stop()
     await get_engine().dispose()
 
@@ -59,10 +66,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(agents.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(events.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(preferences.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(sessions.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(projects.router, prefix=f"{settings.API_V1_STR}")
+app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}")
 
 
 @app.get("/health")
