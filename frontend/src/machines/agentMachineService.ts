@@ -153,6 +153,18 @@ class AgentMachineService {
   }
 
   /**
+   * Force-remove an agent without departure animation.
+   * Used in multi-session view to clean up stale agents from previous sessions.
+   */
+  forceRemove(agentId: string): void {
+    const managed = this.agents.get(agentId);
+    if (managed) {
+      managed.actor.stop();
+      this.agents.delete(agentId);
+    }
+  }
+
+  /**
    * Send an event to an agent's state machine.
    */
   sendEvent(agentId: string, event: AgentMachineEvent): void {

@@ -201,9 +201,16 @@ export function useWebSocketEvents({
         if (!backendAgentIds.has(agentId)) {
           const agent = store.agents.get(agentId);
 
-          // Only trigger departure if agent is idle at desk
           if (agent && agent.phase === "idle") {
+            // Agent at desk — trigger departure animation
             agentMachineService.triggerDeparture(agentId);
+          } else if (currentSessionIdRef.current === "__all__") {
+            // In multi-session view, force-remove stale agents that aren't
+            // in the backend state (they may be stuck in non-idle phases
+            // from a previous single-session view)
+            agentMachineService.forceRemove(agentId);
+            store.removeAgent(agentId);
+            processedAgentsRef.current.delete(agentId);
           }
         }
       }
