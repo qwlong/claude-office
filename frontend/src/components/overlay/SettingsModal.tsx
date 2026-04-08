@@ -6,9 +6,7 @@ import {
   usePreferencesStore,
   type ClockType,
   type ClockFormat,
-  type ThemeMode,
 } from "@/stores/preferencesStore";
-import { Sun, Moon, Monitor } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { locales, type Locale } from "@/i18n";
 import { useTheme } from "next-themes";
@@ -34,9 +32,6 @@ export default function SettingsModal({
   const setAutoFollowNewSessions = usePreferencesStore(
     (s) => s.setAutoFollowNewSessions,
   );
-  const themeMode = usePreferencesStore((s) => s.themeMode);
-  const setThemeMode = usePreferencesStore((s) => s.setThemeMode);
-
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
 
@@ -159,7 +154,7 @@ export default function SettingsModal({
                   }}
                   className={`flex-1 px-4 py-3 rounded-lg border text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 outline-none ${
                     language === locale
-                      ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                      ? "bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-700 dark:text-purple-300"
                       : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
                   }`}
                 >
@@ -167,72 +162,6 @@ export default function SettingsModal({
                 </button>
               ),
             )}
-          </div>
-        </div>
-
-        {/* Theme */}
-        <div>
-          <label className="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
-            {t("settings.theme")}
-          </label>
-          <div
-            className="flex gap-3"
-            role="radiogroup"
-            aria-label={t("settings.theme")}
-          >
-            {(
-              [
-                {
-                  value: "light" as ThemeMode,
-                  icon: Sun,
-                  labelKey: "settings.themeLight" as const,
-                },
-                {
-                  value: "dark" as ThemeMode,
-                  icon: Moon,
-                  labelKey: "settings.themeDark" as const,
-                },
-                {
-                  value: "system" as ThemeMode,
-                  icon: Monitor,
-                  labelKey: "settings.themeSystem" as const,
-                },
-              ] as const
-            ).map(({ value, icon: Icon, labelKey }, idx, arr) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={themeMode === value}
-                tabIndex={themeMode === value ? 0 : -1}
-                onClick={() => setThemeMode(value)}
-                onKeyDown={(e) => {
-                  const parent = e.currentTarget.parentElement;
-                  if (!parent) return;
-                  const buttons = Array.from(parent.children) as HTMLElement[];
-                  let nextIdx: number | null = null;
-                  if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-                    e.preventDefault();
-                    nextIdx = (idx + 1) % arr.length;
-                  } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-                    e.preventDefault();
-                    nextIdx = (idx - 1 + arr.length) % arr.length;
-                  }
-                  if (nextIdx !== null) {
-                    setThemeMode(arr[nextIdx].value);
-                    buttons[nextIdx].focus();
-                  }
-                }}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 outline-none ${
-                  themeMode === value
-                    ? "bg-purple-500/20 border-purple-500 text-purple-300"
-                    : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
-                }`}
-              >
-                <Icon size={16} />
-                {t(labelKey)}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -275,7 +204,7 @@ export default function SettingsModal({
                 }}
                 className={`flex-1 px-4 py-3 rounded-lg border text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 outline-none ${
                   clockType === type
-                    ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                    ? "bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-700 dark:text-purple-300"
                     : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
                 }`}
               >
@@ -329,7 +258,7 @@ export default function SettingsModal({
                   }}
                   className={`flex-1 px-4 py-3 rounded-lg border text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 outline-none ${
                     clockFormat === fmt
-                      ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                      ? "bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-700 dark:text-purple-300"
                       : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
                   }`}
                 >
