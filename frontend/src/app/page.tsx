@@ -454,7 +454,7 @@ export default function V2TestPage(): React.ReactNode {
             onDeleteSession={setSessionPendingDelete}
           />
 
-          <div className="flex-grow border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
+          <div className="flex-1 min-w-0 min-h-0 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
             {/* View Mode Toggle */}
             <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 rounded-md p-0.5 backdrop-blur-sm">
               {(["office", "projects", "sessions"] as const).map((mode) => (
