@@ -13,6 +13,7 @@ import {
   Moon,
   Monitor,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTheme } from "next-themes";
 
@@ -57,6 +58,9 @@ export function HeaderControls({
 }: HeaderControlsProps): React.ReactNode {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const cycleTheme = () => {
     if (theme === "light") setTheme("dark");
@@ -64,8 +68,9 @@ export function HeaderControls({
     else setTheme("light");
   };
 
-  const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
-  const themeLabel = theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
+  // Avoid hydration mismatch: render neutral icon until mounted
+  const ThemeIcon = !mounted ? Sun : theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  const themeLabel = !mounted ? "Light" : theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
 
   return (
     <div className="flex gap-4 items-center">
