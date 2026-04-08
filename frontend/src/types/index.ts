@@ -52,6 +52,17 @@ export type {
 export type { Commit, Commit as GitCommit } from "./generated";
 
 // ============================================================================
+// PROJECT TYPES — multi-project office
+// ============================================================================
+
+export type {
+  ViewMode,
+  ProjectGroup,
+  MultiProjectGameState,
+  ProjectSummary,
+} from "./projects";
+
+// ============================================================================
 // FRONTEND-ONLY TYPES — not derived from backend models
 // ============================================================================
 
