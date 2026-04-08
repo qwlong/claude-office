@@ -19,7 +19,7 @@ import {
   Sprite,
   Application as PixiApplication,
 } from "pixi.js";
-import { useMemo, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -273,18 +273,12 @@ export function OfficeGame(): ReactNode {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [debugMode]);
 
-  // Reset the pan/zoom transform whenever the container is resized (e.g. sidebar
-  // open/close). Without this, react-zoom-pan-pinch keeps a stale translate that
-  // was calculated against the old container dimensions, which crops the scene.
+  // Reset pan/zoom when fitScale changes (view mode switch, container resize)
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver(() => {
-      transformRef.current?.resetTransform(0);
-    });
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
+    if (fitScale > 0) {
+      transformRef.current?.centerView(fitScale, 0);
+    }
+  }, [fitScale]);
 
   const handleSessionRoomClick = useCallback((sessionId: string) => {
     window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
@@ -305,6 +299,25 @@ export function OfficeGame(): ReactNode {
     useProjectStore.getState().setViewMode("office");
   }, [projects]);
 
+  // Track container size for fit-to-view scaling
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setContainerSize({ width, height });
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Compute initial scale so the canvas fits within the container
+  const fitScale = useMemo(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return 1;
+    return Math.min(containerSize.width / appWidth, containerSize.height / appHeight, 1);
+  }, [appWidth, appHeight, containerSize]);
+
   return (
     <div
       ref={containerRef}
@@ -312,12 +325,13 @@ export function OfficeGame(): ReactNode {
     >
       <TransformWrapper
         ref={transformRef}
-        initialScale={1}
-        minScale={0.3}
+        initialScale={fitScale}
+        minScale={0.2}
         maxScale={3}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
         doubleClick={{ mode: "reset" }}
+        centerOnInit
       >
         <ZoomControls />
         <TransformComponent
