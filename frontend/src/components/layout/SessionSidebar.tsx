@@ -154,7 +154,18 @@ export function SessionSidebar({
         <>
           {/* Project Groups */}
           <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0">
-            <ProjectSidebar />
+            <ProjectSidebar
+              onDeleteProject={(project) => {
+                const projectSessions = sessions.filter(
+                  (s) => s.id !== "__all__" && s.projectName === project.name
+                );
+                if (projectSessions.length === 0) return;
+                // Delete all sessions in this project sequentially
+                for (const session of projectSessions) {
+                  onDeleteSession(session);
+                }
+              }}
+            />
           </div>
 
           {/* Session Browser */}
