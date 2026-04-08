@@ -116,7 +116,7 @@ export function OfficeGame(): ReactNode {
   // Multi-project view state
   const viewMode = useProjectStore(selectViewMode);
   const projects = useProjectStore(selectProjects);
-  const sessionRooms = useProjectStore(useShallow(selectSessionRooms));
+  const sessionRooms = useProjectStore(selectSessionRooms);
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
