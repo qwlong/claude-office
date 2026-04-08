@@ -9,10 +9,10 @@ from app.core.state_machine import StateMachine
 
 @pytest.fixture(autouse=True)
 def clean_processor():
-    event_processor.sessions.clear()
+    event_processor.sessions.clear(); event_processor._db_sessions_restored = True
     event_processor.project_registry = ProjectRegistry()
     yield
-    event_processor.sessions.clear()
+    event_processor.sessions.clear(); event_processor._db_sessions_restored = True
     event_processor.project_registry = ProjectRegistry()
 
 

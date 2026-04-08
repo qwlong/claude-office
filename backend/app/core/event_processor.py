@@ -108,6 +108,7 @@ class EventProcessor:
     def __init__(self) -> None:
         self.sessions: dict[str, StateMachine] = {}
         self.project_registry = ProjectRegistry()
+        self._db_sessions_restored = False
         self._sessions_lock = asyncio.Lock()
         self._transcript_poller_initialized = False
         self._task_poller_initialized = False
@@ -307,6 +308,25 @@ class EventProcessor:
     async def get_project_grouped_state(self) -> "MultiProjectGameState | None":
         """Build a MultiProjectGameState grouped by project."""
         from app.models.projects import MultiProjectGameState, ProjectGroup
+
+        # On cold start (first call with no sessions), restore active sessions from DB
+        if not self.sessions and not self._db_sessions_restored:
+            try:
+                async with AsyncSessionLocal() as db:
+                    result = await db.execute(
+                        select(SessionRecord).where(SessionRecord.status == "active")
+                    )
+                    active_records = result.scalars().all()
+                    for rec in active_records:
+                        if rec.id not in self.sessions:
+                            await self._restore_session(rec.id)
+                        if rec.project_name and not self.project_registry.get_project_for_session(rec.id):
+                            self.project_registry.register_session(
+                                rec.id, rec.project_name, rec.project_root
+                            )
+            except Exception:
+                logger.debug("Could not restore sessions from DB for project view")
+            self._db_sessions_restored = True
 
         if not self.sessions:
             return None
