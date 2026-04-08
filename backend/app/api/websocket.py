@@ -13,6 +13,7 @@ class ConnectionManager:
 
     def __init__(self) -> None:
         self.active_connections: dict[str, list[WebSocket]] = {}
+        self.all_session_connections: list[WebSocket] = []
         self._lock = asyncio.Lock()
 
     async def connect(self, websocket: WebSocket, session_id: str) -> None:
@@ -94,6 +95,42 @@ class ConnectionManager:
                             self.active_connections[session_id].remove(conn)
                         if not self.active_connections[session_id]:
                             del self.active_connections[session_id]
+
+
+    async def connect_all(self, websocket: WebSocket) -> None:
+        """Register a WebSocket that wants merged state from all sessions."""
+        await websocket.accept()
+        async with self._lock:
+            self.all_session_connections.append(websocket)
+
+    async def disconnect_all(self, websocket: WebSocket) -> None:
+        """Remove an all-sessions WebSocket."""
+        async with self._lock:
+            if websocket in self.all_session_connections:
+                self.all_session_connections.remove(websocket)
+
+    async def broadcast_to_all_subscribers(self, message: dict[str, Any]) -> None:
+        """Send a message to all /ws/all subscribers."""
+        async with self._lock:
+            connections = self.all_session_connections.copy()
+
+        if not connections:
+            return
+
+        failed: list[WebSocket] = []
+        for conn in connections:
+            try:
+                if conn.client_state == WebSocketState.CONNECTED:
+                    await conn.send_json(message)
+            except Exception as e:
+                logger.warning(f"Failed to send to all-subscriber: {e}")
+                failed.append(conn)
+
+        if failed:
+            async with self._lock:
+                for conn in failed:
+                    if conn in self.all_session_connections:
+                        self.all_session_connections.remove(conn)
 
 
 manager = ConnectionManager()

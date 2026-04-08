@@ -36,6 +36,20 @@ async def broadcast_state(session_id: str, sm: StateMachine) -> None:
         session_id,
     )
 
+    # Also notify all-session subscribers with merged state
+    if manager.all_session_connections:
+        from app.core.event_processor import event_processor
+
+        merged = await event_processor.get_merged_state()
+        if merged:
+            await manager.broadcast_to_all_subscribers(
+                {
+                    "type": "state_update",
+                    "timestamp": merged.last_updated.isoformat(),
+                    "state": merged.model_dump(mode="json", by_alias=True),
+                },
+            )
+
 
 async def broadcast_event(
     session_id: str,

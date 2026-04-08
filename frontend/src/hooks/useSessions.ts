@@ -66,8 +66,20 @@ export function useSessions(
       const res = await fetch("http://localhost:8000/api/v1/sessions");
       if (res.ok) {
         const data = (await res.json()) as Session[];
-        setSessions(data);
-        return data;
+        // Inject "All Sessions" virtual entry at the top
+        const allEntry: Session = {
+          id: "__all__",
+          label: "All Sessions",
+          projectName: "All Sessions",
+          projectRoot: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          status: "active",
+          eventCount: data.reduce((sum, s) => sum + s.eventCount, 0),
+        };
+        const withAll = [allEntry, ...data];
+        setSessions(withAll);
+        return withAll;
       }
     } catch {
       // Silently fail
@@ -156,6 +168,7 @@ export function useSessions(
   // Auto-follow new sessions in the current project
   useEffect(() => {
     if (!autoFollowNewSessions || sessions.length === 0) return;
+    if (sessionId === "__all__") return; // Don't auto-follow away from all-sessions view
 
     // Get current session's project root
     const currentSession = sessions.find((s) => s.id === sessionId);

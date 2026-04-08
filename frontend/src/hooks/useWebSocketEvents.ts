@@ -70,7 +70,11 @@ export function useWebSocketEvents({
   const handleStateUpdate = useCallback(
     (state: GameState) => {
       // Ignore state updates from old sessions (race condition protection)
-      if (state.sessionId !== currentSessionIdRef.current) {
+      // In __all__ mode, accept updates with sessionId "__all__"
+      if (
+        currentSessionIdRef.current !== "__all__" &&
+        state.sessionId !== currentSessionIdRef.current
+      ) {
         return;
       }
 
@@ -290,6 +294,7 @@ export function useWebSocketEvents({
         if (
           message.type !== "session_deleted" &&
           message.type !== "reload" &&
+          currentSessionIdRef.current !== "__all__" &&
           message.state?.sessionId &&
           message.state.sessionId !== currentSessionIdRef.current
         ) {
@@ -421,7 +426,9 @@ export function useWebSocketEvents({
       reconnectTimeoutRef.current = null;
     }
 
-    const wsUrl = `ws://localhost:8000/ws/${sessionId}`;
+    const wsUrl = sessionId === "__all__"
+      ? "ws://localhost:8000/ws/all"
+      : `ws://localhost:8000/ws/${sessionId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

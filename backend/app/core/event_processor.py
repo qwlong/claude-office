@@ -40,7 +40,15 @@ from app.core.task_persistence import load_tasks, save_tasks
 from app.core.transcript_poller import init_transcript_poller
 from app.db.database import AsyncSessionLocal
 from app.db.models import EventRecord, SessionRecord
-from app.models.agents import AgentState
+from app.models.agents import (
+    Agent,
+    AgentState,
+    Boss,
+    BossState,
+    ElevatorState,
+    OfficeState,
+    PhoneState,
+)
 from app.models.common import TodoItem
 from app.models.events import Event, EventData, EventType
 from app.models.sessions import ConversationEntry, GameState, HistoryEntry
@@ -186,6 +194,106 @@ class EventProcessor:
         if sm:
             return sm.to_game_state(session_id)
         return None
+
+    async def get_merged_state(self) -> GameState | None:
+        """Build a merged GameState from all active sessions.
+
+        Each session's boss becomes a regular agent (prefixed with session ID).
+        All agent IDs are namespaced as "{session_short}:{agent_id}" to avoid collisions.
+        The merged state uses a synthetic idle boss.
+        """
+        if not self.sessions:
+            return None
+
+        all_agents: list[Agent] = []
+        all_arrival_queue: list[str] = []
+        all_departure_queue: list[str] = []
+        total_desk_count = 0
+        latest_updated = datetime.min.replace(tzinfo=UTC)
+        all_todos: list[TodoItem] = []
+        all_conversation: list[ConversationEntry] = []
+        active_session_ids: list[str] = []
+
+        colors = [
+            "#3B82F6", "#22C55E", "#A855F7", "#F97316",
+            "#EC4899", "#06B6D4", "#EAB308", "#EF4444",
+        ]
+
+        for idx, (session_id, sm) in enumerate(self.sessions.items()):
+            state = sm.to_game_state(session_id)
+            short_id = session_id[:8]
+            active_session_ids.append(session_id)
+
+            # Map BossState to AgentState for the boss-as-agent
+            boss_agent_state = AgentState.WORKING
+            if state.boss.state in (BossState.IDLE,):
+                boss_agent_state = AgentState.WAITING
+            elif state.boss.state in (BossState.WAITING_PERMISSION,):
+                boss_agent_state = AgentState.WAITING_PERMISSION
+
+            # Convert this session's boss into a regular agent
+            boss_as_agent = Agent(
+                id=f"{short_id}:boss",
+                name=state.boss.current_task or short_id,
+                color=colors[idx % len(colors)],
+                number=total_desk_count + 1,
+                state=boss_agent_state,
+                desk=total_desk_count + 1,
+                current_task=state.boss.current_task,
+                bubble=state.boss.bubble,
+            )
+            all_agents.append(boss_as_agent)
+
+            # Namespace all agents from this session
+            for agent in state.agents:
+                namespaced = agent.model_copy(update={
+                    "id": f"{short_id}:{agent.id}",
+                    "desk": (agent.desk or 0) + total_desk_count + 1,
+                    "number": (agent.number or 0) + total_desk_count + 1,
+                })
+                all_agents.append(namespaced)
+
+            # Namespace queues
+            for aid in state.arrival_queue:
+                all_arrival_queue.append(f"{short_id}:{aid}")
+            for aid in state.departure_queue:
+                all_departure_queue.append(f"{short_id}:{aid}")
+
+            total_desk_count += state.office.desk_count or 8
+
+            if state.last_updated > latest_updated:
+                latest_updated = state.last_updated
+
+            all_todos.extend(state.todos)
+            all_conversation.extend(state.conversation)
+
+        # Synthetic boss for the merged view
+        merged_boss = Boss(
+            state=BossState.IDLE,
+            current_task=f"{len(active_session_ids)} active sessions",
+            bubble=None,
+        )
+
+        merged_office = OfficeState(
+            desk_count=max(8, total_desk_count),
+            elevator_state=ElevatorState.CLOSED,
+            phone_state=PhoneState.IDLE,
+            context_utilization=0.0,
+            tool_uses_since_compaction=0,
+            print_report=False,
+        )
+
+        return GameState(
+            session_id="__all__",
+            boss=merged_boss,
+            agents=all_agents,
+            office=merged_office,
+            last_updated=latest_updated if latest_updated.tzinfo else datetime.now(UTC),
+            todos=all_todos,
+            arrival_queue=all_arrival_queue,
+            departure_queue=all_departure_queue,
+            conversation=all_conversation,
+        )
 
     async def get_project_root(self, session_id: str) -> str | None:
         """Get the cached project_root for a session from the database.

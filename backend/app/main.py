@@ -79,6 +79,29 @@ async def get_status() -> dict[str, bool | str | None]:
     }
 
 
+@app.websocket("/ws/all")
+async def websocket_all_endpoint(websocket: WebSocket) -> None:
+    """WebSocket that sends merged state from all active sessions."""
+    await manager.connect_all(websocket)
+
+    merged_state = await event_processor.get_merged_state()
+    if merged_state:
+        await manager.send_personal_message(
+            {
+                "type": "state_update",
+                "timestamp": merged_state.last_updated.isoformat(),
+                "state": merged_state.model_dump(mode="json", by_alias=True),
+            },
+            websocket,
+        )
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await manager.disconnect_all(websocket)
+
+
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
     await manager.connect(websocket, session_id)

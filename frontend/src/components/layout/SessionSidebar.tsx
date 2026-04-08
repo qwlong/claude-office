@@ -7,6 +7,7 @@ import {
   Trash2,
   PanelLeftClose,
   PanelLeftOpen,
+  Users,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR as dateFnsPtBR, es as dateFnsEs } from "date-fns/locale";
@@ -148,6 +149,7 @@ export function SessionSidebar({
                 <div className="flex flex-col gap-2">
                   {sessions.map((session) => {
                     const isActive = session.id === sessionId;
+                    const isAllSessions = session.id === "__all__";
                     const isLive = session.status === "active";
                     return (
                       <div
@@ -155,9 +157,13 @@ export function SessionSidebar({
                         tabIndex={0}
                         key={session.id}
                         className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md ${
-                          isActive
-                            ? "bg-purple-500/20 border-l-2 border-purple-500"
-                            : "hover:bg-slate-800/50"
+                          isAllSessions
+                            ? isActive
+                              ? "bg-amber-500/20 border-l-2 border-amber-500"
+                              : "bg-slate-800/30 hover:bg-amber-500/10 border-l-2 border-amber-500/30"
+                            : isActive
+                              ? "bg-purple-500/20 border-l-2 border-purple-500"
+                              : "hover:bg-slate-800/50"
                         }`}
                         onClick={() => onSessionSelect(session.id)}
                         onKeyDown={(e) => {
@@ -168,7 +174,12 @@ export function SessionSidebar({
                         }}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          {isLive ? (
+                          {isAllSessions ? (
+                            <Users
+                              size={10}
+                              className="text-amber-400 flex-shrink-0"
+                            />
+                          ) : isLive ? (
                             <Radio
                               size={10}
                               className="text-emerald-400 animate-pulse flex-shrink-0"
@@ -181,37 +192,49 @@ export function SessionSidebar({
                           )}
                           <span
                             className={`text-xs font-bold truncate flex-1 ${
-                              isActive ? "text-purple-300" : "text-slate-300"
+                              isAllSessions
+                                ? isActive
+                                  ? "text-amber-300"
+                                  : "text-amber-400/70"
+                                : isActive
+                                  ? "text-purple-300"
+                                  : "text-slate-300"
                             }`}
                           >
                             {session.projectName ||
                               t("sessions.unknownProject")}
                           </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteSession(session);
-                            }}
-                            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
-                            aria-label={`${t("sessions.deleteSession")} ${session.id}`}
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          {!isAllSessions && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteSession(session);
+                              }}
+                              className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
+                              aria-label={`${t("sessions.deleteSession")} ${session.id}`}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
                         </div>
-                        <div className="text-[10px] text-slate-500 font-mono truncate mb-1">
-                          {session.id}
-                        </div>
+                        {!isAllSessions && (
+                          <div className="text-[10px] text-slate-500 font-mono truncate mb-1">
+                            {session.id}
+                          </div>
+                        )}
                         <div className="flex justify-between text-[10px] text-slate-500">
                           <span>
                             {t("sessions.events", { count: session.eventCount })}
                           </span>
-                          <span>
-                            {formatDistanceToNow(new Date(session.updatedAt), {
-                              addSuffix: true,
-                              locale: dateFnsLocale,
-                            })}
-                          </span>
+                          {!isAllSessions && (
+                            <span>
+                              {formatDistanceToNow(new Date(session.updatedAt), {
+                                addSuffix: true,
+                                locale: dateFnsLocale,
+                              })}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );
