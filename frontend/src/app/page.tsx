@@ -33,7 +33,7 @@ import {
 import Modal from "@/components/overlay/Modal";
 import SettingsModal from "@/components/overlay/SettingsModal";
 import { usePreferencesStore } from "@/stores/preferencesStore";
-import { useProjectStore, selectViewMode } from "@/stores/projectStore";
+import { useProjectStore, selectViewMode, selectPreviousViewMode } from "@/stores/projectStore";
 import { useProjectWebSocket } from "@/hooks/useProjectWebSocket";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { Session } from "@/hooks/useSessions";
@@ -123,6 +123,8 @@ export default function V2TestPage(): React.ReactNode {
   useProjectWebSocket();
   const viewMode = useProjectStore(selectViewMode);
   const setViewMode = useProjectStore((s) => s.setViewMode);
+  const previousViewMode = useProjectStore(selectPreviousViewMode);
+  const goBackToMultiRoom = useProjectStore((s) => s.goBackToMultiRoom);
 
   // ------------------------------------------------------------------
   // Store subscriptions
@@ -174,6 +176,20 @@ export default function V2TestPage(): React.ReactNode {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // ------------------------------------------------------------------
+  // Session selection via custom event (from OfficeGame clicks)
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const sessionId = (e as CustomEvent).detail?.sessionId;
+      if (sessionId) {
+        handleSessionSelect(sessionId);
+      }
+    };
+    window.addEventListener("office:select-session", handler);
+    return () => window.removeEventListener("office:select-session", handler);
+  }, [handleSessionSelect]);
 
   // ------------------------------------------------------------------
   // Derived handlers
@@ -414,8 +430,8 @@ export default function V2TestPage(): React.ReactNode {
 
           <div className="flex-grow border border-slate-800 rounded-lg shadow-2xl bg-slate-900 overflow-hidden relative">
             {/* View Mode Toggle */}
-            <div className="absolute top-2 left-2 z-10 flex gap-1 bg-slate-800/80 rounded-md p-0.5 backdrop-blur-sm">
-              {(["all-merged", "overview"] as const).map((mode) => (
+            <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-slate-800/80 rounded-md p-0.5 backdrop-blur-sm">
+              {(["all-merged", "overview", "sessions"] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
@@ -425,9 +441,21 @@ export default function V2TestPage(): React.ReactNode {
                       : "text-slate-400 hover:text-white hover:bg-slate-700"
                   }`}
                 >
-                  {mode === "all-merged" ? "Office" : "Projects"}
+                  {mode === "all-merged"
+                    ? "Office"
+                    : mode === "overview"
+                      ? "Projects"
+                      : "Sessions"}
                 </button>
               ))}
+              {viewMode === "all-merged" && previousViewMode && (previousViewMode === "sessions" || previousViewMode === "overview") && (
+                <button
+                  onClick={goBackToMultiRoom}
+                  className="ml-1 px-2 py-1 text-xs rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border-l border-slate-600"
+                >
+                  {previousViewMode === "sessions" ? "\u2190 Sessions" : "\u2190 Projects"}
+                </button>
+              )}
             </div>
 
             <OfficeGame />
