@@ -153,8 +153,8 @@ export function OfficeGame(): ReactNode {
   }, [projects, storeSessions]);
 
   // Multi-room vs single-office rendering
-  // Singular modes ("project"/"session") render as single office using gameStore data
-  const isMultiRoom = viewMode === "projects" || viewMode === "sessions";
+  // All modes except "office" use multi-room canvas (with RoomProvider per-project data)
+  const isMultiRoom = viewMode !== "office";
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
@@ -235,8 +235,10 @@ export function OfficeGame(): ReactNode {
   // Canvas dimensions for multi-room view
   const multiRoomRooms = useMemo(() => {
     if (viewMode === "sessions") return sessionRooms;
+    if (viewMode === "session") return sessionRooms.filter((r) => r.key === activeRoomKey);
+    if (viewMode === "project") return projects.filter((p) => p.key === activeRoomKey);
     return projects; // "projects" mode
-  }, [viewMode, sessionRooms, projects]);
+  }, [viewMode, sessionRooms, projects, activeRoomKey]);
   const multiRoomSize = useMemo(
     () => getMultiRoomCanvasSize(Math.max(1, multiRoomRooms.length)),
     [multiRoomRooms.length]
