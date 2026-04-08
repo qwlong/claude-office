@@ -25,7 +25,7 @@ _AO_STATUS_MAP: dict[str, str] = {
     "done": "done",
     "killed": "done",
     "exited": "done",
-    "stuck": "error",
+    "stuck": "working",
     "error": "error",
     "failed": "error",
 }
