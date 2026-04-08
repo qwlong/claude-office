@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     CLAUDE_PATH_HOST: str = ""
     CLAUDE_PATH_CONTAINER: str = ""
 
+    AO_URL: str = ""
+    AO_POLL_INTERVAL: int = 10
+
     model_config = SettingsConfigDict(env_file=".env")
 
     def translate_path(self, path: str) -> str:

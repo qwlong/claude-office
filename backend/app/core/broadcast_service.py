@@ -16,6 +16,7 @@ __all__ = [
     "broadcast_state",
     "broadcast_event",
     "broadcast_error",
+    "broadcast_tasks_update",
 ]
 
 
@@ -50,7 +51,6 @@ async def broadcast_state(session_id: str, sm: StateMachine) -> None:
                 },
             )
 
-
     # Also notify project subscribers with project-grouped state
     if manager.project_connections:
         from app.core.event_processor import event_processor
@@ -81,6 +81,33 @@ async def broadcast_event(
         "event": dict(event_dict),
     }
     await manager.broadcast(payload, session_id)
+
+
+async def broadcast_tasks_update(
+    tasks: list,
+    connected: bool,
+    adapter_type: str | None,
+) -> None:
+    """Push tasks_update to all /ws/projects subscribers."""
+    if not manager.project_connections:
+        return
+    from app.models.tasks import Task
+
+    await manager.broadcast_to_project_subscribers(
+        {
+            "type": "tasks_update",
+            "data": {
+                "connected": connected,
+                "adapterType": adapter_type,
+                "tasks": [
+                    t.model_dump(by_alias=True, mode="json")
+                    if isinstance(t, Task)
+                    else t
+                    for t in tasks
+                ],
+            },
+        },
+    )
 
 
 async def broadcast_error(session_id: str, message: str, timestamp: str) -> None:
