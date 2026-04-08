@@ -26,8 +26,8 @@ const FULL_ROOM_H = getCanvasHeight(8) + 60;
 /** Label height at full scale (inside the scaled container). Tight to room. */
 const LABEL_H = 42;
 
-/** Edge padding (smaller than inter-room gap). */
-const EDGE_PAD = 8;
+/** Edge padding = same as corridor gap. */
+const EDGE_PAD = ROOM_GAP;
 
 /** Calculate the x,y position for a room cell (including label) at the given index. */
 export function getRoomPosition(index: number) {

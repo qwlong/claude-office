@@ -65,7 +65,7 @@ export function getMultiRoomCanvasSize(
   // Each cell = (room + label) * scale
   const cellW = fullRoomWidth * ROOM_SCALE;
   const cellH = (fullRoomHeight + LABEL_H_FULL) * ROOM_SCALE;
-  const edgePad = 8;
+  const edgePad = ROOM_GAP;
   return {
     cols,
     rows,
