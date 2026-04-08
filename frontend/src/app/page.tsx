@@ -351,7 +351,7 @@ export default function V2TestPage(): React.ReactNode {
       {/* ----------------------------------------------------------------
           Header
       ---------------------------------------------------------------- */}
-      <header className="flex justify-between items-center mb-2 px-1 relative h-12">
+      <header className="flex justify-between items-center mb-2 px-1 relative h-[60px] flex-shrink-0">
         <div className="flex items-center gap-3">
           {isMobile && (
             <button
