@@ -273,6 +273,25 @@ export function OfficeGame(): ReactNode {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [debugMode]);
 
+  // Track container size for fit-to-view scaling (must be before fitScale useEffect)
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setContainerSize({ width, height });
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Compute initial scale so the canvas fits within the container
+  const fitScale = useMemo(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return 1;
+    return Math.min(containerSize.width / appWidth, containerSize.height / appHeight, 1);
+  }, [appWidth, appHeight, containerSize]);
+
   // Reset pan/zoom when fitScale changes (view mode switch, container resize)
   useEffect(() => {
     if (fitScale > 0) {
@@ -298,25 +317,6 @@ export function OfficeGame(): ReactNode {
     }
     useProjectStore.getState().setViewMode("office");
   }, [projects]);
-
-  // Track container size for fit-to-view scaling
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver((entries) => {
-      const { width, height } = entries[0].contentRect;
-      setContainerSize({ width, height });
-    });
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
-
-  // Compute initial scale so the canvas fits within the container
-  const fitScale = useMemo(() => {
-    if (containerSize.width === 0 || containerSize.height === 0) return 1;
-    return Math.min(containerSize.width / appWidth, containerSize.height / appHeight, 1);
-  }, [appWidth, appHeight, containerSize]);
 
   return (
     <div

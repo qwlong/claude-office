@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useTaskStore, selectTasksByProject, selectActiveTaskCount } from "@/stores/taskStore";
 import { TaskList } from "./TaskList";
 import { SpawnModal } from "./SpawnModal";
@@ -17,7 +18,7 @@ export function TaskDrawer() {
   const toggleDrawer = useTaskStore((s) => s.toggleDrawer);
   const setDrawerHeight = useTaskStore((s) => s.setDrawerHeight);
   const activeCount = useTaskStore(selectActiveTaskCount);
-  const tasksByProject = useTaskStore(selectTasksByProject);
+  const tasksByProject = useTaskStore(useShallow(selectTasksByProject));
 
   const [spawnOpen, setSpawnOpen] = useState(false);
 
