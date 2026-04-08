@@ -115,13 +115,36 @@ function Whiteboard({ todos: propTodos }: { todos?: TodoItem[] }) {
 
 This preserves backward compatibility — All Merged view passes no props (uses store), Overview passes per-room data.
 
-Components that need this change:
-- `Whiteboard` — needs per-room `todos`
-- `BossSprite` / `BossBubble` — needs per-room `boss` state
-- `SafetySign` — needs per-room tool count
-- `DeskGrid` — needs per-room `deskCount` / `occupiedDesks`
-- `Elevator` — needs per-room agent list
+**Approach: RoomContext provider** — Instead of prop-drilling 10+ overrides into each sub-component, wrap each room in a `RoomContext.Provider` that supplies the project's data. Sub-components call `useRoomContext()` which returns the per-room override, falling back to `gameStore` when no context is present (All Merged mode).
+
+```typescript
+interface RoomContextValue {
+  agents: Map<string, AgentAnimationState>;
+  boss: BossAnimationState;
+  todos: TodoItem[];
+  whiteboardData: WhiteboardData;
+  deskCount: number;
+  occupiedDesks: Set<number>;
+  textures: OfficeTextures;  // Forward loaded textures
+}
+
+const RoomContext = createContext<RoomContextValue | null>(null);
+
+function useRoomData<T>(selector: (store: GameStore) => T, roomField: keyof RoomContextValue): T {
+  const room = useContext(RoomContext);
+  const storeValue = useGameStore(selector);
+  return room ? (room[roomField] as T) : storeValue;
+}
+```
+
+Components that need `useRoomData()`:
+- `Whiteboard` — todos, whiteboardData, whiteboardMode (mode is global/shared across rooms)
+- `BossSprite` / `BossBubble` — boss state
+- `SafetySign` — tool count
+- `DeskGrid` — deskCount, occupiedDesks, deskTasks
+- `Elevator` — agent list
 - `AgentSprite` — already receives agent data as props (no change)
+- All furniture sprites — receive textures from context
 
 #### 3. Room Label Component
 
@@ -142,11 +165,35 @@ Remove the HTML-based components that are no longer needed:
 
 #### 5. Animation System
 
-Each room needs independent agent animation state. The current `animationSystem` drives agents from `gameStore`. For overview mode:
-- Create per-room animation state derived from each `ProjectGroup.agents[]`
-- Or: render agents in static poses (working/idle) for v1, add full animation later
+The global `useAnimationSystem()` is a singleton tied to `gameStore`. For overview mode:
 
-**Recommendation:** Start with static agent poses for v1 (agents at desks, correct state-based sprite frame, bubbles showing). Full walk animation per-room is complex and can be added incrementally.
+- **Skip `useAnimationSystem()`** when `viewMode === "overview"` — agents in rooms don't need walk choreography
+- Agents render in **static poses** at their desks with the correct state-based sprite frame (working → typing frame, idle → idle frame, waiting_permission → red frame)
+- Bubbles display from the per-room agent/boss data
+- Each room's agents operate independently — they show their own project's activity
+
+**Each room has independent activity:** The backend already tracks agents per-project. When agent A in proj-X is typing and agent B in proj-Y is idle, each room shows its own state independently. No cross-room interference.
+
+#### 6. Canvas Resize on Mode Switch
+
+The `<Application>` component receives `width` and `height` as props. When switching between modes, the canvas needs different dimensions:
+- All Merged: `CANVAS_WIDTH × canvasHeight` (current)
+- Overview: `gridWidth × gridHeight` (based on project count)
+
+**Approach:** Use a `key` prop on `<Application>` that includes the `viewMode`, forcing a remount only on mode switch. This avoids imperative `app.renderer.resize()` calls.
+
+```typescript
+<Application
+  key={`pixi-app-${hmrVersion}-${viewMode}`}
+  width={viewMode === "overview" ? gridWidth : CANVAS_WIDTH}
+  height={viewMode === "overview" ? gridHeight : canvasHeight}
+  ...
+/>
+```
+
+#### 7. Texture Forwarding
+
+`useOfficeTextures()` loads ~15 textures (desk, chair, monitor, elevator, headset, etc.). In overview mode, the same textures object is passed via `RoomContext` to all rooms. Textures are loaded once and shared — no duplication.
 
 ### Page.tsx Changes
 
@@ -156,8 +203,9 @@ Each room needs independent agent animation state. The current `animationSystem`
 
 ## Non-Goals
 
-- Room-detail zoom view (sidebar session switching already covers this)
-- Per-room independent animation system (v1 uses static poses)
+- Room-detail zoom view (`room-detail` mode in projectStore exists but is unused; sidebar session switching already covers single-project focus)
+- Full walk animation per-room (v1 uses static poses; agents show correct state frames)
 - Room furniture customization
 - Agent migration between rooms
-- Room-specific whiteboard modes (all rooms show same mode)
+- Room-specific whiteboard modes (mode is global, shared across all rooms)
+- Per-room compaction animation (compaction visual only shows in All Merged mode)
