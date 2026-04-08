@@ -46,7 +46,7 @@ import {
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
-import { useProjectStore, selectViewMode, selectProjects, selectSessionRooms } from "@/stores/projectStore";
+import { useProjectStore, selectViewMode, selectProjects } from "@/stores/projectStore";
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -116,7 +116,36 @@ export function OfficeGame(): ReactNode {
   // Multi-project view state
   const viewMode = useProjectStore(selectViewMode);
   const projects = useProjectStore(selectProjects);
-  const sessionRooms = useProjectStore(selectSessionRooms);
+  const sessionRooms = useMemo(() => {
+    const sessionMap = new Map<string, {
+      agents: typeof projects[0]["agents"];
+      project: typeof projects[0];
+    }>();
+    for (const project of projects) {
+      const hasSessionIds = project.agents.some((a) => (a as Record<string, unknown>).sessionId);
+      if (!hasSessionIds) {
+        sessionMap.set(project.key, { agents: project.agents, project });
+        continue;
+      }
+      for (const agent of project.agents) {
+        const sid = String((agent as Record<string, unknown>).sessionId ?? "unknown");
+        if (!sessionMap.has(sid)) {
+          sessionMap.set(sid, { agents: [], project });
+        }
+        sessionMap.get(sid)!.agents.push(agent);
+      }
+    }
+    return Array.from(sessionMap.entries()).map(([sid, { agents, project }]) => ({
+      key: sid,
+      name: `${project.name} · ${sid.slice(0, 8)}`,
+      color: project.color,
+      root: project.root,
+      agents,
+      boss: project.boss,
+      sessionCount: 1,
+      todos: project.todos,
+    }));
+  }, [projects]);
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
