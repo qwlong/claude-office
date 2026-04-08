@@ -292,8 +292,16 @@ export function OfficeGame(): ReactNode {
     return Math.min(containerSize.width / appWidth, containerSize.height / appHeight, 1);
   }, [appWidth, appHeight, containerSize]);
 
-  // Round fitScale to 2 decimals to avoid unnecessary TransformWrapper remounts
-  const fitScaleKey = Math.round(fitScale * 100);
+  // Apply fit scale whenever it changes
+  const fitScaleRef = useRef(fitScale);
+  useEffect(() => {
+    fitScaleRef.current = fitScale;
+    // Small delay to ensure TransformWrapper is ready after render
+    const timer = setTimeout(() => {
+      transformRef.current?.centerView(fitScale, 0);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [fitScale]);
 
   const handleSessionRoomClick = useCallback((sessionId: string) => {
     window.dispatchEvent(new CustomEvent("office:select-session", { detail: { sessionId } }));
@@ -320,15 +328,13 @@ export function OfficeGame(): ReactNode {
       className="w-full h-full flex items-center justify-center overflow-hidden relative"
     >
       <TransformWrapper
-        key={`transform-${fitScaleKey}`}
         ref={transformRef}
-        initialScale={fitScale}
-        minScale={0.2}
+        initialScale={1}
+        minScale={0.1}
         maxScale={3}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
         doubleClick={{ mode: "reset" }}
-        centerOnInit
       >
         <ZoomControls />
         <TransformComponent
