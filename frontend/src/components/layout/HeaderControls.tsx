@@ -68,9 +68,9 @@ export function HeaderControls({
   useEffect(() => setMounted(true), []);
 
   const themeOptions = [
-    { value: "light" as const, icon: Sun, label: t("header.themeLight") },
-    { value: "dark" as const, icon: Moon, label: t("header.themeDark") },
-    { value: "system" as const, icon: Monitor, label: t("header.themeSystem") },
+    { value: "light" as const, icon: Sun, label: t("settings.light") },
+    { value: "dark" as const, icon: Moon, label: t("settings.dark") },
+    { value: "system" as const, icon: Monitor, label: t("settings.system") },
   ];
 
   const handleSpawn = async (projectId: string, issue: string) => {

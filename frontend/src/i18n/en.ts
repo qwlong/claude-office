@@ -17,9 +17,6 @@ const en = {
   "header.aiOn": "ON",
   "header.aiOff": "OFF",
   "header.agents": "agents",
-  "header.themeLight": "Light",
-  "header.themeDark": "Dark",
-  "header.themeSystem": "System",
 
   // Modals
   "modal.confirmDbWipe": "Confirm Database Wipe",
