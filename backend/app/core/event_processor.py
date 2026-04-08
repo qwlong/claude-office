@@ -34,6 +34,7 @@ from app.core.handlers import (
     handle_user_prompt_submit,
 )
 from app.core.jsonl_parser import get_last_assistant_response
+from app.core.project_registry import ProjectRegistry
 from app.core.state_machine import StateMachine
 from app.core.task_file_poller import init_task_file_poller
 from app.core.task_persistence import load_tasks, save_tasks
@@ -103,6 +104,7 @@ class EventProcessor:
 
     def __init__(self) -> None:
         self.sessions: dict[str, StateMachine] = {}
+        self.project_registry = ProjectRegistry()
         self._sessions_lock = asyncio.Lock()
         self._transcript_poller_initialized = False
         self._task_poller_initialized = False
@@ -394,10 +396,16 @@ class EventProcessor:
         if event.event_type == EventType.SESSION_START:
             await handle_session_start(sm, event, self._ensure_task_file_poller)
             await self._start_beads_if_available(event.session_id)
+            # Register session with project registry
+            project_name = event.data.project_name if event.data else None
+            project_root = await self.get_project_root(event.session_id)
+            if project_name:
+                self.project_registry.register_session(
+                    event.session_id, project_name, project_root
+                )
             # Configure git service immediately so polling starts without waiting
             # for a WebSocket reconnect (avoids race condition where WS connects
             # before the session_start event is persisted to the DB).
-            project_root = await self.get_project_root(event.session_id)
             if project_root:
                 git_service.configure(
                     session_id=event.session_id,
@@ -420,6 +428,7 @@ class EventProcessor:
         # ------------------------------------------------------------------
         if event.event_type == EventType.SESSION_END:
             await handle_session_end(sm, event)
+            self.project_registry.unregister_session(event.session_id)
             beads = get_beads_poller()
             if beads:
                 await beads.stop_polling(event.session_id)
