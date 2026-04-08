@@ -1,4 +1,5 @@
 import type { Task } from "@/types/tasks";
+import { useTranslation } from "@/hooks/useTranslation";
 import { TaskCard } from "./TaskCard";
 
 interface Props {
@@ -6,12 +7,13 @@ interface Props {
 }
 
 export function TaskList({ tasksByProject }: Props) {
+  const { t } = useTranslation();
   const projectKeys = Object.keys(tasksByProject).sort();
 
   if (projectKeys.length === 0) {
     return (
       <div className="text-center text-slate-500 text-sm py-4">
-        No active tasks
+        {t("tasks.noActiveTasks")}
       </div>
     );
   }

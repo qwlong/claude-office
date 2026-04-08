@@ -193,6 +193,31 @@ const en = {
     "Session deleted. No other sessions available.",
   "status.connectedTo": "Connected to {sessionName}",
   "status.autoFollowed": "Auto-followed new session: {sessionName}",
+
+  // Tasks
+  "tasks.title": "Tasks",
+  "tasks.spawn": "Spawn",
+  "tasks.spawning": "Spawning...",
+  "tasks.spawnNewTask": "Spawn New Task",
+  "tasks.notConnected": "Not connected",
+  "tasks.connected": "Connected",
+  "tasks.noActiveTasks": "No active tasks",
+  "tasks.project": "Project",
+  "tasks.projectPlaceholder": "project-name",
+  "tasks.taskDescription": "Task Description",
+  "tasks.taskPlaceholder": "Describe what the agent should do...",
+
+  // Task Status
+  "taskStatus.spawning": "Spawning",
+  "taskStatus.working": "Working",
+  "taskStatus.prOpen": "PR Open",
+  "taskStatus.ciFailed": "CI Failed",
+  "taskStatus.reviewPending": "Review Pending",
+  "taskStatus.changesRequested": "Changes Requested",
+  "taskStatus.approved": "Approved",
+  "taskStatus.merged": "Merged",
+  "taskStatus.done": "Done",
+  "taskStatus.error": "Error",
 } as const;
 
 export type TranslationKey = keyof typeof en;

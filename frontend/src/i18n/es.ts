@@ -196,6 +196,31 @@ const es: Record<TranslationKey, string> = {
     "Sesión eliminada. No hay otras sesiones disponibles.",
   "status.connectedTo": "Conectado a {sessionName}",
   "status.autoFollowed": "Siguiendo nueva sesión: {sessionName}",
+
+  // Tasks
+  "tasks.title": "Tareas",
+  "tasks.spawn": "Crear",
+  "tasks.spawning": "Creando...",
+  "tasks.spawnNewTask": "Crear Nueva Tarea",
+  "tasks.notConnected": "No conectado",
+  "tasks.connected": "Conectado",
+  "tasks.noActiveTasks": "Sin tareas activas",
+  "tasks.project": "Proyecto",
+  "tasks.projectPlaceholder": "nombre-proyecto",
+  "tasks.taskDescription": "Descripción de la Tarea",
+  "tasks.taskPlaceholder": "Describe lo que el agente debe hacer...",
+
+  // Task Status
+  "taskStatus.spawning": "Creando",
+  "taskStatus.working": "Trabajando",
+  "taskStatus.prOpen": "PR Abierto",
+  "taskStatus.ciFailed": "CI Fallido",
+  "taskStatus.reviewPending": "Revisión Pendiente",
+  "taskStatus.changesRequested": "Cambios Solicitados",
+  "taskStatus.approved": "Aprobado",
+  "taskStatus.merged": "Fusionado",
+  "taskStatus.done": "Hecho",
+  "taskStatus.error": "Error",
 };
 
 export default es;

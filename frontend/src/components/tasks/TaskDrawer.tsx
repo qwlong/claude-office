@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { useTaskStore, selectActiveTaskCount } from "@/stores/taskStore";
 import type { Task } from "@/types/tasks";
+import { useTranslation } from "@/hooks/useTranslation";
 import { TaskList } from "./TaskList";
 import { SpawnModal } from "./SpawnModal";
 
@@ -18,6 +19,7 @@ export function TaskDrawer() {
   const toggleDrawer = useTaskStore((s) => s.toggleDrawer);
   const setDrawerHeight = useTaskStore((s) => s.setDrawerHeight);
   const activeCount = useTaskStore(selectActiveTaskCount);
+  const { t } = useTranslation();
 
   const tasksByProject = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
@@ -100,7 +102,7 @@ export function TaskDrawer() {
             ) : (
               <ChevronUp size={14} />
             )}
-            <span className="font-bold">Tasks</span>
+            <span className="font-bold">{t("tasks.title")}</span>
             {activeCount > 0 && (
               <span className="px-1.5 py-0.5 text-xs bg-purple-600 text-white rounded-full">
                 {activeCount}
@@ -115,16 +117,16 @@ export function TaskDrawer() {
                 className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors"
               >
                 <Plus size={12} />
-                Spawn
+                {t("tasks.spawn")}
               </button>
             )}
             {!connected && (
-              <span className="text-xs text-slate-500">Not connected</span>
+              <span className="text-xs text-slate-500">{t("tasks.notConnected")}</span>
             )}
             {connected && (
               <span className="text-xs text-emerald-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Connected
+                {t("tasks.connected")}
               </span>
             )}
           </div>

@@ -196,6 +196,31 @@ const ptBR: Record<TranslationKey, string> = {
     "Sessão excluída. Nenhuma outra sessão disponível.",
   "status.connectedTo": "Conectado a {sessionName}",
   "status.autoFollowed": "Seguindo nova sessão: {sessionName}",
+
+  // Tasks
+  "tasks.title": "Tarefas",
+  "tasks.spawn": "Criar",
+  "tasks.spawning": "Criando...",
+  "tasks.spawnNewTask": "Criar Nova Tarefa",
+  "tasks.notConnected": "Não conectado",
+  "tasks.connected": "Conectado",
+  "tasks.noActiveTasks": "Sem tarefas ativas",
+  "tasks.project": "Projeto",
+  "tasks.projectPlaceholder": "nome-projeto",
+  "tasks.taskDescription": "Descrição da Tarefa",
+  "tasks.taskPlaceholder": "Descreva o que o agente deve fazer...",
+
+  // Task Status
+  "taskStatus.spawning": "Criando",
+  "taskStatus.working": "Trabalhando",
+  "taskStatus.prOpen": "PR Aberto",
+  "taskStatus.ciFailed": "CI Falhou",
+  "taskStatus.reviewPending": "Revisão Pendente",
+  "taskStatus.changesRequested": "Alterações Solicitadas",
+  "taskStatus.approved": "Aprovado",
+  "taskStatus.merged": "Mesclado",
+  "taskStatus.done": "Concluído",
+  "taskStatus.error": "Erro",
 };
 
 export default ptBR;
