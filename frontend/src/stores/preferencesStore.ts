@@ -39,7 +39,7 @@ const DEFAULT_CLOCK_TYPE: ClockType = "analog";
 const DEFAULT_CLOCK_FORMAT: ClockFormat = "12h";
 const DEFAULT_AUTO_FOLLOW_NEW_SESSIONS = true;
 const DEFAULT_LANGUAGE: Locale = "en";
-const DEFAULT_THEME_MODE: ThemeMode = "dark";
+const DEFAULT_THEME_MODE: ThemeMode = "system";
 
 const VALID_THEME_MODES: ThemeMode[] = ["light", "dark", "system"];
 
@@ -87,6 +87,21 @@ function applyThemeToDOM(mode: ThemeMode): void {
   document.documentElement.classList.toggle("light", !isDark);
 }
 
+let _cleanupSystemListener: (() => void) | null = null;
+
+function setupSystemThemeListener(get: () => PreferencesState): void {
+  if (typeof window === "undefined") return;
+  _cleanupSystemListener?.();
+  const mql = window.matchMedia("(prefers-color-scheme: dark)");
+  const handler = () => {
+    if (get().themeMode === "system") {
+      applyThemeToDOM("system");
+    }
+  };
+  mql.addEventListener("change", handler);
+  _cleanupSystemListener = () => mql.removeEventListener("change", handler);
+}
+
 // ============================================================================
 // STORE
 // ============================================================================
@@ -131,6 +146,9 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
 
     // Apply theme to DOM after loading
     applyThemeToDOM(get().themeMode);
+
+    // Listen for OS theme changes (reacts when in "system" mode)
+    setupSystemThemeListener(get);
   },
 
   setClockType: async (clockType) => {
