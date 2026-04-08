@@ -3,8 +3,6 @@
 import { useState } from "react";
 import {
   Building2,
-  ChevronDown,
-  ChevronRight,
   History,
   Radio,
   PlayCircle,
@@ -82,7 +80,6 @@ export function SessionSidebar({
   const zoomToSession = useProjectStore((s) => s.zoomToSession);
   const gitStatus = useGameStore(selectGitStatus);
   const isWholeOfficeActive = viewMode === "office";
-  const [gitExpanded, setGitExpanded] = useState(false);
 
   const {
     size: sidebarWidth,
@@ -301,31 +298,19 @@ export function SessionSidebar({
             </div>
           </div>
 
-          {/* Git Status Panel (only when git data exists, default collapsed) */}
+          {/* Git Status Panel (drag handle + full panel, no collapse) */}
           {gitStatus && (
             <>
-              <button
-                onClick={() => setGitExpanded(!gitExpanded)}
-                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              <div
+                className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
+                onMouseDown={handleHeightDragStart}
+                title={t("sessions.dragToResize")}
               >
-                {gitExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                <span className="text-xs font-bold uppercase tracking-wider">{t("git.title")}</span>
-                <span className="text-emerald-400 text-xs font-mono ml-auto">{gitStatus.branch}</span>
-              </button>
-              {gitExpanded && (
-                <>
-                  <div
-                    className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
-                    onMouseDown={handleHeightDragStart}
-                    title={t("sessions.dragToResize")}
-                  >
-                    <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
-                  </div>
-                  <div className="flex-grow min-h-0">
-                    <GitStatusPanel />
-                  </div>
-                </>
-              )}
+                <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
+              </div>
+              <div className="flex-grow min-h-0">
+                <GitStatusPanel />
+              </div>
             </>
           )}
         </>

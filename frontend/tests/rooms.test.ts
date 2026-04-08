@@ -13,10 +13,13 @@ import {
 } from "../src/constants/rooms";
 
 describe("getRoomGridCols", () => {
-  it("returns count for 1-3 rooms", () => {
+  it("returns count for 1-2 rooms (single row)", () => {
     expect(getRoomGridCols(1)).toBe(1);
     expect(getRoomGridCols(2)).toBe(2);
-    expect(getRoomGridCols(3)).toBe(3);
+  });
+
+  it("returns 2 cols for 3 rooms (2+1)", () => {
+    expect(getRoomGridCols(3)).toBe(2);
   });
 
   it("prefers 2 rows for 4+ rooms", () => {
@@ -66,10 +69,10 @@ describe("getRoomGridSize", () => {
     expect(size.height).toBe(ROOM_HEIGHT);
   });
 
-  it("returns 3 cols 1 row for 3 rooms", () => {
+  it("returns 2 cols 2 rows for 3 rooms", () => {
     const size = getRoomGridSize(3);
-    expect(size.cols).toBe(3);
-    expect(size.rows).toBe(1);
+    expect(size.cols).toBe(2);
+    expect(size.rows).toBe(2);
   });
 
   it("returns 2 cols 2 rows for 4 rooms", () => {
@@ -110,10 +113,10 @@ describe("getMultiRoomCanvasSize", () => {
     expect(size2.height).toBe(size1.height); // same row
   });
 
-  it("returns taller canvas for 4 projects (2 rows)", () => {
+  it("returns taller canvas for 3 projects (2 rows) vs 2 (1 row)", () => {
+    const size2 = getMultiRoomCanvasSize(2);
     const size3 = getMultiRoomCanvasSize(3);
-    const size4 = getMultiRoomCanvasSize(4);
-    expect(size4.height).toBeGreaterThan(size3.height);
+    expect(size3.height).toBeGreaterThan(size2.height);
   });
 
   it("ROOM_SCALE is 0.5", () => {

@@ -10,7 +10,7 @@ export const ROOM_GRID_COLS_MAX = 6;
 
 /** Compute optimal column count: prefer fewest rows (min 2), distribute evenly, max 6 cols per row. */
 export function getRoomGridCols(count: number): number {
-  if (count <= 3) return count;
+  if (count <= 2) return count;
   const rows = Math.max(2, Math.ceil(count / ROOM_GRID_COLS_MAX));
   return Math.min(Math.ceil(count / rows), ROOM_GRID_COLS_MAX);
 }
