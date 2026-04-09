@@ -363,8 +363,23 @@ class EventProcessor:
             all_todos.extend(state.todos)
             all_conversation.extend(state.conversation)
 
-        # Sort bosses by session_id for stable ordering
-        all_bosses.sort(key=lambda b: b.session_id or "")
+        # Sort bosses by activity (non-idle first, then by agent count desc, then session_id)
+        # and limit to top 3 most active
+        boss_activity: dict[str, tuple[int, int]] = {}  # session_id -> (is_active, agent_count)
+        for b in all_bosses:
+            sid = b.session_id or ""
+            is_active = 1 if b.state != BossState.IDLE else 0
+            agent_count = sum(1 for a in all_agents if a.session_id == sid and a.agent_type != "main")
+            boss_activity[sid] = (is_active, agent_count)
+
+        all_bosses.sort(
+            key=lambda b: (
+                -boss_activity.get(b.session_id or "", (0, 0))[0],   # non-idle first
+                -boss_activity.get(b.session_id or "", (0, 0))[1],   # more agents first
+                b.session_id or "",                                    # stable tiebreak
+            )
+        )
+        all_bosses = all_bosses[:3]  # Show at most 3 bosses
 
         merged_office = OfficeState(
             desk_count=max(8, ((next_desk - 1 + 3) // 4) * 4),
