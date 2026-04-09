@@ -51,7 +51,7 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
       <div
         role="button"
         tabIndex={0}
-        className={`mx-2 mt-2 flex items-center gap-2 px-3 py-2.5 min-h-[60px] rounded-md cursor-pointer transition-colors ${
+        className={`mx-2 mt-2 px-3 py-2.5 min-h-[60px] rounded-md cursor-pointer transition-colors ${
           isAllProjectsActive
             ? "bg-purple-500/15 border-l-2 border-purple-500"
             : "hover:bg-purple-50 dark:hover:bg-purple-900/20"
