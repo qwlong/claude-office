@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { OfficeTextures } from "@/hooks/useOfficeTextures";
 import type { TodoItem } from "@/types";
@@ -15,13 +15,14 @@ import {
   useGameStore,
   selectAgents,
   selectBoss,
+  selectBosses,
   selectTodos,
   selectElevatorState,
   selectContextUtilization,
   selectPrintReport,
 } from "@/stores/gameStore";
 import { useRoomContext } from "@/contexts/RoomContext";
-import { getCanvasHeight } from "@/constants/canvas";
+import { getCanvasHeight, CANVAS_WIDTH } from "@/constants/canvas";
 import {
   EMPLOYEE_OF_MONTH_POSITION,
   CITY_WINDOW_POSITION,
@@ -35,6 +36,8 @@ import {
   PLANT_POSITION,
   BOSS_RUG_POSITION,
   TRASH_CAN_OFFSET,
+  getBossPositions,
+  BOSS_RUG_OFFSET_Y,
 } from "@/constants/positions";
 
 import { OfficeBackground } from "./OfficeBackground";
@@ -72,10 +75,35 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   // Global store values (always called — React hook rules)
   const storeAgents = useGameStore(useShallow(selectAgents));
   const storeBoss = useGameStore(selectBoss);
+  const storeBosses = useGameStore(selectBosses);
+  const storeSessionId = useGameStore((s) => s.sessionId);
   const storeTodos = useGameStore(selectTodos);
   const elevatorState = useGameStore(selectElevatorState);
   const contextUtilization = useGameStore(selectContextUtilization);
   const printReport = useGameStore(selectPrintReport);
+
+  // Multi-boss merged view
+  const isMergedView = !isRoom && storeSessionId === "__all__";
+
+  const bossPositions = useMemo(() => {
+    if (!isMergedView || !storeBosses.size) return [];
+    return getBossPositions(storeBosses.size, CANVAS_WIDTH);
+  }, [isMergedView, storeBosses.size]);
+
+  const sortedBosses = useMemo(() => {
+    if (!isMergedView) return [];
+    return Array.from(storeBosses.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [isMergedView, storeBosses]);
+
+  // In merged view, filter out main agents (bosses) from desk rendering
+  const deskAgents = useMemo(() => {
+    if (!isMergedView) return storeAgents;
+    const filtered = new Map(storeAgents);
+    for (const [id, agent] of storeAgents) {
+      if (agent.agentType === "main") filtered.delete(id);
+    }
+    return filtered;
+  }, [isMergedView, storeAgents]);
 
   // Pick data source
   const todos: TodoItem[] = isRoom ? roomCtx.project.todos : storeTodos;
@@ -86,7 +114,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
     () => isRoom ? roomCtx.project.agents.filter((a: { agentType?: string }) => a.agentType !== "main") : [],
     [isRoom, roomCtx],
   );
-  const agentCount = isRoom ? roomSubagents.length : storeAgents.size;
+  const agentCount = isRoom ? roomSubagents.length : deskAgents.size;
   // In overview mode, use fixed 8 desks for consistent room sizing
   const deskCount = isRoom ? 8 : Math.max(8, Math.ceil(agentCount / 4) * 4);
   const canvasHeight = getCanvasHeight(deskCount);
@@ -149,15 +177,30 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
         canvasHeight={canvasHeight}
       />
 
-      {/* Boss area rug */}
-      {textures.bossRug && (
-        <pixiSprite
-          texture={textures.bossRug}
-          anchor={0.5}
-          x={BOSS_RUG_POSITION.x}
-          y={BOSS_RUG_POSITION.y}
-          scale={0.3}
-        />
+      {/* Boss area rug(s) */}
+      {isMergedView && sortedBosses.length > 0 ? (
+        sortedBosses.map(([sid], i) =>
+          textures.bossRug && bossPositions[i] ? (
+            <pixiSprite
+              key={`rug-${sid}`}
+              texture={textures.bossRug}
+              anchor={0.5}
+              x={bossPositions[i].x}
+              y={bossPositions[i].y + BOSS_RUG_OFFSET_Y}
+              scale={0.3}
+            />
+          ) : null,
+        )
+      ) : (
+        textures.bossRug && (
+          <pixiSprite
+            texture={textures.bossRug}
+            anchor={0.5}
+            x={BOSS_RUG_POSITION.x}
+            y={BOSS_RUG_POSITION.y}
+            scale={0.3}
+          />
+        )
       )}
 
       {/* Wall decorations */}
@@ -400,24 +443,50 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
         thermosTexture={textures.thermos}
       />
 
-      {/* Boss */}
-      <BossSprite
-        position={bossPosition}
-        state={bossState}
-        bubble={bossBubble}
-        inUseBy={isRoom ? null : storeBoss.inUseBy}
-        currentTask={bossCurrentTask}
-        chairTexture={textures.chair}
-        deskTexture={textures.desk}
-        keyboardTexture={textures.keyboard}
-        monitorTexture={textures.monitor}
-        phoneTexture={textures.phone}
-        headsetTexture={textures.headset}
-        sunglassesTexture={textures.sunglasses}
-        renderBubble={false}
-        isTyping={isRoom ? bossState === "working" : storeBoss.isTyping}
-        isAway={false}
-      />
+      {/* Boss(es) */}
+      {isMergedView && sortedBosses.length > 0 ? (
+        sortedBosses.map(([sid, boss], i) =>
+          bossPositions[i] ? (
+            <BossSprite
+              key={`boss-${sid}`}
+              position={bossPositions[i]}
+              state={boss.backendState}
+              bubble={boss.bubble.content}
+              inUseBy={boss.inUseBy}
+              currentTask={boss.currentTask}
+              chairTexture={textures.chair}
+              deskTexture={textures.desk}
+              keyboardTexture={textures.keyboard}
+              monitorTexture={textures.monitor}
+              phoneTexture={textures.phone}
+              headsetTexture={textures.headset}
+              sunglassesTexture={textures.sunglasses}
+              renderBubble={false}
+              isTyping={boss.isTyping}
+              isAway={false}
+              label={boss.projectKey ?? sid.slice(0, 8)}
+            />
+          ) : null,
+        )
+      ) : (
+        <BossSprite
+          position={bossPosition}
+          state={bossState}
+          bubble={bossBubble}
+          inUseBy={isRoom ? null : storeBoss.inUseBy}
+          currentTask={bossCurrentTask}
+          chairTexture={textures.chair}
+          deskTexture={textures.desk}
+          keyboardTexture={textures.keyboard}
+          monitorTexture={textures.monitor}
+          phoneTexture={textures.phone}
+          headsetTexture={textures.headset}
+          sunglassesTexture={textures.sunglasses}
+          renderBubble={false}
+          isTyping={isRoom ? bossState === "working" : storeBoss.isTyping}
+          isAway={false}
+        />
+      )}
 
       {/* Trash Can (all-merged only) */}
       {!isRoom && (
