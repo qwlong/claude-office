@@ -603,6 +603,22 @@ class EventProcessor:
             if project_name:
                 async with AsyncSessionLocal() as db:
                     await self.project_registry.register_session(db, event.session_id, project_name, project_root)
+            # Create main agent record in DB
+            try:
+                from app.db.agent_store import agent_store as _agent_store
+                project = self.project_registry.get_project_for_session(event.session_id)
+                async with AsyncSessionLocal() as db:
+                    await _agent_store.create_agent(
+                        db,
+                        session_id=event.session_id,
+                        project_id=project.id if project else None,
+                        external_id="main",
+                        agent_type="main",
+                        name="Claude",
+                        state="working",
+                    )
+            except Exception:
+                logger.debug("Failed to persist main agent record")
             # Configure git service immediately so polling starts without waiting
             # for a WebSocket reconnect (avoids race condition where WS connects
             # before the session_start event is persisted to the DB).
@@ -629,6 +645,15 @@ class EventProcessor:
         if event.event_type == EventType.SESSION_END:
             await handle_session_end(sm, event)
             self.project_registry.unregister_session(event.session_id)
+            # Mark main agent as ended in DB
+            try:
+                from app.db.agent_store import agent_store as _agent_store
+                async with AsyncSessionLocal() as db:
+                    rec = await _agent_store.find_by_external_id(db, event.session_id, "main")
+                    if rec:
+                        await _agent_store.mark_ended(db, rec.id, "completed")
+            except Exception:
+                logger.debug("Failed to mark main agent ended in DB")
             beads = get_beads_poller()
             if beads:
                 await beads.stop_polling(event.session_id)
@@ -650,6 +675,26 @@ class EventProcessor:
                 self._ensure_transcript_poller,
                 self._update_agent_state,
             )
+            # Persist subagent to DB
+            try:
+                from app.db.agent_store import agent_store as _agent_store
+                ext_id = event.data.agent_id or ""
+                agent = sm.agents.get(ext_id)
+                project = self.project_registry.get_project_for_session(event.session_id)
+                async with AsyncSessionLocal() as db:
+                    await _agent_store.create_agent(
+                        db,
+                        session_id=event.session_id,
+                        project_id=project.id if project else None,
+                        external_id=ext_id,
+                        agent_type="subagent",
+                        name=agent.name if agent else None,
+                        state=str(agent.state) if agent else None,
+                        assignment=agent.currentTask if agent else (event.data.task_description if event.data else None),
+                        color=agent.color if agent else None,
+                    )
+            except Exception:
+                logger.debug("Failed to persist subagent record")
 
         # ------------------------------------------------------------------
         # SUBAGENT_INFO
@@ -668,6 +713,16 @@ class EventProcessor:
         # ------------------------------------------------------------------
         if event.event_type == EventType.SUBAGENT_STOP:
             await handle_subagent_stop(sm, event, self._persist_synthetic_event)
+            # Mark subagent as ended in DB
+            try:
+                from app.db.agent_store import agent_store as _agent_store
+                ext_id = event.data.agent_id or event.data.native_agent_id or ""
+                async with AsyncSessionLocal() as db:
+                    rec = await _agent_store.find_by_external_id(db, event.session_id, ext_id)
+                    if rec:
+                        await _agent_store.mark_ended(db, rec.id, "completed")
+            except Exception:
+                logger.debug("Failed to mark subagent ended in DB")
 
         # ------------------------------------------------------------------
         # STOP
