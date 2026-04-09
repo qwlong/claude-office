@@ -51,9 +51,11 @@ async def test_multi_session_same_project_merges_agents():
     assert result is not None
     assert len(result.projects) == 1
     assert result.projects[0].session_count == 2
-    assert len(result.projects[0].agents) == 2
+    assert len(result.projects[0].agents) == 4  # 2 main + 2 subagents
     agent_names = {a.name for a in result.projects[0].agents}
-    assert agent_names == {"Agent A1", "Agent A2"}
+    assert "Agent A1" in agent_names
+    assert "Agent A2" in agent_names
+    assert "Claude" in agent_names
 
 
 @pytest.mark.asyncio
@@ -90,7 +92,7 @@ async def test_grouped_state_desk_numbers_are_sequential():
 
     result = await event_processor.get_project_grouped_state()
     desks = sorted([a.desk for a in result.projects[0].agents])
-    assert desks == [1, 2, 3, 4]
+    assert desks == [1, 2, 3, 4, 5]  # 1 main + 4 subagents
 
 
 @pytest.mark.asyncio

@@ -454,6 +454,32 @@ class EventProcessor:
                 if group_boss.state == BossState.IDLE and state.boss.state != BossState.IDLE:
                     group_boss = state.boss
 
+                # Add main agent (boss) as an agent in the list
+                # Map BossState to AgentState for display
+                _boss_to_agent_state = {
+                    BossState.IDLE: AgentState.WAITING,
+                    BossState.WORKING: AgentState.WORKING,
+                    BossState.DELEGATING: AgentState.WORKING,
+                    BossState.WAITING_PERMISSION: AgentState.WAITING_PERMISSION,
+                    BossState.REVIEWING: AgentState.WORKING,
+                    BossState.COMPLETING: AgentState.COMPLETED,
+                }
+                boss_agent_state = _boss_to_agent_state.get(state.boss.state, AgentState.WORKING)
+                boss_as_agent = Agent(
+                    id=f"main-{sid}",
+                    name="Claude",
+                    color=color,
+                    number=desk_num,
+                    state=boss_agent_state,
+                    desk=desk_num,
+                    current_task=state.boss.current_task,
+                    bubble=state.boss.bubble,
+                    project_key=key,
+                    session_id=sid,
+                )
+                all_agents.append(boss_as_agent)
+                desk_num += 1
+
                 for agent in state.agents:
                     updated = agent.model_copy(
                         update={
