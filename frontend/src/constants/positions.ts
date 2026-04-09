@@ -65,7 +65,7 @@ export const BOSS_ROW_Y = 900;
 export const BOSS_RUG_OFFSET_Y = 40;
 
 /** Horizontal spacing between boss areas */
-export const BOSS_SPACING = 280;
+export const BOSS_SPACING = 380;
 
 /** Half the boss desk width — used for edge padding */
 export const BOSS_HALF_WIDTH = 70;

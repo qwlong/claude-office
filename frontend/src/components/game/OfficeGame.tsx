@@ -707,18 +707,33 @@ export function OfficeGame(): ReactNode {
                     />
                   )}
 
-                  {/* Trash Can (Context Utilization Indicator) - right of boss desk */}
-                  <TrashCanSprite
-                    x={boss.position.x + TRASH_CAN_OFFSET.x}
-                    y={boss.position.y + TRASH_CAN_OFFSET.y}
-                    contextUtilization={
-                      compactionAnimation.phase !== "idle"
-                        ? compactionAnimation.animatedContextUtilization
-                        : contextUtilization
-                    }
-                    isCompacting={isCompacting}
-                    isStomping={compactionAnimation.isStomping}
-                  />
+                  {/* Trash Can(s) - right of boss desk */}
+                  {isMergedView && sortedBosses.length > 0
+                    ? sortedBosses.map(([sid], i) =>
+                        bossPositions[i] ? (
+                          <TrashCanSprite
+                            key={`trash-${sid}`}
+                            x={bossPositions[i].x + TRASH_CAN_OFFSET.x}
+                            y={bossPositions[i].y + TRASH_CAN_OFFSET.y}
+                            contextUtilization={0}
+                            isCompacting={false}
+                            isStomping={false}
+                          />
+                        ) : null,
+                      )
+                    : (
+                      <TrashCanSprite
+                        x={boss.position.x + TRASH_CAN_OFFSET.x}
+                        y={boss.position.y + TRASH_CAN_OFFSET.y}
+                        contextUtilization={
+                          compactionAnimation.phase !== "idle"
+                            ? compactionAnimation.animatedContextUtilization
+                            : contextUtilization
+                        }
+                        isCompacting={isCompacting}
+                        isStomping={compactionAnimation.isStomping}
+                      />
+                    )}
 
                   {/* Debug overlays */}
                   {debugMode && (
