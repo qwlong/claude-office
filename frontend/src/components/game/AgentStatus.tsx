@@ -159,7 +159,7 @@ export function AgentStatus() {
         </div>
 
         {/* Subagent cards */}
-        {agentArray.map((agent) => (
+        {agentArray.filter((a) => a.agentType !== "main").map((agent) => (
             <div
               key={agent.id}
               className="bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-colors"

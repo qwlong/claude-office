@@ -81,7 +81,12 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const todos: TodoItem[] = isRoom ? roomCtx.project.todos : storeTodos;
   const isElevatorOpen = isRoom ? false : elevatorState === "open";
 
-  const agentCount = isRoom ? roomCtx.project.agents.length : storeAgents.size;
+  // Filter out main agents (boss) from desk rendering — boss uses BossSprite
+  const roomSubagents = useMemo(
+    () => isRoom ? roomCtx.project.agents.filter((a: { agentType?: string }) => a.agentType !== "main") : [],
+    [isRoom, roomCtx],
+  );
+  const agentCount = isRoom ? roomSubagents.length : storeAgents.size;
   // In overview mode, use fixed 8 desks for consistent room sizing
   const deskCount = isRoom ? 8 : Math.max(8, Math.ceil(agentCount / 4) * 4);
   const canvasHeight = getCanvasHeight(deskCount);
@@ -89,7 +94,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const occupiedDesks = useMemo(() => {
     const desks = new Set<number>();
     if (isRoom) {
-      roomCtx.project.agents.forEach((a, i) => desks.add(a.desk ?? i + 1));
+      roomSubagents.forEach((a, i) => desks.add(a.desk ?? i + 1));
     } else {
       for (const agent of storeAgents.values()) {
         if (agent.desk && agent.phase === "idle") desks.add(agent.desk);
@@ -101,7 +106,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const deskTasks = useMemo(() => {
     const tasks = new Map<number, string>();
     if (isRoom) {
-      roomCtx.project.agents.forEach((a, i) => {
+      roomSubagents.forEach((a, i) => {
         const desk = a.desk ?? i + 1;
         const label = a.currentTask ?? a.name ?? "";
         if (label) tasks.set(desk, label);
@@ -268,7 +273,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
         {/* Overview mode: agents at desk positions, static poses */}
         {isRoom &&
-          roomCtx.project.agents.map((agent, i) => {
+          roomSubagents.map((agent, i) => {
             const deskIdx = (agent.desk ?? i + 1) - 1;
             const desk = deskPositions[deskIdx];
             if (!desk) return null;
@@ -332,7 +337,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
       {/* Agent arms */}
       {isRoom
-        ? roomCtx.project.agents.map((agent, i) => {
+        ? roomSubagents.map((agent, i) => {
             const deskIdx = (agent.desk ?? i + 1) - 1;
             const desk = deskPositions[deskIdx];
             if (!desk) return null;
@@ -357,7 +362,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       {/* Headsets */}
       {textures.headset &&
         (isRoom
-          ? roomCtx.project.agents.map((agent, i) => {
+          ? roomSubagents.map((agent, i) => {
               const deskIdx = (agent.desk ?? i + 1) - 1;
               const desk = deskPositions[deskIdx];
               if (!desk) return null;
@@ -427,7 +432,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
       {/* Labels */}
       {isRoom
-        ? roomCtx.project.agents.map((agent, i) => {
+        ? roomSubagents.map((agent, i) => {
             const deskIdx = (agent.desk ?? i + 1) - 1;
             const desk = deskPositions[deskIdx];
             if (!desk || !agent.name) return null;
@@ -454,7 +459,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
       {/* Bubbles */}
       {isRoom
-        ? roomCtx.project.agents
+        ? roomSubagents
             .filter((a) => a.bubble)
             .map((agent, i) => {
               const deskIdx = (agent.desk ?? i + 1) - 1;
