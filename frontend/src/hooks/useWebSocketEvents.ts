@@ -8,7 +8,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { useGameStore } from "@/stores/gameStore";
+import { useGameStore, type BossAnimationState } from "@/stores/gameStore";
 import { agentMachineService } from "@/machines/agentMachineService";
 import { WS_BASE_URL } from "@/config";
 import {
@@ -17,7 +17,7 @@ import {
   getQueuePosition,
   resetSpawnIndex,
 } from "@/systems/queuePositions";
-import type { GameState, WebSocketMessage, Position } from "@/types";
+import type { GameState, WebSocketMessage, Position, BossState, BubbleContent } from "@/types";
 
 // ============================================================================
 // TYPES
@@ -243,6 +243,52 @@ export function useWebSocketEvents({
           }
         } else {
           console.log(`[WS] Boss bubble SKIPPED (same as lastSeen)`);
+        }
+      }
+
+      // Update multi-boss state (merged view)
+      const backendBosses = (state as Record<string, unknown>).bosses as Array<{
+        state: BossState;
+        currentTask?: string | null;
+        bubble?: BubbleContent | null;
+        sessionId?: string;
+        projectKey?: string;
+        projectColor?: string;
+      }> | undefined;
+
+      if (backendBosses && backendBosses.length > 0) {
+        const currentBosses = store.bosses;
+        const newBosses = new Map<string, BossAnimationState>();
+        for (const bb of backendBosses) {
+          const sid = bb.sessionId ?? "unknown";
+          const existing = currentBosses.get(sid);
+          newBosses.set(sid, {
+            backendState: bb.state,
+            position: existing?.position ?? { x: 640, y: 900 },
+            bubble: existing?.bubble ?? { content: null, displayStartTime: null, queue: [] },
+            inUseBy: existing?.inUseBy ?? null,
+            currentTask: bb.currentTask ?? null,
+            isTyping: existing?.isTyping ?? false,
+            sessionId: sid,
+            projectKey: bb.projectKey ?? undefined,
+            projectColor: bb.projectColor ?? undefined,
+          });
+        }
+        useGameStore.setState({ bosses: newBosses });
+
+        // Per-boss bubbles
+        for (const bb of backendBosses) {
+          if (bb.bubble) {
+            const sid = bb.sessionId ?? "boss";
+            const bubbleText = bb.bubble.text;
+            const lastSeen = lastSeenBubbleTextRef.current.get(sid);
+            if (bubbleText !== lastSeen) {
+              lastSeenBubbleTextRef.current.set(sid, bubbleText);
+              if (!store.hasBubbleText(sid, bubbleText)) {
+                enqueueBubble(sid, bb.bubble);
+              }
+            }
+          }
         }
       }
 

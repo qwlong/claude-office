@@ -5,6 +5,7 @@ import {
   selectEventLog,
   selectConversation,
   selectBoss,
+  selectBosses,
 } from "@/stores/gameStore";
 import type { AgentAnimationState, BossAnimationState } from "@/stores/gameStore";
 import {
@@ -37,6 +38,7 @@ export function useFilteredData() {
   const storeSessions = useProjectStore(selectSessions);
   const gameAgents = useGameStore(useShallow(selectAgents));
   const gameBoss = useGameStore(selectBoss);
+  const gameBosses = useGameStore(selectBosses);
   const allEvents = useGameStore(selectEventLog);
   const allConversation = useGameStore(selectConversation);
 
@@ -68,6 +70,12 @@ export function useFilteredData() {
     return gameBoss;
   }, [viewMode, activeProject, gameBoss]);
 
+  const bosses = useMemo((): BossAnimationState[] => {
+    const all = Array.from(gameBosses.values());
+    if (!sessionIds) return all;
+    return all.filter((b) => b.sessionId && sessionIds.has(b.sessionId));
+  }, [gameBosses, sessionIds]);
+
   const events = useMemo(
     () => filterEvents(allEvents, sessionIds),
     [allEvents, sessionIds],
@@ -78,5 +86,5 @@ export function useFilteredData() {
     [allConversation, sessionIds],
   );
 
-  return { agents, boss, events, conversation, sessionIds };
+  return { agents, boss, bosses, events, conversation, sessionIds };
 }
