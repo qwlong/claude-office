@@ -147,7 +147,7 @@ export function useWebSocketEvents({
           }
 
           // Add to store first
-          store.addAgent(backendAgent, spawnPosition);
+          store.addAgent(backendAgent, spawnPosition, state.sessionId);
 
           // Spawn state machine with backend state for mid-session handling
           agentMachineService.spawnAgent(

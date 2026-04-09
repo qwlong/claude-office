@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getFilteredAgentIds, getFilteredSessionIds, groupAgentsBySessionId } from "../src/utils/agentFilter";
+import { getFilteredSessionIds, groupAgentsBySessionId } from "../src/utils/agentFilter";
 import type { Agent } from "../src/types/generated";
 import type { ProjectGroup } from "../src/types/projects";
 
@@ -26,41 +26,6 @@ function makeProject(overrides: Partial<ProjectGroup>): ProjectGroup {
     ...overrides,
   };
 }
-
-describe("getFilteredAgentIds", () => {
-  const agent1 = makeAgent({ id: "a1", number: 1, sessionId: "sess-1" });
-  const agent2 = makeAgent({ id: "a2", number: 2, sessionId: "sess-1" });
-  const agent3 = makeAgent({ id: "a3", number: 3, sessionId: "sess-2" });
-
-  const projects: ProjectGroup[] = [
-    makeProject({ key: "proj-1", agents: [agent1, agent2, agent3] }),
-    makeProject({ key: "proj-2", agents: [makeAgent({ id: "a4", number: 4, sessionId: "sess-3" })] }),
-  ];
-
-  it("returns null for office view", () => {
-    expect(getFilteredAgentIds("office", null, projects)).toBeNull();
-  });
-
-  it("returns null for projects overview", () => {
-    expect(getFilteredAgentIds("projects", null, projects)).toBeNull();
-  });
-
-  it("returns null for sessions overview", () => {
-    expect(getFilteredAgentIds("sessions", null, projects)).toBeNull();
-  });
-
-  it("returns Set of agent ids for project view", () => {
-    expect(getFilteredAgentIds("project", "proj-1", projects)).toEqual(new Set(["a1", "a2", "a3"]));
-  });
-
-  it("returns Set of agent ids for session view", () => {
-    expect(getFilteredAgentIds("session", "sess-1", projects)).toEqual(new Set(["a1", "a2"]));
-  });
-
-  it("returns empty Set for unknown session", () => {
-    expect(getFilteredAgentIds("session", "nonexistent", projects)).toEqual(new Set());
-  });
-});
 
 describe("getFilteredSessionIds", () => {
   const projects: ProjectGroup[] = [

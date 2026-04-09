@@ -25,26 +25,6 @@ export function groupAgentsBySessionId(
 }
 
 /**
- * Get the set of agent IDs for the current view.
- * Returns null when no filtering needed (show all agents).
- */
-export function getFilteredAgentIds(
-  viewMode: ViewMode,
-  activeRoomKey: string | null,
-  projects: ProjectGroup[],
-): Set<string> | null {
-  if (viewMode === "project" && activeRoomKey) {
-    const project = projects.find((p) => p.key === activeRoomKey);
-    return new Set((project?.agents ?? []).map((a) => a.id));
-  }
-  if (viewMode === "session" && activeRoomKey) {
-    const bySession = groupAgentsBySessionId(projects);
-    return new Set((bySession.get(activeRoomKey) ?? []).map((a) => a.id));
-  }
-  return null;
-}
-
-/**
  * Get the set of session IDs for the current view.
  * Returns null when no filtering needed (show everything).
  */

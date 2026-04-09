@@ -89,6 +89,9 @@ export interface AgentAnimationState {
   queueType: "arrival" | "departure" | null;
   queueIndex: number; // Position in queue (-1 = not in queue)
 
+  // Session tracking
+  sessionId: string | null;
+
   // Animation state
   isTyping: boolean; // True when agent is actively using tools
 }
@@ -139,7 +142,7 @@ interface GameStore {
   agents: Map<string, AgentAnimationState>;
 
   // Agent actions
-  addAgent: (backendAgent: BackendAgent, initialPosition: Position) => void;
+  addAgent: (backendAgent: BackendAgent, initialPosition: Position, sessionId?: string) => void;
   removeAgent: (agentId: string) => void;
   updateAgentPhase: (agentId: string, phase: AgentPhase) => void;
   updateAgentPosition: (agentId: string, position: Position) => void;
@@ -401,7 +404,7 @@ export const useGameStore = create<GameStore>()(
     // AGENT ACTIONS
     // ========================================================================
 
-    addAgent: (backendAgent, initialPosition) =>
+    addAgent: (backendAgent, initialPosition, sessionId) =>
       set((state) => {
         const newAgents = new Map(state.agents);
         const animState: AgentAnimationState = {
@@ -419,6 +422,7 @@ export const useGameStore = create<GameStore>()(
           bubble: createEmptyBubbleState(),
           queueType: null,
           queueIndex: -1,
+          sessionId: sessionId ?? null,
           isTyping: false,
         };
         newAgents.set(backendAgent.id, animState);

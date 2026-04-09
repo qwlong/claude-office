@@ -13,18 +13,18 @@ import {
   selectSessions,
 } from "@/stores/projectStore";
 import { useShallow } from "zustand/react/shallow";
-import { getFilteredAgentIds, getFilteredSessionIds } from "@/utils/agentFilter";
+import { getFilteredSessionIds } from "@/utils/agentFilter";
 import { filterEvents, filterConversation } from "@/utils/filterHelpers";
 
 /**
  * Hook: returns filtered agents, events, and conversation for the current viewMode.
  *
+ * All filtering is based on sessionIds:
  * - office/projects/sessions: returns all data (no filtering)
- * - project: returns data for sessions in the selected project
- * - session: returns data for the selected session
+ * - project: sessionIds = all sessions in that project
+ * - session: sessionIds = that single session
  *
- * Agents come from gameStore (preserving animation state), filtered by agentIds.
- * Events/conversation are filtered by sessionId.
+ * Agents, events, and conversation are all filtered by sessionId.
  */
 export function useFilteredData() {
   const viewMode = useProjectStore(selectViewMode);
@@ -35,11 +35,6 @@ export function useFilteredData() {
   const allEvents = useGameStore(selectEventLog);
   const allConversation = useGameStore(selectConversation);
 
-  const agentIds = useMemo(
-    () => getFilteredAgentIds(viewMode, activeRoomKey, projects),
-    [viewMode, activeRoomKey, projects],
-  );
-
   const sessionIds = useMemo(
     () => getFilteredSessionIds(viewMode, activeRoomKey, projects, storeSessions),
     [viewMode, activeRoomKey, projects, storeSessions],
@@ -49,9 +44,9 @@ export function useFilteredData() {
     const all = Array.from(gameAgents.values()).sort(
       (a, b) => a.number - b.number,
     );
-    if (!agentIds) return all;
-    return all.filter((a) => agentIds.has(a.id));
-  }, [gameAgents, agentIds]);
+    if (!sessionIds) return all;
+    return all.filter((a) => a.sessionId && sessionIds.has(a.sessionId));
+  }, [gameAgents, sessionIds]);
 
   const events = useMemo(
     () => filterEvents(allEvents, sessionIds),
@@ -63,5 +58,5 @@ export function useFilteredData() {
     [allConversation, sessionIds],
   );
 
-  return { agents, events, conversation, agentIds, sessionIds };
+  return { agents, events, conversation, sessionIds };
 }
