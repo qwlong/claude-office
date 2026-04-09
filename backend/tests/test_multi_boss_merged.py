@@ -25,7 +25,7 @@ async def test_merged_state_has_bosses_from_each_session():
     sm1 = StateMachine()
     sm1.boss_state = BossState.WORKING
     sm2 = StateMachine()
-    sm2.boss_state = BossState.IDLE
+    sm2.boss_state = BossState.WORKING
     event_processor.sessions["session-aaa"] = sm1
     event_processor.sessions["session-bbb"] = sm2
     event_processor.project_registry.register_session_sync("session-aaa", "Project Alpha", "/tmp/alpha")
@@ -61,6 +61,7 @@ async def test_merged_state_boss_also_in_agents():
 async def test_merged_state_bosses_have_project_info():
     """Each boss should carry project_key and project_color."""
     sm = StateMachine()
+    sm.boss_state = BossState.WORKING
     event_processor.sessions["sess1"] = sm
     event_processor.project_registry.register_session_sync("sess1", "My Project", "/tmp/proj")
 
@@ -77,6 +78,7 @@ async def test_merged_state_bosses_sorted_by_session_id():
     """Bosses should be sorted by session_id for stable ordering."""
     for sid in ["zzz", "aaa", "mmm"]:
         sm = StateMachine()
+        sm.boss_state = BossState.WORKING
         event_processor.sessions[sid] = sm
         event_processor.project_registry.register_session_sync(sid, f"Proj-{sid}", f"/tmp/{sid}")
 
