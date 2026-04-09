@@ -261,14 +261,17 @@ class EventProcessor:
     async def get_merged_state(self) -> GameState | None:
         """Build a merged GameState from all active sessions.
 
-        Each session's boss becomes a regular agent (prefixed with session ID).
+        Each session's boss appears BOTH as:
+        1. A real Boss in the bosses list (for BossSprite animation)
+        2. An Agent with agentType="main" in the agents list (unified data model)
         All agent IDs are namespaced as "{session_short}:{agent_id}" to avoid collisions.
-        The merged state uses a synthetic idle boss.
+        Bosses are sorted by session_id for stable ordering.
         """
         if not self.sessions:
             return None
 
         all_agents: list[Agent] = []
+        all_bosses: list[Boss] = []
         all_arrival_queue: list[str] = []
         all_departure_queue: list[str] = []
         next_desk = 1  # Global compact desk counter
@@ -293,35 +296,48 @@ class EventProcessor:
             short_id = session_id[:8]
             active_session_ids.append(session_id)
 
-            # Map BossState to AgentState for the boss-as-agent
+            # Get project info for this session
+            project = self.project_registry.get_project_for_session(session_id)
+            proj_color = project.color if project else colors[idx % len(colors)]
+
+            # Collect real boss with identity info (for BossSprite)
+            boss = state.boss.model_copy(update={
+                "session_id": session_id,
+                "project_key": project.key if project else None,
+                "project_color": proj_color,
+            })
+            all_bosses.append(boss)
+
+            # Also keep boss-as-agent in agents list (unified model)
             boss_agent_state = AgentState.WORKING
             if state.boss.state in (BossState.IDLE,):
                 boss_agent_state = AgentState.WAITING
             elif state.boss.state in (BossState.WAITING_PERMISSION,):
                 boss_agent_state = AgentState.WAITING_PERMISSION
 
-            # Convert this session's boss into a regular agent
             boss_as_agent = Agent(
                 id=f"{short_id}:boss",
                 agent_type="main",
                 name=state.boss.current_task or short_id,
-                color=colors[idx % len(colors)],
+                color=proj_color,
                 number=next_desk,
                 state=boss_agent_state,
                 desk=next_desk,
                 current_task=state.boss.current_task,
                 bubble=state.boss.bubble,
+                session_id=session_id,
             )
             all_agents.append(boss_as_agent)
             next_desk += 1
 
-            # Namespace all agents from this session with compact desk numbers
+            # Namespace all subagents from this session with compact desk numbers
             for agent in state.agents:
                 namespaced = agent.model_copy(
                     update={
                         "id": f"{short_id}:{agent.id}",
                         "desk": next_desk,
                         "number": next_desk,
+                        "session_id": session_id,
                     }
                 )
                 all_agents.append(namespaced)
@@ -343,12 +359,8 @@ class EventProcessor:
             all_todos.extend(state.todos)
             all_conversation.extend(state.conversation)
 
-        # Synthetic boss for the merged view
-        merged_boss = Boss(
-            state=BossState.IDLE,
-            current_task=f"{len(active_session_ids)} active sessions",
-            bubble=None,
-        )
+        # Sort bosses by session_id for stable ordering
+        all_bosses.sort(key=lambda b: b.session_id or "")
 
         merged_office = OfficeState(
             desk_count=max(8, ((next_desk - 1 + 3) // 4) * 4),
@@ -361,7 +373,8 @@ class EventProcessor:
 
         return GameState(
             session_id="__all__",
-            boss=merged_boss,
+            boss=all_bosses[0] if all_bosses else Boss(state=BossState.IDLE),
+            bosses=all_bosses,
             agents=all_agents,
             office=merged_office,
             last_updated=latest_updated or datetime.now(UTC),
