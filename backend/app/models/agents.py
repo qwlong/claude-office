@@ -78,6 +78,9 @@ class Boss(BaseModel):
     current_task: str | None = None
     bubble: BubbleContent | None = None
     position: dict[str, int] = {"x": 640, "y": 830}
+    session_id: str | None = None
+    project_key: str | None = None
+    project_color: str | None = None
 
 
 class ElevatorState(StrEnum):

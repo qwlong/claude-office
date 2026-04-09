@@ -129,6 +129,7 @@ class GameState(BaseModel):
 
     session_id: str
     boss: Boss
+    bosses: list[Boss] = Field(default_factory=lambda: cast(list[Boss], []))
     agents: list[Agent]
     office: OfficeState
     last_updated: datetime
