@@ -77,10 +77,7 @@ class ReplayEntry(TypedDict):
 async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[SessionSummary]:
     """List all sessions with event counts.
 
-    Only returns sessions that have received a ``session_start`` event.  Child
-    sessions spawned by OpenCode @agent mentions never receive a ``session_start``
-    — they start directly with ``user_prompt_submit`` / ``pre_tool_use`` events —
-    so filtering on this event type keeps them out of the sidebar.
+    Returns sessions that have at least one event in the database.
     """
     logger.debug("API: list_sessions called")
     try:

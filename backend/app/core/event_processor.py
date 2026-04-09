@@ -392,9 +392,7 @@ class EventProcessor:
         if not self.sessions:
             return None
 
-        # Register ALL DB sessions with project registry so project counts
-        # match the sessions sidebar total (includes completed sessions)
-        # Register DB sessions (with session_start events) into project registry
+        # Register all DB sessions (with any events) into project registry
         # so project counts match the sessions sidebar total
         try:
             async with AsyncSessionLocal() as db:
