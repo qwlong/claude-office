@@ -19,6 +19,7 @@ import type {
   EventDetail,
   ConversationEntry,
 } from "@/types";
+import type { ConversationEntryWithSession } from "@/utils/filterHelpers";
 
 // ============================================================================
 // TYPES
@@ -222,7 +223,7 @@ interface GameStore {
   setGitStatus: (status: GitStatus | null) => void;
   addEventLog: (event: NonNullable<WebSocketMessage["event"]>, sessionId?: string) => void;
   setEventHistory: (history: NonNullable<WebSocketMessage["event"]>[], sessionId?: string) => void;
-  conversation: ConversationEntry[];
+  conversation: ConversationEntryWithSession[];
   setConversation: (conversation: ConversationEntry[], sessionId?: string) => void;
 
   // Whiteboard actions
@@ -945,7 +946,7 @@ export const useGameStore = create<GameStore>()(
 
     setConversation: (conversation, sessionId) => set({
       conversation: sessionId
-        ? conversation.map((c) => ({ ...c, sessionId } as ConversationEntry))
+        ? conversation.map((c) => ({ ...c, sessionId }))
         : conversation,
     }),
 

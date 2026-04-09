@@ -1,6 +1,9 @@
 import type { EventLogEntry } from "@/stores/gameStore";
 import type { ConversationEntry } from "@/types";
 
+/** ConversationEntry extended with sessionId injected by setConversation. */
+export type ConversationEntryWithSession = ConversationEntry & { sessionId?: string };
+
 /**
  * Filter events by a set of session IDs.
  * Returns the original array reference when sessionIds is null (no filtering).
@@ -18,12 +21,9 @@ export function filterEvents(
  * Returns the original array reference when sessionIds is null (no filtering).
  */
 export function filterConversation(
-  conversation: ConversationEntry[],
+  conversation: ConversationEntryWithSession[],
   sessionIds: Set<string> | null,
-): ConversationEntry[] {
+): ConversationEntryWithSession[] {
   if (!sessionIds) return conversation;
-  return conversation.filter((c) => {
-    const sid = (c as Record<string, unknown>).sessionId;
-    return typeof sid === "string" && sessionIds.has(sid);
-  });
+  return conversation.filter((c) => c.sessionId && sessionIds.has(c.sessionId));
 }
