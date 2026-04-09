@@ -69,7 +69,7 @@ async def broadcast_event(
     session_id: str,
     event_dict: HistoryEntry,
 ) -> None:
-    """Broadcast a single event payload to all clients connected to *session_id*.
+    """Broadcast a single event payload to session clients and all-session subscribers.
 
     Args:
         session_id: The session whose clients should receive the event.
@@ -78,9 +78,14 @@ async def broadcast_event(
     payload: dict[str, Any] = {
         "type": "event",
         "timestamp": event_dict["timestamp"],
+        "session_id": session_id,
         "event": dict(event_dict),
     }
     await manager.broadcast(payload, session_id)
+
+    # Also notify all-session subscribers so Whole Office view gets events
+    if manager.all_session_connections:
+        await manager.broadcast_to_all_subscribers(payload)
 
 
 async def broadcast_tasks_update(
