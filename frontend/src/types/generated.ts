@@ -7,6 +7,7 @@
 
 export type Id = string;
 export type Nativeid = string | null;
+export type Agenttype = string;
 export type Name = string | null;
 export type Color = string;
 export type Number = number;
@@ -40,6 +41,10 @@ export type Text = string;
 export type Icon = string | null;
 export type Persistent = boolean;
 export type Currenttask = string | null;
+export type Projectkey = string | null;
+export type Sessionid = string | null;
+export type Lastactivitytime = string;
+export type Orphaned = boolean;
 export type Agentid = string;
 export type Agentname = string;
 export type Color1 = string;
@@ -67,6 +72,9 @@ export type BossState =
   | "reviewing"
   | "completing";
 export type Currenttask1 = string | null;
+export type Sessionid1 = string | null;
+export type Projectkey1 = string | null;
+export type Projectcolor = string | null;
 export type Path = string;
 /**
  * Git file status codes.
@@ -170,7 +178,8 @@ export type BackgroundTaskSummary = string | null;
 export type TaskListId = string | null;
 export type Filepath = string;
 export type Editcount = number;
-export type Sessionid = string;
+export type Sessionid2 = string;
+export type Bosses = Boss[];
 export type Agents = Agent[];
 export type Deskcount = number;
 /**
@@ -276,7 +285,7 @@ export interface ClaudeOfficeBackendTypes {
 export interface Agent {
   id: Id;
   nativeId?: Nativeid;
-  agentType?: string;  // "main" or "subagent"
+  agentType?: Agenttype;
   name?: Name;
   color: Color;
   number: Number;
@@ -285,6 +294,10 @@ export interface Agent {
   bubble?: BubbleContent | null;
   currentTask?: Currenttask;
   position?: Position;
+  projectKey?: Projectkey;
+  sessionId?: Sessionid;
+  lastActivityTime?: Lastactivitytime;
+  orphaned?: Orphaned;
   [k: string]: unknown;
 }
 /**
@@ -342,6 +355,9 @@ export interface Boss {
   currentTask?: Currenttask1;
   bubble?: BubbleContent | null;
   position?: Position1;
+  sessionId?: Sessionid1;
+  projectKey?: Projectkey1;
+  projectColor?: Projectcolor;
   [k: string]: unknown;
 }
 export interface Position1 {
@@ -473,8 +489,9 @@ export interface FileEdit {
  * via the `definition` "GameState".
  */
 export interface GameState {
-  sessionId: Sessionid;
+  sessionId: Sessionid2;
   boss: Boss;
+  bosses?: Bosses;
   agents: Agents;
   office: OfficeState;
   lastUpdated: Lastupdated;
