@@ -32,11 +32,17 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
 
   const handleSpawn = async () => {
     if (!projectId || !issue || loading) return;
+    setLoading(true);
     const taskDesc = issue;
     setIssue("");
     onClose();
-    // Fire and forget — don't block UI
-    onSpawn(projectId, taskDesc).catch(() => {});
+    try {
+      await onSpawn(projectId, taskDesc);
+    } catch {
+      // Spawn errors handled by caller
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
