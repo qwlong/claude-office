@@ -8,7 +8,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useGameStore, selectConversation } from "@/stores/gameStore";
+import { useFilteredData } from "@/hooks/useFilteredData";
 import { format } from "date-fns";
 import {
   MessageSquare,
@@ -263,7 +263,7 @@ function ConversationEntries({
 
 export function ConversationHistory() {
   const { t } = useTranslation();
-  const conversation = useGameStore(selectConversation);
+  const { conversation } = useFilteredData();
   const bottomRef = useRef<HTMLDivElement>(null);
   const modalBottomRef = useRef<HTMLDivElement>(null);
   const [showTools, setShowTools] = useState(false);
