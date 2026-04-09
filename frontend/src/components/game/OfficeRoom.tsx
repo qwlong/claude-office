@@ -84,6 +84,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // Multi-boss merged view
   const isMergedView = !isRoom && storeSessionId === "__all__";
+  console.log(`[OfficeRoom] isMergedView=${isMergedView} storeSessionId=${storeSessionId} storeBosses.size=${storeBosses.size}`);
 
   const bossPositions = useMemo(() => {
     if (!isMergedView || !storeBosses.size) return [];

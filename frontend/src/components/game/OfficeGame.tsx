@@ -32,6 +32,7 @@ import {
   useGameStore,
   selectAgents,
   selectBoss,
+  selectBosses,
   selectTodos,
   selectDebugMode,
   selectShowPaths,
@@ -70,6 +71,8 @@ import {
   PLANT_POSITION,
   BOSS_RUG_POSITION,
   TRASH_CAN_OFFSET,
+  getBossPositions,
+  BOSS_RUG_OFFSET_Y,
 } from "@/constants/positions";
 import {
   AgentSprite,
@@ -174,6 +177,8 @@ export function OfficeGame(): ReactNode {
   // Subscribe to store state
   const agents = useGameStore(useShallow(selectAgents));
   const boss = useGameStore(selectBoss);
+  const storeBosses = useGameStore(selectBosses);
+  const storeSessionId = useGameStore((s) => s.sessionId);
   const todos = useGameStore(selectTodos);
   const debugMode = useGameStore(selectDebugMode);
   const showPaths = useGameStore(selectShowPaths);
@@ -190,6 +195,29 @@ export function OfficeGame(): ReactNode {
 
   // Use store's elevator state (controlled by state machine)
   const isElevatorOpen = elevatorState === "open";
+
+  // Multi-boss merged view
+  const isMergedView = storeSessionId === "__all__";
+
+  const bossPositions = useMemo(() => {
+    if (!isMergedView || !storeBosses.size) return [];
+    return getBossPositions(storeBosses.size, CANVAS_WIDTH);
+  }, [isMergedView, storeBosses.size]);
+
+  const sortedBosses = useMemo(() => {
+    if (!isMergedView) return [];
+    return Array.from(storeBosses.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [isMergedView, storeBosses]);
+
+  // In merged view, filter main agents from desk rendering (they get BossSprite)
+  const deskAgents = useMemo(() => {
+    if (!isMergedView) return agents;
+    const filtered = new Map(agents);
+    for (const [id, agent] of agents) {
+      if (agent.agentType === "main") filtered.delete(id);
+    }
+    return filtered;
+  }, [isMergedView, agents]);
 
   // Calculate occupied desks
   const occupiedDesks = useMemo(() => {
@@ -403,16 +431,29 @@ export function OfficeGame(): ReactNode {
                   {/* Floor and walls */}
                   <OfficeBackground floorTileTexture={textures.floorTile} canvasHeight={canvasHeight} />
 
-                  {/* Boss area rug - rendered right after floor */}
-                  {textures.bossRug && (
-                    <pixiSprite
-                      texture={textures.bossRug}
-                      anchor={0.5}
-                      x={BOSS_RUG_POSITION.x}
-                      y={BOSS_RUG_POSITION.y}
-                      scale={0.3}
-                    />
-                  )}
+                  {/* Boss area rug(s) */}
+                  {isMergedView && sortedBosses.length > 0
+                    ? sortedBosses.map(([sid], i) =>
+                        textures.bossRug && bossPositions[i] ? (
+                          <pixiSprite
+                            key={`rug-${sid}`}
+                            texture={textures.bossRug}
+                            anchor={0.5}
+                            x={bossPositions[i].x}
+                            y={bossPositions[i].y + BOSS_RUG_OFFSET_Y}
+                            scale={0.3}
+                          />
+                        ) : null,
+                      )
+                    : textures.bossRug && (
+                        <pixiSprite
+                          texture={textures.bossRug}
+                          anchor={0.5}
+                          x={BOSS_RUG_POSITION.x}
+                          y={BOSS_RUG_POSITION.y}
+                          scale={0.3}
+                        />
+                      )}
 
                   {/* Wall decorations */}
                   <pixiContainer
@@ -612,24 +653,50 @@ export function OfficeGame(): ReactNode {
                     thermosTexture={textures.thermos}
                   />
 
-                  {/* Boss */}
-                  <BossSprite
-                    position={boss.position}
-                    state={boss.backendState}
-                    bubble={boss.bubble?.content ?? null}
-                    inUseBy={boss.inUseBy}
-                    currentTask={boss.currentTask}
-                    chairTexture={textures.chair}
-                    deskTexture={textures.desk}
-                    keyboardTexture={textures.keyboard}
-                    monitorTexture={textures.monitor}
-                    phoneTexture={textures.phone}
-                    headsetTexture={textures.headset}
-                    sunglassesTexture={textures.sunglasses}
-                    renderBubble={false}
-                    isTyping={boss.isTyping}
-                    isAway={compactionAnimation.phase !== "idle"}
-                  />
+                  {/* Boss(es) */}
+                  {isMergedView && sortedBosses.length > 0
+                    ? sortedBosses.map(([sid, b], i) =>
+                        bossPositions[i] ? (
+                          <BossSprite
+                            key={`boss-${sid}`}
+                            position={bossPositions[i]}
+                            state={b.backendState}
+                            bubble={b.bubble?.content ?? null}
+                            inUseBy={b.inUseBy}
+                            currentTask={b.currentTask}
+                            chairTexture={textures.chair}
+                            deskTexture={textures.desk}
+                            keyboardTexture={textures.keyboard}
+                            monitorTexture={textures.monitor}
+                            phoneTexture={textures.phone}
+                            headsetTexture={textures.headset}
+                            sunglassesTexture={textures.sunglasses}
+                            renderBubble={false}
+                            isTyping={b.isTyping}
+                            isAway={false}
+                            label={b.projectKey ?? sid.slice(0, 8)}
+                          />
+                        ) : null,
+                      )
+                    : (
+                      <BossSprite
+                        position={boss.position}
+                        state={boss.backendState}
+                        bubble={boss.bubble?.content ?? null}
+                        inUseBy={boss.inUseBy}
+                        currentTask={boss.currentTask}
+                        chairTexture={textures.chair}
+                        deskTexture={textures.desk}
+                        keyboardTexture={textures.keyboard}
+                        monitorTexture={textures.monitor}
+                        phoneTexture={textures.phone}
+                        headsetTexture={textures.headset}
+                        sunglassesTexture={textures.sunglasses}
+                        renderBubble={false}
+                        isTyping={boss.isTyping}
+                        isAway={compactionAnimation.phase !== "idle"}
+                      />
+                    )}
 
                   {/* Mobile Boss (when walking to/from trash can) */}
                   {compactionAnimation.bossPosition && (

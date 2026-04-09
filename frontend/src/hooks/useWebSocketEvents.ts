@@ -247,45 +247,42 @@ export function useWebSocketEvents({
       }
 
       // Update multi-boss state (merged view)
-      const backendBosses = (state as Record<string, unknown>).bosses as Array<{
-        state: BossState;
-        currentTask?: string | null;
-        bubble?: BubbleContent | null;
-        sessionId?: string;
-        projectKey?: string;
-        projectColor?: string;
-      }> | undefined;
+      // state.bosses comes from GameState.bosses (Boss[]) in generated types
+      const backendBosses = (state as Record<string, unknown>).bosses as Array<Record<string, unknown>> | undefined;
+      console.log(`[WS] backendBosses:`, backendBosses?.length ?? 0);
 
       if (backendBosses && backendBosses.length > 0) {
         const currentBosses = store.bosses;
         const newBosses = new Map<string, BossAnimationState>();
         for (const bb of backendBosses) {
-          const sid = bb.sessionId ?? "unknown";
+          const sid = (bb.sessionId as string) ?? "unknown";
           const existing = currentBosses.get(sid);
           newBosses.set(sid, {
-            backendState: bb.state,
+            backendState: (bb.state as BossState) ?? "idle",
             position: existing?.position ?? { x: 640, y: 900 },
             bubble: existing?.bubble ?? { content: null, displayStartTime: null, queue: [] },
             inUseBy: existing?.inUseBy ?? null,
-            currentTask: bb.currentTask ?? null,
+            currentTask: (bb.currentTask as string | null) ?? null,
             isTyping: existing?.isTyping ?? false,
             sessionId: sid,
-            projectKey: bb.projectKey ?? undefined,
-            projectColor: bb.projectColor ?? undefined,
+            projectKey: (bb.projectKey as string) ?? undefined,
+            projectColor: (bb.projectColor as string) ?? undefined,
           });
         }
+        console.log(`[WS] Setting ${newBosses.size} bosses in store`);
         useGameStore.setState({ bosses: newBosses });
 
         // Per-boss bubbles
         for (const bb of backendBosses) {
-          if (bb.bubble) {
-            const sid = bb.sessionId ?? "boss";
-            const bubbleText = bb.bubble.text;
+          const bubble = bb.bubble as BubbleContent | null | undefined;
+          if (bubble) {
+            const sid = (bb.sessionId as string) ?? "boss";
+            const bubbleText = bubble.text;
             const lastSeen = lastSeenBubbleTextRef.current.get(sid);
             if (bubbleText !== lastSeen) {
               lastSeenBubbleTextRef.current.set(sid, bubbleText);
               if (!store.hasBubbleText(sid, bubbleText)) {
-                enqueueBubble(sid, bb.bubble);
+                enqueueBubble(sid, bubble);
               }
             }
           }
