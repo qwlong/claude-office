@@ -29,7 +29,7 @@ def extract_project_name(path: str) -> str:
     # or: -Users-apple-.worktrees-claude-office-co-7-abc12345
     if "worktrees" in dirname.lower():
         # Try regex: everything after "worktrees-" should be <project>-<session-id>
-        m = re.search(r'worktrees-(.+?)-((?:co|ao|sess|s)-\d+)(?:-[a-f0-9]+)?$', dirname)
+        m = re.search(r'worktrees-(.+?)-([a-z]+-\d+)(?:-[a-f0-9]+)?$', dirname)
         if m:
             return f"{m.group(1)}/{m.group(2)}"
         # Fallback: strip prefix up to worktrees, return the rest

@@ -65,7 +65,7 @@ def get_project_name(raw_data: dict[str, Any], strip_prefixes: list[str] | None 
                 # Convert to: <project>/<session-id>
                 import re
                 wt_match = re.match(
-                    r"\.?worktrees-(.+?)-((?:co|ao|sess|s)-\d+)(?:-[a-f0-9]+)?$",
+                    r"\.?worktrees-(.+?)-([a-z]+-\d+)(?:-[a-f0-9]+)?$",
                     project_name,
                 )
                 if wt_match:
