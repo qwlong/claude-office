@@ -3,10 +3,11 @@
 import { useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useTaskStore } from "@/stores/taskStore";
+import { API_BASE_URL, WS_BASE_URL } from "@/config";
 import type { MultiProjectGameState } from "@/types/projects";
 import type { TasksUpdate } from "@/types/tasks";
 
-const WS_URL = "ws://localhost:8000";
+const WS_URL = WS_BASE_URL;
 
 export function useProjectWebSocket() {
   const updateFromServer = useProjectStore((s) => s.updateFromServer);
@@ -44,11 +45,11 @@ export function useProjectWebSocket() {
     connect();
 
     // Fetch initial task state so TaskDrawer renders immediately
-    fetch("http://localhost:8000/api/v1/tasks/status")
+    fetch(`${API_BASE_URL}/api/v1/tasks/status`)
       .then((r) => (r.ok ? r.json() : null))
       .then((status) => {
         if (!status) return;
-        fetch("http://localhost:8000/api/v1/tasks")
+        fetch(`${API_BASE_URL}/api/v1/tasks`)
           .then((r) => (r.ok ? r.json() : []))
           .then((tasks) => {
             updateTasks({

@@ -8,6 +8,7 @@ import { TaskList } from "@/components/tasks/TaskList";
 import { SpawnModal } from "@/components/tasks/SpawnModal";
 import { useDragResize } from "@/hooks/useDragResize";
 import { useTranslation } from "@/hooks/useTranslation";
+import { API_BASE_URL } from "@/config";
 import { useTaskStore, selectActiveTaskCount } from "@/stores/taskStore";
 import type { Task } from "@/types/tasks";
 
@@ -52,7 +53,7 @@ export function RightSidebar(): React.ReactNode {
   const [spawnOpen, setSpawnOpen] = useState(false);
 
   const handleSpawn = async (projectId: string, issue: string) => {
-    const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
+    const res = await fetch(`${API_BASE_URL}/api/v1/tasks/spawn`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_id: projectId, issue }),

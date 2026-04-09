@@ -22,6 +22,7 @@ import { useDragResize } from "@/hooks/useDragResize";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useProjectStore, selectViewMode, selectActiveRoomKey } from "@/stores/projectStore";
 import { useGameStore, selectGitStatus } from "@/stores/gameStore";
+import { API_BASE_URL } from "@/config";
 
 // ============================================================================
 // CONSTANTS
@@ -180,7 +181,7 @@ export function SessionSidebar({
                 );
                 if (!confirmed) return;
                 try {
-                  const resp = await fetch(`http://localhost:8000/api/v1/projects/${project.key}`, {
+                  const resp = await fetch(`${API_BASE_URL}/api/v1/projects/${project.key}`, {
                     method: "DELETE",
                   });
                   if (resp.ok) {

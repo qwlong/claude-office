@@ -38,6 +38,7 @@ import { useProjectStore, selectViewMode, selectPreviousViewMode } from "@/store
 import { useProjectWebSocket } from "@/hooks/useProjectWebSocket";
 
 import { useTranslation } from "@/hooks/useTranslation";
+import { API_BASE_URL } from "@/config";
 import type { Session } from "@/hooks/useSessions";
 
 // ============================================================================
@@ -158,7 +159,7 @@ export default function V2TestPage(): React.ReactNode {
   // One-time initialization effects
   // ------------------------------------------------------------------
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/status")
+    fetch(`${API_BASE_URL}/api/v1/status`)
       .then((res) => res.json())
       .then((data: { aiSummaryEnabled: boolean }) =>
         setAiSummaryEnabled(data.aiSummaryEnabled),
@@ -214,7 +215,7 @@ export default function V2TestPage(): React.ReactNode {
   const handleCleanupAgents = async () => {
     if (!sessionId) return;
     try {
-      const res = await fetch("http://localhost:8000/api/v1/agents/cleanup", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/agents/cleanup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId }),

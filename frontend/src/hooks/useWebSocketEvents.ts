@@ -10,6 +10,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useGameStore } from "@/stores/gameStore";
 import { agentMachineService } from "@/machines/agentMachineService";
+import { WS_BASE_URL } from "@/config";
 import {
   getNextSpawnPosition,
   getDeskPosition,
@@ -450,8 +451,8 @@ export function useWebSocketEvents({
     }
 
     const wsUrl = sessionId === "__all__"
-      ? "ws://localhost:8000/ws/all"
-      : `ws://localhost:8000/ws/${sessionId}`;
+      ? `${WS_BASE_URL}/ws/all`
+      : `${WS_BASE_URL}/ws/${sessionId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

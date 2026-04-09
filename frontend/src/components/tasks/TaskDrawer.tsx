@@ -7,6 +7,7 @@ import type { Task } from "@/types/tasks";
 import { useTranslation } from "@/hooks/useTranslation";
 import { TaskList } from "./TaskList";
 import { SpawnModal } from "./SpawnModal";
+import { API_BASE_URL } from "@/config";
 
 const MIN_HEIGHT = 150;
 const MAX_HEIGHT_RATIO = 0.5;
@@ -44,7 +45,7 @@ export function TaskDrawer() {
   }, [drawerHeight]);
 
   const handleSpawn = useCallback(async (projectId: string, issue: string) => {
-    const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
+    const res = await fetch(`${API_BASE_URL}/api/v1/tasks/spawn`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_id: projectId, issue }),

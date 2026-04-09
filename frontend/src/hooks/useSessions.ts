@@ -8,6 +8,7 @@ import {
   usePreferencesStore,
   selectAutoFollowNewSessions,
 } from "@/stores/preferencesStore";
+import { API_BASE_URL } from "@/config";
 
 // ============================================================================
 // TYPES
@@ -63,7 +64,7 @@ export function useSessions(
   const fetchSessions = useCallback(async (): Promise<Session[] | null> => {
     setSessionsLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/sessions");
+      const res = await fetch(`${API_BASE_URL}/api/v1/sessions`);
       if (res.ok) {
         const data = (await res.json()) as Session[];
         // Inject "All Sessions" virtual entry at the top

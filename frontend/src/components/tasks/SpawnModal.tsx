@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Modal from "@/components/overlay/Modal";
 import { useTranslation } from "@/hooks/useTranslation";
+import { API_BASE_URL } from "@/config";
 
 interface Props {
   isOpen: boolean;
@@ -19,7 +20,7 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
 
   useEffect(() => {
     if (!isOpen) return;
-    fetch("http://localhost:8000/api/v1/tasks/projects")
+    fetch(`${API_BASE_URL}/api/v1/tasks/projects`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: { id: string; name: string }[]) => {
         setProjects(data);

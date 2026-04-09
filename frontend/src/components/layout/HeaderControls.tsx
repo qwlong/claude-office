@@ -20,6 +20,7 @@ import { useTheme } from "next-themes";
 import { usePreferencesStore } from "@/stores/preferencesStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { SpawnModal } from "@/components/tasks/SpawnModal";
+import { API_BASE_URL } from "@/config";
 
 // ============================================================================
 // TYPES
@@ -76,7 +77,7 @@ export function HeaderControls({
   ];
 
   const handleSpawn = async (projectId: string, issue: string) => {
-    const res = await fetch("http://localhost:8000/api/v1/tasks/spawn", {
+    const res = await fetch(`${API_BASE_URL}/api/v1/tasks/spawn`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_id: projectId, issue }),
