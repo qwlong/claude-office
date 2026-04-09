@@ -181,6 +181,33 @@ export function getBossSlot(type: QueueType): Position {
 }
 
 /**
+ * Get boss slot position relative to a specific boss's position.
+ * Used in merged view where multiple bosses exist.
+ * Offsets derived from: BOSS_SLOT_LEFT = BOSS_POSITION + (-120, -32)
+ *                       BOSS_SLOT_RIGHT = BOSS_POSITION + (+120, -32)
+ */
+export function getBossSlotForPosition(
+  bossPos: Position,
+  type: QueueType,
+): Position {
+  const offsetX = type === "arrival" ? -120 : 120;
+  return { x: bossPos.x + offsetX, y: bossPos.y - 32 };
+}
+
+/**
+ * Get ready position (queue head) relative to a boss position.
+ * Offsets derived from: ARRIVAL_QUEUE_POSITIONS[0] = BOSS_POSITION + (-160, +30)
+ *                       DEPARTURE_QUEUE_POSITIONS[0] = BOSS_POSITION + (+160, +30)
+ */
+export function getReadyPositionForBoss(
+  bossPos: Position,
+  type: QueueType,
+): Position {
+  const offsetX = type === "arrival" ? -160 : 160;
+  return { x: bossPos.x + offsetX, y: bossPos.y + 30 };
+}
+
+/**
  * Get position for an agent at a given index in the queue
  * Returns the boss slot if index is -1 (at boss desk)
  * Returns undefined if index exceeds available positions
