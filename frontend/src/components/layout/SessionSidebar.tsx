@@ -30,9 +30,9 @@ import { useGameStore, selectGitStatus } from "@/stores/gameStore";
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 500;
 const SIDEBAR_DEFAULT_WIDTH = 288; // equivalent to w-72
-const SESSIONS_MIN_HEIGHT = 80;
-const SESSIONS_DEFAULT_HEIGHT = 280;
-
+const GIT_STATUS_MIN_HEIGHT = 80;
+const GIT_STATUS_DEFAULT_HEIGHT = 160;
+const GIT_STATUS_MAX_HEIGHT = 400;
 /** Max height is 70% of viewport to prevent overflow on smaller screens */
 const getMaxPanelHeight = () => Math.floor(window.innerHeight * 0.7);
 
@@ -98,18 +98,6 @@ export function SessionSidebar({
   });
 
   const {
-    size: sessionsHeight,
-    isDragging: isSessionsHeightDragging,
-    handleDragStart: handleSessionsHeightDragStart,
-  } = useDragResize({
-    initialSize: SESSIONS_DEFAULT_HEIGHT,
-    minSize: SESSIONS_MIN_HEIGHT,
-    maxSize: getMaxPanelHeight,
-    direction: "vertical",
-    edge: "down",
-  });
-
-  const {
     size: projectsHeight,
     isDragging: isProjectHeightDragging,
     handleDragStart: handleProjectHeightDragStart,
@@ -121,7 +109,19 @@ export function SessionSidebar({
     edge: "down",
   });
 
-  const isDragging = isWidthDragging || isSessionsHeightDragging || isProjectHeightDragging;
+  const {
+    size: gitStatusHeight,
+    isDragging: isGitStatusHeightDragging,
+    handleDragStart: handleGitStatusHeightDragStart,
+  } = useDragResize({
+    initialSize: GIT_STATUS_DEFAULT_HEIGHT,
+    minSize: GIT_STATUS_MIN_HEIGHT,
+    maxSize: GIT_STATUS_MAX_HEIGHT,
+    direction: "vertical",
+    edge: "up",
+  });
+
+  const isDragging = isWidthDragging || isProjectHeightDragging || isGitStatusHeightDragging;
 
   return (
     <aside
@@ -199,9 +199,8 @@ export function SessionSidebar({
           {/* Session Browser */}
           <div
             className={`bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex flex-col ${
-              sessionsCollapsed ? "flex-shrink-0" : gitStatus ? "flex-shrink-0" : "flex-grow"
+              sessionsCollapsed ? "flex-shrink-0" : "flex-grow min-h-0"
             }`}
-            style={!sessionsCollapsed && gitStatus ? { height: sessionsHeight } : undefined}
           >
             <button
               onClick={() => setSessionsCollapsed(!sessionsCollapsed)}
@@ -346,17 +345,17 @@ export function SessionSidebar({
             )}
           </div>
 
-          {/* Git Status Panel (drag handle + full panel, no collapse) */}
-          {gitStatus && (
+          {/* Git Status Panel — only visible when viewing a specific session */}
+          {gitStatus && viewMode === "session" && (
             <>
               <div
                 className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
-                onMouseDown={handleSessionsHeightDragStart}
+                onMouseDown={handleGitStatusHeightDragStart}
                 title={t("sessions.dragToResize")}
               >
                 <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
               </div>
-              <div className="flex-shrink-0 overflow-y-auto" style={{ maxHeight: 160 }}>
+              <div className="flex-shrink-0 overflow-y-auto" style={{ height: gitStatusHeight }}>
                 <GitStatusPanel />
               </div>
             </>
