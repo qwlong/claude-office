@@ -303,6 +303,7 @@ class EventProcessor:
             # Convert this session's boss into a regular agent
             boss_as_agent = Agent(
                 id=f"{short_id}:boss",
+                agent_type="main",
                 name=state.boss.current_task or short_id,
                 color=colors[idx % len(colors)],
                 number=next_desk,
@@ -467,6 +468,7 @@ class EventProcessor:
                 boss_agent_state = _boss_to_agent_state.get(state.boss.state, AgentState.WORKING)
                 boss_as_agent = Agent(
                     id=f"main-{sid}",
+                    agent_type="main",
                     name="Claude",
                     color=color,
                     number=desk_num,
