@@ -158,7 +158,7 @@ export function SessionSidebar({
       {!isCollapsed && (
         <>
           {/* Project Groups */}
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0">
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0 max-h-[40vh] overflow-y-auto">
             <ProjectSidebar
               collapsed={projectsCollapsed}
               onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
