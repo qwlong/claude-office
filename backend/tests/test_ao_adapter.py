@@ -4,7 +4,8 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from httpx import Request, Response
 
-from app.services.adapters.ao import AOAdapter
+from app.services.adapters.ao import AOAdapter, _AO_STATUS_MAP
+from app.models.tasks import TaskStatus
 
 _DUMMY_REQ = Request("GET", "http://test")
 
@@ -132,3 +133,23 @@ class TestAOAdapterSpawn:
             session = await adapter.spawn("my-project", "#99")
             assert session.session_id == "new-sess-1"
             assert session.status == "spawning"
+
+
+class TestAOStatusMapping:
+    def test_stuck_maps_to_blocked(self):
+        """AO 'stuck' means agent needs human input — should map to 'blocked'."""
+        assert _AO_STATUS_MAP["stuck"] == "blocked"
+        assert TaskStatus("blocked")  # Verify the status exists
+
+    def test_idle_maps_to_idle(self):
+        """AO 'idle' means agent is idle — should map to 'idle'."""
+        assert _AO_STATUS_MAP["idle"] == "idle"
+        assert TaskStatus("idle")
+
+    def test_working_still_maps_to_working(self):
+        assert _AO_STATUS_MAP["working"] == "working"
+
+    def test_all_ao_statuses_map_to_valid_task_status(self):
+        """Every AO status should map to a valid TaskStatus."""
+        for ao_status, task_status in _AO_STATUS_MAP.items():
+            assert TaskStatus(task_status), f"AO status '{ao_status}' maps to invalid '{task_status}'"

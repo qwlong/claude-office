@@ -218,6 +218,8 @@ const ptBR: Record<TranslationKey, string> = {
   // Task Status
   "taskStatus.spawning": "Criando",
   "taskStatus.working": "Trabalhando",
+  "taskStatus.idle": "Ocioso",
+  "taskStatus.blocked": "Bloqueado",
   "taskStatus.prOpen": "PR Aberto",
   "taskStatus.ciFailed": "CI Falhou",
   "taskStatus.reviewPending": "Revisão Pendente",

@@ -218,6 +218,8 @@ const es: Record<TranslationKey, string> = {
   // Task Status
   "taskStatus.spawning": "Creando",
   "taskStatus.working": "Trabajando",
+  "taskStatus.idle": "Inactivo",
+  "taskStatus.blocked": "Bloqueado",
   "taskStatus.prOpen": "PR Abierto",
   "taskStatus.ciFailed": "CI Fallido",
   "taskStatus.reviewPending": "Revisión Pendiente",

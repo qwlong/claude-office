@@ -16,7 +16,7 @@ _AO_STATUS_MAP: dict[str, str] = {
     "working": "working",
     "ready": "working",
     "active": "working",
-    "idle": "working",
+    "idle": "idle",
     "pr_open": "pr_open",
     "pr-open": "pr_open",
     "review": "review_pending",
@@ -25,7 +25,7 @@ _AO_STATUS_MAP: dict[str, str] = {
     "done": "done",
     "killed": "done",
     "exited": "done",
-    "stuck": "working",
+    "stuck": "blocked",
     "error": "error",
     "failed": "error",
 }

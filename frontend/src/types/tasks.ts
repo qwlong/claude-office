@@ -6,6 +6,8 @@
 export type TaskStatus =
   | "spawning"
   | "working"
+  | "idle"
+  | "blocked"
   | "pr_open"
   | "ci_failed"
   | "review_pending"
@@ -42,6 +44,8 @@ export interface TasksUpdate {
 export const ACTIVE_TASK_STATUSES: TaskStatus[] = [
   "spawning",
   "working",
+  "idle",
+  "blocked",
   "pr_open",
   "ci_failed",
   "review_pending",

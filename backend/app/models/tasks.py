@@ -14,6 +14,8 @@ class TaskStatus(StrEnum):
 
     spawning = "spawning"
     working = "working"
+    idle = "idle"
+    blocked = "blocked"
     pr_open = "pr_open"
     ci_failed = "ci_failed"
     review_pending = "review_pending"

@@ -8,6 +8,8 @@ const STATUS_CONFIG: Record<
 > = {
   spawning: { icon: "\u26AA", labelKey: "taskStatus.spawning", color: "text-slate-400" },
   working: { icon: "\uD83D\uDFE2", labelKey: "taskStatus.working", color: "text-emerald-400" },
+  idle: { icon: "\uD83D\uDFE4", labelKey: "taskStatus.idle", color: "text-slate-400" },
+  blocked: { icon: "\uD83D\uDED1", labelKey: "taskStatus.blocked", color: "text-red-400" },
   pr_open: { icon: "\uD83D\uDFE3", labelKey: "taskStatus.prOpen", color: "text-purple-400" },
   ci_failed: { icon: "\uD83D\uDD34", labelKey: "taskStatus.ciFailed", color: "text-red-400" },
   review_pending: { icon: "\uD83D\uDFE1", labelKey: "taskStatus.reviewPending", color: "text-yellow-400" },

@@ -215,6 +215,8 @@ const en = {
   // Task Status
   "taskStatus.spawning": "Spawning",
   "taskStatus.working": "Working",
+  "taskStatus.idle": "Idle",
+  "taskStatus.blocked": "Blocked",
   "taskStatus.prOpen": "PR Open",
   "taskStatus.ciFailed": "CI Failed",
   "taskStatus.reviewPending": "Review Pending",

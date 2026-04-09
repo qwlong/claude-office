@@ -9,7 +9,7 @@ from app.models.tasks import Task, TaskStatus
 class TestTaskStatus:
     def test_all_statuses_exist(self):
         expected = {
-            "spawning", "working", "pr_open", "ci_failed",
+            "spawning", "working", "idle", "blocked", "pr_open", "ci_failed",
             "review_pending", "changes_requested", "approved",
             "merged", "done", "error",
         }

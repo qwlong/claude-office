@@ -213,6 +213,8 @@ const zhCN: Record<TranslationKey, string> = {
   // Task Status
   "taskStatus.spawning": "派发中",
   "taskStatus.working": "工作中",
+  "taskStatus.idle": "空闲",
+  "taskStatus.blocked": "已阻塞",
   "taskStatus.prOpen": "PR 已开",
   "taskStatus.ciFailed": "CI 失败",
   "taskStatus.reviewPending": "等待审查",
