@@ -54,6 +54,7 @@ class Agent(BaseModel):
 
     id: str
     native_id: str | None = None  # Native Claude agent ID (e.g., "a5a60c7")
+    agent_type: str = "subagent"  # "main" or "subagent"
     name: str | None = None
     color: str
     number: int
