@@ -223,9 +223,12 @@ export function SessionSidebar({
                   const activeCount = filtered.filter((s) => s.status === "active").length;
                   const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
                   return (
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
-                      {activeCount > 0 && <><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")} · </>}{t("sessions.events", { count: totalEvents })}
-                    </span>
+                    <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
+                      <span>{t("sessions.events", { count: totalEvents })}</span>
+                      {activeCount > 0 && (
+                        <span><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")}</span>
+                      )}
+                    </div>
                   );
                 })()}
               </div>

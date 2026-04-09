@@ -66,9 +66,10 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
               {t("sidebar.allProjects")}
             </span>
           </div>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
-            {projects.reduce((sum, p) => sum + p.sessionCount, 0)} {t("project.sessions", { count: 0 }).replace(/^0\s*/, "")} · {projects.reduce((sum, p) => sum + p.agents.length, 0)} {t("project.agents", { count: 0 }).replace(/^0\s*/, "")}
-          </span>
+          <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
+            <span>{t("project.sessions", { count: projects.reduce((sum, p) => sum + p.sessionCount, 0) })}</span>
+            <span>{t("project.agents", { count: projects.reduce((sum, p) => sum + p.agents.length, 0) })}</span>
+          </div>
         </div>
       </div>
 
