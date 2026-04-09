@@ -99,8 +99,8 @@ export function SessionSidebar({
 
   const {
     size: sessionsHeight,
-    isDragging: isHeightDragging,
-    handleDragStart: handleHeightDragStart,
+    isDragging: isSessionsHeightDragging,
+    handleDragStart: handleSessionsHeightDragStart,
   } = useDragResize({
     initialSize: SESSIONS_DEFAULT_HEIGHT,
     minSize: SESSIONS_MIN_HEIGHT,
@@ -121,7 +121,7 @@ export function SessionSidebar({
     edge: "down",
   });
 
-  const isDragging = isWidthDragging || isHeightDragging || isProjectHeightDragging;
+  const isDragging = isWidthDragging || isSessionsHeightDragging || isProjectHeightDragging;
 
   return (
     <aside
@@ -351,7 +351,7 @@ export function SessionSidebar({
             <>
               <div
                 className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
-                onMouseDown={handleHeightDragStart}
+                onMouseDown={handleSessionsHeightDragStart}
                 title={t("sessions.dragToResize")}
               >
                 <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
