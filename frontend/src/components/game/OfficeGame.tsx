@@ -156,20 +156,11 @@ export function OfficeGame(): ReactNode {
   useAnimationSystem({ enabled: !isMultiRoom });
 
   // Cleanup on unmount (HMR or navigation)
+  // NOTE: Don't call app.destroy() here — @pixi/react's <Application> handles that
+  // on unmount. Calling it manually causes double-destroy which crashes ResizePlugin.
   useEffect(() => {
     return () => {
-      if (appRef.current) {
-        try {
-          appRef.current.destroy(true, {
-            children: true,
-            texture: true,
-            textureSource: true,
-          });
-        } catch {
-          // Ignore cleanup errors
-        }
-        appRef.current = null;
-      }
+      appRef.current = null;
       performFullCleanup();
     };
   }, []);
@@ -219,33 +210,33 @@ export function OfficeGame(): ReactNode {
     return filtered;
   }, [isMergedView, agents]);
 
-  // Calculate occupied desks
+  // Calculate occupied desks (use deskAgents to exclude bosses in merged view)
   const occupiedDesks = useMemo(() => {
     const desks = new Set<number>();
-    for (const agent of agents.values()) {
+    for (const agent of deskAgents.values()) {
       if (agent.desk && agent.phase === "idle") {
         desks.add(agent.desk);
       }
     }
     return desks;
-  }, [agents]);
+  }, [deskAgents]);
 
   // Calculate desk tasks for marquee display
   const deskTasks = useMemo(() => {
     const tasks = new Map<number, string>();
-    for (const agent of agents.values()) {
+    for (const agent of deskAgents.values()) {
       if (agent.desk && agent.phase === "idle") {
         const label = agent.currentTask ?? agent.name ?? "";
         if (label) tasks.set(agent.desk, label);
       }
     }
     return tasks;
-  }, [agents]);
+  }, [deskAgents]);
 
   // Desk count
   const deskCount = useMemo(() => {
-    return Math.max(8, Math.ceil(agents.size / 4) * 4);
-  }, [agents.size]);
+    return Math.max(8, Math.ceil(deskAgents.size / 4) * 4);
+  }, [deskAgents.size]);
 
   // Dynamic canvas height based on desk count
   const canvasHeight = useMemo(() => getCanvasHeight(deskCount), [deskCount]);
@@ -412,6 +403,12 @@ export function OfficeGame(): ReactNode {
               }
               onInit={(app) => {
                 appRef.current = app;
+                // Patch: PixiJS v8 ResizePlugin.destroy() crashes if _cancelResize
+                // was never initialized (no resizeTo configured). Ensure it's callable.
+                const appAny = app as unknown as Record<string, unknown>;
+                if (!appAny._cancelResize) {
+                  appAny._cancelResize = () => {};
+                }
               }}
             >
               {/* Loading screen - shown while sprites are loading */}
@@ -575,7 +572,8 @@ export function OfficeGame(): ReactNode {
                     })}
 
                     {/* Agents outside elevator - zIndex based on feet Y position */}
-                    {Array.from(agents.values())
+                    {/* In merged view, deskAgents excludes bosses (agentType=main) */}
+                    {Array.from(deskAgents.values())
                       .filter(
                         (agent) =>
                           !isAgentInElevator(
@@ -615,7 +613,7 @@ export function OfficeGame(): ReactNode {
                   />
 
                   {/* Agent arms - rendered after desk/keyboard, before headsets */}
-                  {Array.from(agents.values())
+                  {Array.from(deskAgents.values())
                     .filter((agent) => agent.phase === "idle")
                     .map((agent) => (
                       <AgentArms
@@ -627,7 +625,7 @@ export function OfficeGame(): ReactNode {
 
                   {/* Agent headsets - rendered after arms so they appear on top */}
                   {textures.headset &&
-                    Array.from(agents.values())
+                    Array.from(deskAgents.values())
                       .filter((agent) => agent.phase === "idle")
                       .map((agent) => (
                         <AgentHeadset
@@ -747,7 +745,7 @@ export function OfficeGame(): ReactNode {
                   )}
 
                   {/* Labels Layer - rendered on top of most things */}
-                  {Array.from(agents.values())
+                  {Array.from(deskAgents.values())
                     .filter(
                       (agent) =>
                         agent.name && !isInElevatorZone(agent.currentPosition),
@@ -761,7 +759,7 @@ export function OfficeGame(): ReactNode {
                     ))}
 
                   {/* Bubbles Layer - rendered on top of everything */}
-                  {Array.from(agents.values())
+                  {Array.from(deskAgents.values())
                     .filter(
                       (agent) =>
                         agent.bubble.content &&
