@@ -109,8 +109,9 @@ async def test_merged_state_bosses_sorted_by_activity():
     state = await event_processor.get_merged_state()
     assert state is not None
 
-    # s-idle filtered out (idle + no agents)
-    # Remaining 3: s-working-2 (working, 2 agents), s-working-0 (working, 0), s-idle-1 (idle, 1)
+    # 4 sessions, max 3 bosses shown
+    # Sorted: s-working-2 (working, 2 agents), s-working-0 (working, 0), s-idle-1 (idle, 1)
+    # s-idle (idle, 0 agents) is 4th — gets cut off by max 3
     session_ids = [b.session_id for b in state.bosses]
     assert len(session_ids) == 3
     assert session_ids[0] == "s-working-2"  # working + most agents
@@ -134,20 +135,21 @@ async def test_merged_state_max_3_bosses():
 
 
 @pytest.mark.asyncio
-async def test_merged_state_idle_no_agents_filtered():
-    """Sessions with idle boss and no agents should not appear in bosses list."""
+async def test_merged_state_idle_sessions_included_but_ranked_lower():
+    """Idle sessions are included but ranked after active ones."""
     sm_active = StateMachine()
     sm_active.boss_state = BossState.WORKING
     event_processor.sessions["active"] = sm_active
 
-    sm_dead = StateMachine()
-    sm_dead.boss_state = BossState.IDLE
-    event_processor.sessions["dead"] = sm_dead
+    sm_idle = StateMachine()
+    sm_idle.boss_state = BossState.IDLE
+    event_processor.sessions["idle"] = sm_idle
 
-    for sid in ["active", "dead"]:
+    for sid in ["active", "idle"]:
         event_processor.project_registry.register_session_sync(sid, f"Proj-{sid}", f"/tmp/{sid}")
 
     state = await event_processor.get_merged_state()
     assert state is not None
-    assert len(state.bosses) == 1
-    assert state.bosses[0].session_id == "active"
+    assert len(state.bosses) == 2
+    assert state.bosses[0].session_id == "active"  # active ranked first
+    assert state.bosses[1].session_id == "idle"

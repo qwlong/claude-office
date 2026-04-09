@@ -292,10 +292,6 @@ class EventProcessor:
         ]
 
         for idx, (session_id, sm) in enumerate(self.sessions.items()):
-            # Only include active sessions (non-idle boss or has agents)
-            if sm.boss_state == BossState.IDLE and not sm.agents:
-                continue
-
             state = sm.to_game_state(session_id)
             short_id = session_id[:8]
             active_session_ids.append(session_id)
