@@ -67,6 +67,7 @@ const zhCN: Record<TranslationKey, string> = {
   "sessions.noSessions": "未找到会话",
   "sessions.unknownProject": "未知项目",
   "sessions.deleteSession": "删除会话",
+  "sessions.activeSessions": "个活跃",
   "sessions.events": "个事件",
   "sessions.events_one": "{count} 个事件",
   "sessions.events_other": "{count} 个事件",

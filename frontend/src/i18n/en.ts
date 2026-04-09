@@ -67,6 +67,7 @@ const en = {
   "sessions.noSessions": "No sessions found",
   "sessions.unknownProject": "Unknown Project",
   "sessions.deleteSession": "Delete session",
+  "sessions.activeSessions": "active",
   "sessions.events": "events",
   "sessions.events_one": "{count} event",
   "sessions.events_other": "{count} events",

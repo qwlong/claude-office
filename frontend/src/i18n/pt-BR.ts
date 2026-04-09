@@ -69,6 +69,7 @@ const ptBR: Record<TranslationKey, string> = {
   "sessions.noSessions": "Nenhuma sessão encontrada",
   "sessions.unknownProject": "Projeto Desconhecido",
   "sessions.deleteSession": "Excluir sessão",
+  "sessions.activeSessions": "ativas",
   "sessions.events": "eventos",
   "sessions.events_one": "{count} evento",
   "sessions.events_other": "{count} eventos",

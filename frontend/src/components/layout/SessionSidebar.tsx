@@ -224,7 +224,7 @@ export function SessionSidebar({
                   const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
                   return (
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
-                      {activeCount > 0 && <><span className="text-emerald-500">{activeCount}</span> active · </>}{totalEvents} {t("eventLog.events", { count: totalEvents })}
+                      {activeCount > 0 && <><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")} · </>}{t("sessions.events", { count: totalEvents })}
                     </span>
                   );
                 })()}

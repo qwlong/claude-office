@@ -69,6 +69,7 @@ const es: Record<TranslationKey, string> = {
   "sessions.noSessions": "No se encontraron sesiones",
   "sessions.unknownProject": "Proyecto desconocido",
   "sessions.deleteSession": "Eliminar sesión",
+  "sessions.activeSessions": "activas",
   "sessions.events": "eventos",
   "sessions.events_one": "{count} evento",
   "sessions.events_other": "{count} eventos",
