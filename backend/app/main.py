@@ -36,6 +36,15 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    # Migrate existing sessions to projects table (idempotent)
+    from app.db.database import AsyncSessionLocal
+    from app.db.migrate_projects import migrate_projects
+
+    async with AsyncSessionLocal() as db:
+        await migrate_projects(db)
+        # Load projects into registry cache
+        await event_processor.project_registry.load_from_db(db)
+
     git_service.start()
     event_processor.start_stale_agent_checker()
 
