@@ -9,6 +9,7 @@
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { useFilteredData } from "@/hooks/useFilteredData";
+import { useGameStore, selectBoss } from "@/stores/gameStore";
 import {
   Users,
   Briefcase,
@@ -16,6 +17,7 @@ import {
   Activity,
   MapPin,
   Layers,
+  Crown,
 } from "lucide-react";
 
 // Backend state colors (work status)
@@ -84,6 +86,9 @@ function formatState(state: string | undefined): string {
 export function AgentStatus() {
   const { t } = useTranslation();
   const { agents: agentArray } = useFilteredData();
+  const boss = useGameStore(selectBoss);
+
+  const totalCount = agentArray.length + 1; // +1 for boss
 
   return (
     <div className="flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden font-mono text-xs h-full">
@@ -95,7 +100,7 @@ export function AgentStatus() {
         </div>
         <div className="flex items-center gap-1">
           <span className="text-2xl font-bold text-slate-800 dark:text-slate-200 tabular-nums">
-            {agentArray.length}
+            {totalCount}
           </span>
           <span className="text-slate-400 dark:text-slate-500 text-[10px]">
             {t("header.agents")}
@@ -105,12 +110,58 @@ export function AgentStatus() {
 
       {/* Agent list - scrollable, fills remaining height */}
       <div className="flex-grow overflow-y-auto p-2 space-y-2 min-h-0">
-        {agentArray.length === 0 ? (
-          <div className="text-slate-400 dark:text-slate-600 italic p-4 text-center">
-            {t("agentStatus.noAgents")}
+        {/* Boss card */}
+        <div className="bg-amber-50/60 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40 rounded-md overflow-hidden">
+          <div
+            className="flex items-center justify-between px-2 py-1.5 border-b border-amber-200/50 dark:border-amber-800/30"
+            style={{ borderLeftWidth: 3, borderLeftColor: "#f59e0b" }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Crown size={11} className="text-amber-500 flex-shrink-0" />
+              <span className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                Claude
+              </span>
+            </div>
           </div>
-        ) : (
-          agentArray.map((agent) => (
+          <div className="px-2 py-1.5 space-y-1.5">
+            <div className="flex items-start gap-2">
+              <Briefcase size={11} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+              <div className="text-slate-700 dark:text-slate-300 text-[11px] leading-tight min-w-0">
+                {boss.currentTask ? (
+                  <span className="line-clamp-2">{boss.currentTask}</span>
+                ) : (
+                  <span className="text-slate-400 dark:text-slate-600 italic">
+                    {t("agentStatus.noTaskSummary")}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Terminal size={11} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+              <div className="text-[11px] leading-tight min-w-0">
+                {boss.bubble?.content ? (
+                  <span className="text-blue-400 line-clamp-2">
+                    <span className="mr-1">{boss.bubble.content.icon}</span>
+                    {boss.bubble.content.text}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 dark:text-slate-600 italic">
+                    {t("agentStatus.noRecentToolCall")}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Activity size={10} className="text-slate-400 dark:text-slate-500" />
+              <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-semibold border ${getBackendStateColor(boss.backendState)}`}>
+                {formatState(boss.backendState)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Subagent cards */}
+        {agentArray.map((agent) => (
             <div
               key={agent.id}
               className="bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
@@ -211,8 +262,7 @@ export function AgentStatus() {
                 )}
               </div>
             </div>
-          ))
-        )}
+          ))}
       </div>
     </div>
   );
