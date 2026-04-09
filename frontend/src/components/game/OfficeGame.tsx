@@ -47,6 +47,7 @@ import { useAnimationSystem } from "@/systems/animationSystem";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
 import { useProjectStore, selectViewMode, selectActiveRoomKey, selectProjects, selectSessions } from "@/stores/projectStore";
+import { groupAgentsBySessionId } from "@/utils/agentFilter";
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -122,19 +123,8 @@ export function OfficeGame(): ReactNode {
   // Derive one room per session. Use the sessions list as the source of truth
   // (not agents) so sessions with zero agents still get a room.
   const sessionRooms = useMemo(() => {
-    // Build a lookup: projectName → ProjectGroup (for color, boss, todos)
     const projectByName = new Map(projects.map((p) => [p.name, p]));
-
-    // Build agent lookup: sessionId → agents[]
-    const agentsBySession = new Map<string, typeof projects[0]["agents"]>();
-    for (const project of projects) {
-      for (const agent of project.agents) {
-        const sid = String((agent as Record<string, unknown>).sessionId ?? "");
-        if (!sid) continue;
-        if (!agentsBySession.has(sid)) agentsBySession.set(sid, []);
-        agentsBySession.get(sid)!.push(agent);
-      }
-    }
+    const agentsBySession = groupAgentsBySessionId(projects);
 
     return storeSessions.map((session) => {
       const project = projectByName.get(session.projectName ?? "") ?? projects[0];
