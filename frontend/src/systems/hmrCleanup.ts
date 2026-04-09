@@ -38,20 +38,11 @@ export function performFullCleanup(): void {
   // Reset agent state machines
   agentMachineService.reset();
 
-  // Destroy PixiJS application if registered
-  if (currentApp) {
-    try {
-      // Destroy the app and its renderer to free WebGL context
-      currentApp.destroy(true, {
-        children: true,
-        texture: true,
-        textureSource: true,
-      });
-    } catch {
-      // Ignore cleanup errors
-    }
-    currentApp = null;
-  }
+  // Clear PixiJS application reference
+  // NOTE: Don't call app.destroy() here — @pixi/react's <Application> component
+  // handles destruction on unmount. Calling it manually causes double-destroy
+  // which crashes PixiJS's ResizePlugin (_cancelResize is not a function).
+  currentApp = null;
 }
 
 /**

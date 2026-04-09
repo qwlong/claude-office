@@ -171,7 +171,7 @@ export function SessionSidebar({
       {!isCollapsed && (
         <>
           {/* Project Groups */}
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0" style={{ height: projectsHeight }}>
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0" style={{ height: projectsCollapsed ? "auto" : projectsHeight }}>
             <ProjectSidebar
               collapsed={projectsCollapsed}
               onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
@@ -201,6 +201,7 @@ export function SessionSidebar({
           </div>
 
           {/* Drag handle between projects and sessions — controls project area height */}
+          {!projectsCollapsed && (
           <div
             className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1 z-10"
             onMouseDown={handleProjectHeightDragStart}
@@ -208,6 +209,7 @@ export function SessionSidebar({
           >
             <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
           </div>
+          )}
 
           {/* Session Browser */}
           <div
