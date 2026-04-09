@@ -28,6 +28,19 @@ logging.basicConfig(
 settings = get_settings()
 
 
+def _add_project_id_column_if_missing(connection) -> None:  # type: ignore[no-untyped-def]
+    """Add project_id column to sessions table if it doesn't exist (schema migration)."""
+    import sqlite3
+
+    raw = connection.connection.dbapi_connection  # type: ignore[attr-defined]
+    cursor = raw.cursor()
+    cursor.execute("PRAGMA table_info(sessions)")
+    columns = {row[1] for row in cursor.fetchall()}
+    if "project_id" not in columns:
+        cursor.execute("ALTER TABLE sessions ADD COLUMN project_id VARCHAR REFERENCES projects(id)")
+        logging.getLogger(__name__).info("Added project_id column to sessions table")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Manage application startup and shutdown lifecycle."""
@@ -35,6 +48,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add project_id column to sessions if missing (schema migration)
+        await conn.run_sync(_add_project_id_column_if_missing)
 
     # Migrate existing sessions to projects table (idempotent)
     from app.db.database import AsyncSessionLocal
