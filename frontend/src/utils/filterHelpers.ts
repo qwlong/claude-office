@@ -2,25 +2,28 @@ import type { EventLogEntry } from "@/stores/gameStore";
 import type { ConversationEntry } from "@/types";
 
 /**
- * Filter events by a set of agent IDs.
- * Returns the original array reference when agentIds is null (no filtering).
+ * Filter events by a set of session IDs.
+ * Returns the original array reference when sessionIds is null (no filtering).
  */
 export function filterEvents(
   events: EventLogEntry[],
-  agentIds: Set<string> | null,
+  sessionIds: Set<string> | null,
 ): EventLogEntry[] {
-  if (!agentIds) return events;
-  return events.filter((e) => agentIds.has(e.agentId));
+  if (!sessionIds) return events;
+  return events.filter((e) => e.sessionId && sessionIds.has(e.sessionId));
 }
 
 /**
- * Filter conversation entries by a set of agent IDs.
- * Returns the original array reference when agentIds is null (no filtering).
+ * Filter conversation entries by a set of session IDs.
+ * Returns the original array reference when sessionIds is null (no filtering).
  */
 export function filterConversation(
   conversation: ConversationEntry[],
-  agentIds: Set<string> | null,
+  sessionIds: Set<string> | null,
 ): ConversationEntry[] {
-  if (!agentIds) return conversation;
-  return conversation.filter((c) => agentIds.has(c.agentId));
+  if (!sessionIds) return conversation;
+  return conversation.filter((c) => {
+    const sid = (c as Record<string, unknown>).sessionId;
+    return typeof sid === "string" && sessionIds.has(sid);
+  });
 }

@@ -119,7 +119,7 @@ export interface BossAnimationState {
 export type EventLogEntry = Omit<
   NonNullable<WebSocketMessage["event"]>,
   "timestamp"
-> & { timestamp: Date; detail?: EventDetail };
+> & { timestamp: Date; detail?: EventDetail; sessionId?: string };
 
 /**
  * Replay frame for event replay.
@@ -220,8 +220,8 @@ interface GameStore {
   setTodos: (todos: TodoItem[]) => void;
   setPrintReport: (printReport: boolean) => void;
   setGitStatus: (status: GitStatus | null) => void;
-  addEventLog: (event: NonNullable<WebSocketMessage["event"]>) => void;
-  setEventHistory: (history: NonNullable<WebSocketMessage["event"]>[]) => void;
+  addEventLog: (event: NonNullable<WebSocketMessage["event"]>, sessionId?: string) => void;
+  setEventHistory: (history: NonNullable<WebSocketMessage["event"]>[], sessionId?: string) => void;
   conversation: ConversationEntry[];
   setConversation: (conversation: ConversationEntry[]) => void;
 
@@ -921,22 +921,23 @@ export const useGameStore = create<GameStore>()(
     setPrintReport: (printReport) => set({ printReport }),
     setGitStatus: (gitStatus) => set({ gitStatus }),
 
-    addEventLog: (event) =>
+    addEventLog: (event, sessionId) =>
       set((state) => {
         const timestamp = event.timestamp
           ? new Date(event.timestamp)
           : new Date();
-        const entry: EventLogEntry = { ...event, timestamp };
+        const entry: EventLogEntry = { ...event, timestamp, sessionId };
         return {
           eventLog: [entry, ...state.eventLog.slice(0, MAX_EVENT_LOG - 1)],
         };
       }),
 
-    setEventHistory: (history) =>
+    setEventHistory: (history, sessionId) =>
       set(() => {
         const entries: EventLogEntry[] = history.map((event) => ({
           ...event,
           timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+          sessionId,
         }));
         // History is ordered oldest-first from backend; reverse for newest-first display
         return { eventLog: entries.reverse().slice(0, MAX_EVENT_LOG) };

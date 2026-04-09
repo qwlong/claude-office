@@ -300,6 +300,7 @@ export function useWebSocketEvents({
             timestamp: h.timestamp,
             detail: h.detail,
           })),
+          state.sessionId,
         );
       }
     },
@@ -332,7 +333,7 @@ export function useWebSocketEvents({
 
           case "event":
             if (message.event) {
-              addEventLog(message.event);
+              addEventLog(message.event, message.session_id);
 
               // Clear processed agents on session_start to allow re-detection
               // This is needed when simulation re-runs with the same session ID and agent IDs
