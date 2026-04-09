@@ -29,7 +29,7 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
   const isAllProjectsActive = viewMode === "projects";
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <button
         onClick={onToggleCollapsed}
         className="w-full bg-slate-100 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 flex-shrink-0 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
@@ -59,13 +59,20 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
         onClick={zoomToProjects}
         onKeyDown={(e) => e.key === "Enter" && zoomToProjects()}
       >
-        <Layers size={10} className={isAllProjectsActive ? "text-purple-600 dark:text-purple-400" : "text-slate-400 dark:text-slate-500"} />
-        <span className={`text-xs font-bold ${isAllProjectsActive ? "text-purple-700 dark:text-purple-300" : "text-slate-500 dark:text-slate-400"}`}>
-          {t("sidebar.allProjects")}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <Layers size={10} className={isAllProjectsActive ? "text-purple-600 dark:text-purple-400" : "text-slate-400 dark:text-slate-500"} />
+            <span className={`text-xs font-bold ${isAllProjectsActive ? "text-purple-700 dark:text-purple-300" : "text-slate-500 dark:text-slate-400"}`}>
+              {t("sidebar.allProjects")}
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
+            {projects.reduce((sum, p) => sum + p.sessionCount, 0)} {t("project.sessions", { count: 0 }).replace(/^0\s*/, "")} · {projects.reduce((sum, p) => sum + p.agents.length, 0)} {t("project.agents", { count: 0 }).replace(/^0\s*/, "")}
+          </span>
+        </div>
       </div>
 
-      <div className="overflow-y-auto p-2">
+      <div className="overflow-y-auto flex-grow min-h-0 p-2">
         <div className="flex flex-col gap-2">
           {projects.map((project) => {
             const isActive = viewMode === "project" && activeRoomKey === project.key;
