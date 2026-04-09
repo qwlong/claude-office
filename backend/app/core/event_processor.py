@@ -398,20 +398,17 @@ class EventProcessor:
         # so project counts match the sessions sidebar total
         try:
             async with AsyncSessionLocal() as db:
-                # Only count sessions that have a session_start event (same
-                # filter as the sessions API sidebar list)
-                start_result = await db.execute(
-                    select(EventRecord.session_id)
-                    .where(EventRecord.event_type == "session_start")
-                    .distinct()
+                # Register all DB sessions that have any events into project registry
+                sessions_with_events_result = await db.execute(
+                    select(EventRecord.session_id).distinct()
                 )
-                sessions_with_start: set[str] = {row[0] for row in start_result.all()}
+                sessions_with_events: set[str] = {row[0] for row in sessions_with_events_result.all()}
 
                 all_result = await db.execute(select(SessionRecord))
                 all_records = all_result.scalars().all()
                 needs_commit = False
                 for rec in all_records:
-                    if rec.id not in sessions_with_start:
+                    if rec.id not in sessions_with_events:
                         continue
                     if self.project_registry.get_project_for_session(rec.id):
                         continue
