@@ -7,12 +7,8 @@
 
 "use client";
 
-import { useMemo } from "react";
-import { useGameStore, selectAgents } from "@/stores/gameStore";
-import { useProjectStore, selectViewMode, selectActiveRoomKey } from "@/stores/projectStore";
-import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "@/hooks/useTranslation";
-import { getFilteredAgents } from "@/utils/agentFilter";
+import { useFilteredData } from "@/hooks/useFilteredData";
 import {
   Users,
   Briefcase,
@@ -87,65 +83,7 @@ function formatState(state: string | undefined): string {
 
 export function AgentStatus() {
   const { t } = useTranslation();
-  const viewMode = useProjectStore(selectViewMode);
-  const activeRoomKey = useProjectStore(selectActiveRoomKey);
-  const projects = useProjectStore((s) => s.projects);
-  const gameAgents = useGameStore(useShallow(selectAgents));
-
-  const filtered = useMemo(
-    () => getFilteredAgents(viewMode, activeRoomKey, projects),
-    [viewMode, activeRoomKey, projects],
-  );
-
-  // Normalize agents from either source into a common shape for rendering
-  interface DisplayAgent {
-    id: string;
-    name: string | null;
-    color: string;
-    number: number;
-    desk: number | null;
-    backendState: string;
-    currentTask: string | null;
-    phase: string | null;
-    bubble: { content: { icon?: string; text?: string } | null } | null;
-    queueType: string | null;
-    queueIndex: number;
-  }
-
-  const agentArray = useMemo((): DisplayAgent[] => {
-    if (filtered) {
-      // projectStore Agent → DisplayAgent
-      return filtered.map((a): DisplayAgent => ({
-        id: a.id as string,
-        name: (a.name as string) ?? null,
-        color: a.color as string,
-        number: a.number as number,
-        desk: (a.desk as number) ?? null,
-        backendState: (a.state as string) ?? "unknown",
-        currentTask: (a.currentTask as string) ?? null,
-        phase: null,
-        bubble: (a.bubble as DisplayAgent["bubble"]) ?? null,
-        queueType: null,
-        queueIndex: -1,
-      }));
-    }
-    // gameStore agents already have the right shape
-    return Array.from(gameAgents.values())
-      .sort((a, b) => a.number - b.number)
-      .map((a): DisplayAgent => ({
-        id: a.id,
-        name: a.name ?? null,
-        color: a.color,
-        number: a.number,
-        desk: a.desk ?? null,
-        backendState: a.backendState ?? "unknown",
-        currentTask: a.currentTask ?? null,
-        phase: a.phase ?? null,
-        bubble: a.bubble ? { content: a.bubble.content ? { icon: a.bubble.content.icon ?? undefined, text: a.bubble.content.text ?? undefined } : null } : null,
-        queueType: a.queueType ?? null,
-        queueIndex: a.queueIndex ?? -1,
-      }));
-  }, [filtered, gameAgents]);
+  const { agents: agentArray } = useFilteredData();
 
   return (
     <div className="flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden font-mono text-xs h-full">
