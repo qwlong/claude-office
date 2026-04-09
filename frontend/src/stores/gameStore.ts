@@ -223,7 +223,7 @@ interface GameStore {
   addEventLog: (event: NonNullable<WebSocketMessage["event"]>, sessionId?: string) => void;
   setEventHistory: (history: NonNullable<WebSocketMessage["event"]>[], sessionId?: string) => void;
   conversation: ConversationEntry[];
-  setConversation: (conversation: ConversationEntry[]) => void;
+  setConversation: (conversation: ConversationEntry[], sessionId?: string) => void;
 
   // Whiteboard actions
   whiteboardData: WhiteboardData;
@@ -943,7 +943,11 @@ export const useGameStore = create<GameStore>()(
         return { eventLog: entries.reverse().slice(0, MAX_EVENT_LOG) };
       }),
 
-    setConversation: (conversation) => set({ conversation }),
+    setConversation: (conversation, sessionId) => set({
+      conversation: sessionId
+        ? conversation.map((c) => ({ ...c, sessionId } as ConversationEntry))
+        : conversation,
+    }),
 
     // ========================================================================
     // WHITEBOARD ACTIONS

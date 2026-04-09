@@ -285,7 +285,7 @@ export function useWebSocketEvents({
       }
       // Sync conversation history (user prompts + Claude responses)
       if (state.conversation) {
-        store.setConversation(state.conversation);
+        store.setConversation(state.conversation, state.sessionId);
       }
       // Sync event history from backend on initial connection / reconnection
       // Only populate if frontend eventLog is empty (avoids overwriting live events)
