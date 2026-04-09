@@ -8,15 +8,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useGameStore,
-  selectEventLog,
-  type EventLogEntry,
-} from "@/stores/gameStore";
+import { type EventLogEntry } from "@/stores/gameStore";
 import { format } from "date-fns";
 import { Terminal } from "lucide-react";
 import { EventDetailModal } from "@/components/game/EventDetailModal";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useFilteredData } from "@/hooks/useFilteredData";
 import { getEventTypeTextColor } from "@/utils/event-type-styles";
 
 function hasNonEmptyDetail(event: EventLogEntry): boolean {
@@ -25,7 +22,7 @@ function hasNonEmptyDetail(event: EventLogEntry): boolean {
 
 export function EventLog() {
   const { t } = useTranslation();
-  const eventLog = useGameStore(selectEventLog);
+  const { events: eventLog } = useFilteredData();
   const [selectedEvent, setSelectedEvent] = useState<EventLogEntry | null>(
     null,
   );
