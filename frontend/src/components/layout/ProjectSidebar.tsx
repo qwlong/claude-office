@@ -46,33 +46,31 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
       </button>
 
       {!collapsed && (
-      <>
-      {/* All Projects item */}
-      <div
-        role="button"
-        tabIndex={0}
-        className={`mx-2 mt-2 px-3 py-2.5 min-h-[60px] rounded-md cursor-pointer transition-colors ${
-          isAllProjectsActive
-            ? "bg-purple-500/15 border-l-2 border-purple-500"
-            : "hover:bg-purple-50 dark:hover:bg-purple-900/20"
-        }`}
-        onClick={zoomToProjects}
-        onKeyDown={(e) => e.key === "Enter" && zoomToProjects()}
-      >
-        <div className="flex items-center gap-2 mb-1">
-          <Layers size={10} className={isAllProjectsActive ? "text-purple-600 dark:text-purple-400" : "text-slate-400 dark:text-slate-500"} />
-          <span className={`text-xs font-bold ${isAllProjectsActive ? "text-purple-700 dark:text-purple-300" : "text-slate-500 dark:text-slate-400"}`}>
-            {t("sidebar.allProjects")}
-          </span>
-        </div>
-        <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
-          <span>{t("project.sessions", { count: projects.reduce((sum, p) => sum + p.sessionCount, 0) })}</span>
-          <span>{t("project.agents", { count: projects.reduce((sum, p) => sum + p.agents.length, 0) })}</span>
-        </div>
-      </div>
-
       <div className="overflow-y-auto flex-grow min-h-0 p-2">
         <div className="flex flex-col gap-2">
+          {/* All Projects item */}
+          <div
+            role="button"
+            tabIndex={0}
+            className={`px-3 py-2.5 rounded-md cursor-pointer transition-colors ${
+              isAllProjectsActive
+                ? "bg-purple-500/15 border-l-2 border-purple-500"
+                : "hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            }`}
+            onClick={zoomToProjects}
+            onKeyDown={(e) => e.key === "Enter" && zoomToProjects()}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Layers size={10} className={isAllProjectsActive ? "text-purple-600 dark:text-purple-400" : "text-slate-400 dark:text-slate-500"} />
+              <span className={`text-xs font-bold ${isAllProjectsActive ? "text-purple-700 dark:text-purple-300" : "text-slate-500 dark:text-slate-400"}`}>
+                {t("sidebar.allProjects")}
+              </span>
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+              <span>{t("project.sessions", { count: projects.reduce((sum, p) => sum + p.sessionCount, 0) })}</span>
+              <span>{t("project.agents", { count: projects.reduce((sum, p) => sum + p.agents.length, 0) })}</span>
+            </div>
+          </div>
           {projects.map((project) => {
             const isActive = viewMode === "project" && activeRoomKey === project.key;
             return (
@@ -130,7 +128,6 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
           })}
         </div>
       </div>
-      </>
       )}
     </div>
   );

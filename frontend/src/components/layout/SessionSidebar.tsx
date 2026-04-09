@@ -109,7 +109,19 @@ export function SessionSidebar({
     edge: "down",
   });
 
-  const isDragging = isWidthDragging || isHeightDragging;
+  const {
+    size: projectsHeight,
+    isDragging: isProjectHeightDragging,
+    handleDragStart: handleProjectHeightDragStart,
+  } = useDragResize({
+    initialSize: 240,
+    minSize: 80,
+    maxSize: getMaxPanelHeight,
+    direction: "vertical",
+    edge: "down",
+  });
+
+  const isDragging = isWidthDragging || isHeightDragging || isProjectHeightDragging;
 
   return (
     <aside
@@ -158,7 +170,7 @@ export function SessionSidebar({
       {!isCollapsed && (
         <>
           {/* Project Groups */}
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0 max-h-[40vh]">
+          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0" style={{ height: projectsHeight }}>
             <ProjectSidebar
               collapsed={projectsCollapsed}
               onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
@@ -173,6 +185,15 @@ export function SessionSidebar({
                 }
               }}
             />
+          </div>
+
+          {/* Drag handle between projects and sessions — controls project area height */}
+          <div
+            className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1 z-10"
+            onMouseDown={handleProjectHeightDragStart}
+            title={t("sessions.dragToResize")}
+          >
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
           </div>
 
           {/* Session Browser */}
@@ -198,41 +219,39 @@ export function SessionSidebar({
             </button>
 
             {!sessionsCollapsed && (
-            <>
-            {/* All Sessions item */}
-            <div
-              role="button"
-              tabIndex={0}
-              className={`mx-2 mt-2 px-3 py-2.5 min-h-[60px] rounded-md cursor-pointer transition-colors ${
-                viewMode === "sessions"
-                  ? "bg-amber-500/15 border-l-2 border-amber-500"
-                  : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
-              }`}
-              onClick={() => setViewMode("sessions")}
-              onKeyDown={(e) => e.key === "Enter" && setViewMode("sessions")}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <Users size={10} className={viewMode === "sessions" ? "text-amber-500" : "text-slate-400 dark:text-slate-500"} />
-                <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-                  {t("sidebar.allSessions")}
-                </span>
-              </div>
-              {(() => {
-                const filtered = sessions.filter((s) => s.id !== "__all__");
-                const activeCount = filtered.filter((s) => s.status === "active").length;
-                const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
-                return (
-                  <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
-                    <span>{t("sessions.events", { count: totalEvents })}</span>
-                    {activeCount > 0 && (
-                      <span><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")}</span>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-
             <div className="overflow-y-auto flex-grow p-2">
+              {/* All Sessions item */}
+              <div
+                role="button"
+                tabIndex={0}
+                className={`px-3 py-2.5 mb-2 rounded-md cursor-pointer transition-colors ${
+                  viewMode === "sessions"
+                    ? "bg-amber-500/15 border-l-2 border-amber-500"
+                    : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                }`}
+                onClick={() => setViewMode("sessions")}
+                onKeyDown={(e) => e.key === "Enter" && setViewMode("sessions")}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Users size={10} className={viewMode === "sessions" ? "text-amber-500" : "text-slate-400 dark:text-slate-500"} />
+                  <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+                    {t("sidebar.allSessions")}
+                  </span>
+                </div>
+                {(() => {
+                  const filtered = sessions.filter((s) => s.id !== "__all__");
+                  const activeCount = filtered.filter((s) => s.status === "active").length;
+                  const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
+                  return (
+                    <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                      <span>{t("sessions.events", { count: totalEvents })}</span>
+                      {activeCount > 0 && (
+                        <span><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")}</span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
               {sessionsLoading && sessions.length === 0 ? (
                 <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
                   {t("sessions.loading")}
@@ -324,7 +343,6 @@ export function SessionSidebar({
                 </div>
               )}
             </div>
-            </>
             )}
           </div>
 
