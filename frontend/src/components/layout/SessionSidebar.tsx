@@ -175,6 +175,10 @@ export function SessionSidebar({
               collapsed={projectsCollapsed}
               onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
               onDeleteProject={async (project) => {
+                const confirmed = window.confirm(
+                  `Delete project "${project.name}" and all its sessions? This cannot be undone.`
+                );
+                if (!confirmed) return;
                 try {
                   const resp = await fetch(`http://localhost:8000/api/v1/projects/${project.key}`, {
                     method: "DELETE",
