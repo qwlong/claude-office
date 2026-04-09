@@ -1,12 +1,41 @@
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+
+class ProjectRecord(Base):
+    """Database model for projects."""
+
+    __tablename__ = "projects"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    key: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    color: Mapped[str] = mapped_column(String, nullable=False)
+    label: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    icon: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+    path: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    sequence: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    sessions: Mapped[list[SessionRecord]] = relationship(
+        "SessionRecord", back_populates="project", cascade="all, delete-orphan"
+    )
 
 
 class SessionRecord(Base):
@@ -17,6 +46,9 @@ class SessionRecord(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     project_name: Mapped[str | None] = mapped_column(String, nullable=True)
     project_root: Mapped[str | None] = mapped_column(String, nullable=True)
+    project_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
@@ -28,6 +60,7 @@ class SessionRecord(Base):
     status: Mapped[str] = mapped_column(String, default="active")
     label: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
 
+    project: Mapped[ProjectRecord | None] = relationship("ProjectRecord", back_populates="sessions")
     events: Mapped[list[EventRecord]] = relationship(
         "EventRecord", back_populates="session", cascade="all, delete-orphan"
     )
