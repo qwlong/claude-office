@@ -276,6 +276,7 @@ export interface ClaudeOfficeBackendTypes {
 export interface Agent {
   id: Id;
   nativeId?: Nativeid;
+  agentType?: string;  // "main" or "subagent"
   name?: Name;
   color: Color;
   number: Number;

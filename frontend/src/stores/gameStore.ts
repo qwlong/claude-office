@@ -67,6 +67,7 @@ export interface BubbleState {
 export interface AgentAnimationState {
   // Identity (from backend)
   id: string;
+  agentType: "main" | "subagent";
   name: string | null;
   color: string;
   number: number;
@@ -409,6 +410,7 @@ export const useGameStore = create<GameStore>()(
         const newAgents = new Map(state.agents);
         const animState: AgentAnimationState = {
           id: backendAgent.id,
+          agentType: (backendAgent.agentType as "main" | "subagent") ?? "subagent",
           name: backendAgent.name ?? null,
           color: backendAgent.color,
           number: backendAgent.number,
