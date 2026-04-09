@@ -64,6 +64,42 @@ class SessionRecord(Base):
     events: Mapped[list[EventRecord]] = relationship(
         "EventRecord", back_populates="session", cascade="all, delete-orphan"
     )
+    agents_list: Mapped[list[AgentRecord]] = relationship(
+        "AgentRecord", back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class AgentRecord(Base):
+    """Database model for agents within a session."""
+
+    __tablename__ = "agents"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id: Mapped[str] = mapped_column(
+        String, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    project_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=True
+    )
+    external_id: Mapped[str] = mapped_column(String, nullable=False)
+    agent_type: Mapped[str] = mapped_column(String, nullable=False)  # "main" / "subagent"
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+    state: Mapped[str | None] = mapped_column(String, nullable=True)
+    assignment: Mapped[str | None] = mapped_column(String, nullable=True)
+    desk: Mapped[int | None] = mapped_column(nullable=True)
+    color: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    session: Mapped[SessionRecord] = relationship("SessionRecord", back_populates="agents_list")
 
 
 class EventRecord(Base):
