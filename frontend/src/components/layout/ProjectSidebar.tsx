@@ -68,7 +68,7 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
             </div>
             <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
               <span>{t("project.sessions", { count: projects.reduce((sum, p) => sum + p.sessionCount, 0) })}</span>
-              <span>{t("project.agents", { count: projects.reduce((sum, p) => sum + p.agents.length, 0) })}</span>
+              <span>{t("project.agents", { count: projects.reduce((sum, p) => sum + p.agents.length + 1, 0) })}</span>
             </div>
           </div>
           {projects.map((project) => {
@@ -121,7 +121,7 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
                     {t("project.sessions", { count: project.sessionCount })}
                   </span>
                   <span>
-                    {t("project.agents", { count: project.agents.length })}
+                    {t("project.agents", { count: project.agents.length + 1 })}
                   </span>
                 </div>
               </div>
