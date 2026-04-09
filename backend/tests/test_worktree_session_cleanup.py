@@ -91,15 +91,43 @@ class TestWorktreeSessionCleanup:
         assert _should_cleanup_session(active_worktree) is False
 
     @pytest.mark.asyncio
-    async def test_non_worktree_completed_session_not_cleaned(self, service):
-        """Completed non-worktree sessions should NOT be cleaned up."""
+    async def test_non_worktree_completed_session_not_cleaned_within_grace(self, service):
+        """Completed non-worktree sessions within grace period should NOT be cleaned."""
         normal_session = SessionRecord(
             id="jkl-012",
             project_name="my-project",
             project_root="/Users/apple/Projects/my-project",
             status="completed",
-            created_at=datetime.now(UTC) - timedelta(minutes=30),
-            updated_at=datetime.now(UTC) - timedelta(minutes=30),
+            created_at=datetime.now(UTC) - timedelta(minutes=3),
+            updated_at=datetime.now(UTC) - timedelta(minutes=3),
         )
         from app.services.task_service import _should_cleanup_session
         assert _should_cleanup_session(normal_session) is False
+
+    @pytest.mark.asyncio
+    async def test_old_completed_normal_session_cleaned(self, service):
+        """Completed non-worktree sessions older than 24h should be cleaned up."""
+        old_session = SessionRecord(
+            id="old-001",
+            project_name="my-project",
+            project_root="/Users/apple/Projects/my-project",
+            status="completed",
+            created_at=datetime.now(UTC) - timedelta(hours=25),
+            updated_at=datetime.now(UTC) - timedelta(hours=25),
+        )
+        from app.services.task_service import _should_cleanup_session
+        assert _should_cleanup_session(old_session) is True
+
+    @pytest.mark.asyncio
+    async def test_recent_completed_normal_session_not_cleaned(self, service):
+        """Completed non-worktree sessions less than 24h old should NOT be cleaned."""
+        recent_session = SessionRecord(
+            id="recent-001",
+            project_name="my-project",
+            project_root="/Users/apple/Projects/my-project",
+            status="completed",
+            created_at=datetime.now(UTC) - timedelta(hours=12),
+            updated_at=datetime.now(UTC) - timedelta(hours=12),
+        )
+        from app.services.task_service import _should_cleanup_session
+        assert _should_cleanup_session(recent_session) is False

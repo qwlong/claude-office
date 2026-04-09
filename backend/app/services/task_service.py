@@ -18,15 +18,27 @@ from app.services.adapters.ao import AOAdapter
 logger = logging.getLogger(__name__)
 
 # How long after completion before a worktree session is auto-deleted from DB
-_CLEANUP_GRACE_PERIOD = timedelta(minutes=5)
+_WORKTREE_CLEANUP_GRACE = timedelta(minutes=5)
+# How long after completion before a normal session is auto-deleted from DB
+_NORMAL_CLEANUP_GRACE = timedelta(hours=24)
 
 
 def _should_cleanup_session(rec: SessionRecord) -> bool:
-    """Return True if this DB session record is a completed worktree session
-    that should be auto-deleted."""
+    """Return True if this DB session record should be auto-deleted.
+
+    - Worktree sessions: deleted 5 minutes after completion
+    - Normal sessions: deleted 24 hours after completion
+    - Active sessions: never deleted
+    """
     if rec.status not in ("completed", "ended"):
         return False
-    # Only clean up worktree sessions (identified by project_root or project_name)
+
+    now = datetime.now(UTC)
+    updated = rec.updated_at
+    if updated and updated.tzinfo is None:
+        updated = updated.replace(tzinfo=UTC)
+
+    # Determine if this is a worktree session
     project_root = rec.project_root or ""
     project_name = rec.project_name or ""
     is_worktree = (
@@ -34,14 +46,9 @@ def _should_cleanup_session(rec: SessionRecord) -> bool:
         or "/worktrees/" in project_root
         or "/" in project_name  # e.g. "claude-office/co-10"
     )
-    if not is_worktree:
-        return False
-    # Only clean up if updated_at is older than grace period
-    now = datetime.now(UTC)
-    updated = rec.updated_at
-    if updated and updated.tzinfo is None:
-        updated = updated.replace(tzinfo=UTC)
-    if updated and (now - updated) < _CLEANUP_GRACE_PERIOD:
+
+    grace = _WORKTREE_CLEANUP_GRACE if is_worktree else _NORMAL_CLEANUP_GRACE
+    if updated and (now - updated) < grace:
         return False
     return True
 
