@@ -7,7 +7,9 @@
 
 "use client";
 
+import { useMemo } from "react";
 import { useGameStore, selectAgents } from "@/stores/gameStore";
+import { useProjectStore, selectViewMode, selectActiveRoomKey, selectProjects } from "@/stores/projectStore";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
@@ -84,11 +86,34 @@ function formatState(state: string): string {
 
 export function AgentStatus() {
   const { t } = useTranslation();
-  const agents = useGameStore(useShallow(selectAgents));
-  const agentArray = Array.from(agents.values());
+  const viewMode = useProjectStore(selectViewMode);
+  const activeRoomKey = useProjectStore(selectActiveRoomKey);
+  const projects = useProjectStore((s) => s.projects);
+  const gameAgents = useGameStore(useShallow(selectAgents));
 
-  // Sort by number for consistent ordering
-  agentArray.sort((a, b) => a.number - b.number);
+  // In session/project view: filter agents from projectStore by session/project
+  // In office view: use gameStore agents (current WebSocket session)
+  const agentArray = useMemo(() => {
+    if ((viewMode === "session" || viewMode === "project") && activeRoomKey) {
+      // Collect agents matching the active session/project key
+      const matched: typeof projects[0]["agents"] = [];
+      for (const project of projects) {
+        if (viewMode === "project" && project.key === activeRoomKey) {
+          matched.push(...project.agents);
+        } else if (viewMode === "session") {
+          for (const agent of project.agents) {
+            const sid = String((agent as Record<string, unknown>).sessionId ?? "");
+            if (sid === activeRoomKey) matched.push(agent);
+          }
+        }
+      }
+      return [...matched].sort((a, b) => a.number - b.number);
+    }
+    // Default: all agents from gameStore
+    const arr = Array.from(gameAgents.values());
+    arr.sort((a, b) => a.number - b.number);
+    return arr;
+  }, [viewMode, activeRoomKey, projects, gameAgents]);
 
   return (
     <div className="flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden font-mono text-xs h-full">
