@@ -84,15 +84,12 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
     """
     logger.debug("API: list_sessions called")
     try:
-        # Find all session IDs that have at least one session_start event.
-        # Child @agent sessions never get session_start, so they're excluded.
-        sessions_with_start_stmt = (
-            select(EventRecord.session_id)
-            .where(EventRecord.event_type == "session_start")
-            .distinct()
+        # Find all session IDs that have at least one event.
+        sessions_with_events_stmt = (
+            select(EventRecord.session_id).distinct()
         )
-        start_result = await db.execute(sessions_with_start_stmt)
-        sessions_with_start: set[str] = {row[0] for row in start_result.all()}
+        events_result = await db.execute(sessions_with_events_stmt)
+        sessions_with_events: set[str] = {row[0] for row in events_result.all()}
 
         stmt = select(SessionRecord).order_by(SessionRecord.updated_at.desc())
         result = await db.execute(stmt)
@@ -100,9 +97,8 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
 
         sessions: list[SessionSummary] = []
         for rec in records:
-            # Skip child sessions (no session_start event) unless it's the special
-            # simulation session which also lacks one but is always valid.
-            if rec.id not in sessions_with_start and not rec.id.startswith("sim_"):
+            # Skip sessions with no events at all (stale DB entries).
+            if rec.id not in sessions_with_events and not rec.id.startswith("sim_"):
                 continue
 
             count_stmt = select(func.count(EventRecord.id)).where(EventRecord.session_id == rec.id)

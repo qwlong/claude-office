@@ -104,11 +104,12 @@ export function ProjectSidebar({ onDeleteProject, collapsed, onToggleCollapsed }
                   {onDeleteProject && (
                     <button
                       type="button"
+                      onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteProject(project);
                       }}
-                      className="p-1 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
+                      className="relative z-10 p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
                       aria-label={`Delete project ${project.name}`}
                     >
                       <Trash2 size={12} />
