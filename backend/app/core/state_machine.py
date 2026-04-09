@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, cast
@@ -329,7 +329,7 @@ class StateMachine:
             boss=boss,
             agents=agents_list,
             office=office,
-            last_updated=datetime.now(UTC),
+            last_updated=datetime.now(),
             history=self.history,
             todos=self.todos,
             arrival_queue=self.arrival_queue.copy(),
