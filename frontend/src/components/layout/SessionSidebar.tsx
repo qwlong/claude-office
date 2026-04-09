@@ -211,27 +211,25 @@ export function SessionSidebar({
               onClick={() => setViewMode("sessions")}
               onKeyDown={(e) => e.key === "Enter" && setViewMode("sessions")}
             >
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-2">
-                  <Users size={10} className={viewMode === "sessions" ? "text-amber-500" : "text-slate-400 dark:text-slate-500"} />
-                  <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-                    {t("sidebar.allSessions")}
-                  </span>
-                </div>
-                {(() => {
-                  const filtered = sessions.filter((s) => s.id !== "__all__");
-                  const activeCount = filtered.filter((s) => s.status === "active").length;
-                  const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
-                  return (
-                    <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 ml-[18px]">
-                      <span>{t("sessions.events", { count: totalEvents })}</span>
-                      {activeCount > 0 && (
-                        <span><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")}</span>
-                      )}
-                    </div>
-                  );
-                })()}
+              <div className="flex items-center gap-2 mb-1">
+                <Users size={10} className={viewMode === "sessions" ? "text-amber-500" : "text-slate-400 dark:text-slate-500"} />
+                <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+                  {t("sidebar.allSessions")}
+                </span>
               </div>
+              {(() => {
+                const filtered = sessions.filter((s) => s.id !== "__all__");
+                const activeCount = filtered.filter((s) => s.status === "active").length;
+                const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
+                return (
+                  <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                    <span>{t("sessions.events", { count: totalEvents })}</span>
+                    {activeCount > 0 && (
+                      <span><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")}</span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="overflow-y-auto flex-grow p-2">
