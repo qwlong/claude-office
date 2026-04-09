@@ -75,32 +75,9 @@ async function setPreference(key: string, value: string): Promise<void> {
 // THEME HELPERS
 // ============================================================================
 
-function getSystemDark(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-function applyThemeToDOM(mode: ThemeMode): void {
-  if (typeof document === "undefined") return;
-  const isDark = mode === "dark" || (mode === "system" && getSystemDark());
-  document.documentElement.classList.toggle("dark", isDark);
-  document.documentElement.classList.toggle("light", !isDark);
-}
-
-let _cleanupSystemListener: (() => void) | null = null;
-
-function setupSystemThemeListener(get: () => PreferencesState): void {
-  if (typeof window === "undefined") return;
-  _cleanupSystemListener?.();
-  const mql = window.matchMedia("(prefers-color-scheme: dark)");
-  const handler = () => {
-    if (get().themeMode === "system") {
-      applyThemeToDOM("system");
-    }
-  };
-  mql.addEventListener("change", handler);
-  _cleanupSystemListener = () => mql.removeEventListener("change", handler);
-}
+// Theme DOM application is handled exclusively by next-themes (ThemeProvider).
+// The preferencesStore only manages the preference value and syncs it to the
+// backend API. Components use useThemeSync() to bridge store → next-themes.
 
 // ============================================================================
 // STORE
@@ -144,11 +121,7 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
       isLoaded: true,
     });
 
-    // Apply theme to DOM after loading
-    applyThemeToDOM(get().themeMode);
-
-    // Listen for OS theme changes (reacts when in "system" mode)
-    setupSystemThemeListener(get);
+    // Theme is applied to the DOM by next-themes via useThemeSync() hook
   },
 
   setClockType: async (clockType) => {
@@ -173,7 +146,6 @@ export const usePreferencesStore = create<PreferencesState>()((set, get) => ({
 
   setThemeMode: async (themeMode) => {
     set({ themeMode });
-    applyThemeToDOM(themeMode);
     await setPreference("theme_mode", themeMode);
   },
 

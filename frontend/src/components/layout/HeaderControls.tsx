@@ -17,6 +17,7 @@ import {
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTheme } from "next-themes";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { SpawnModal } from "@/components/tasks/SpawnModal";
 
@@ -60,7 +61,8 @@ export function HeaderControls({
   onOpenHelp,
 }: HeaderControlsProps): React.ReactNode {
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
+  const setThemeMode = usePreferencesStore((s) => s.setThemeMode);
   const [mounted, setMounted] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const aoConnected = useTaskStore((s) => s.connected);
@@ -166,7 +168,7 @@ export function HeaderControls({
           return (
             <button
               key={value}
-              onClick={() => setTheme(value)}
+              onClick={() => setThemeMode(value)}
               className={`relative z-10 flex items-center justify-center w-8 h-7 rounded-md text-xs transition-colors duration-200 ${
                 isActive
                   ? "text-slate-900 dark:text-slate-100"
