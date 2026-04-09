@@ -29,7 +29,7 @@ async def test_project_grouped_state_single_project():
     sm = StateMachine()
     sm.boss_state = BossState.WORKING
     event_processor.sessions["sess-1"] = sm
-    event_processor.project_registry.register_session("sess-1", "proj-a", "/a")
+    event_processor.project_registry.register_session_sync("sess-1", "proj-a", "/a")
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None
@@ -44,8 +44,8 @@ async def test_project_grouped_state_multiple_projects():
     sm2 = StateMachine()
     event_processor.sessions["s1"] = sm1
     event_processor.sessions["s2"] = sm2
-    event_processor.project_registry.register_session("s1", "proj-a", "/a")
-    event_processor.project_registry.register_session("s2", "proj-b", "/b")
+    event_processor.project_registry.register_session_sync("s1", "proj-a", "/a")
+    event_processor.project_registry.register_session_sync("s2", "proj-b", "/b")
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None
@@ -66,7 +66,7 @@ async def test_project_grouped_agents_have_project_key():
     )
     sm.agents["agent-1"] = agent
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "proj-a", "/a")
+    event_processor.project_registry.register_session_sync("s1", "proj-a", "/a")
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None

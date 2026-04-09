@@ -27,7 +27,7 @@ def test_list_projects_empty():
 def test_list_projects_with_data():
     sm = StateMachine()
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "proj-a", "/a")
+    event_processor.project_registry.register_session_sync("s1", "proj-a", "/a")
 
     resp = client.get("/api/v1/projects")
     assert resp.status_code == 200
@@ -45,7 +45,7 @@ def test_get_project_not_found():
 def test_get_project_found():
     sm = StateMachine()
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "proj-b", "/b")
+    event_processor.project_registry.register_session_sync("s1", "proj-b", "/b")
 
     resp = client.get("/api/v1/projects/proj-b")
     assert resp.status_code == 200
@@ -57,7 +57,7 @@ def test_get_project_found():
 def test_get_project_sessions():
     sm = StateMachine()
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "proj-c", "/c")
+    event_processor.project_registry.register_session_sync("s1", "proj-c", "/c")
 
     resp = client.get("/api/v1/projects/proj-c/sessions")
     assert resp.status_code == 200

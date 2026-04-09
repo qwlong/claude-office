@@ -106,10 +106,10 @@ class TestProjectSessionCountIncludesDB:
         # One in-memory session
         sm = StateMachine()
         event_processor.sessions["s1"] = sm
-        event_processor.project_registry.register_session("s1", "my-proj", "/path/my-proj")
+        event_processor.project_registry.register_session_sync("s1", "my-proj", "/path/my-proj")
 
         # Also register a DB-only session (not in self.sessions)
-        event_processor.project_registry.register_session("s2", "my-proj", "/path/my-proj")
+        event_processor.project_registry.register_session_sync("s2", "my-proj", "/path/my-proj")
 
         result = await event_processor.get_project_grouped_state()
         assert result is not None

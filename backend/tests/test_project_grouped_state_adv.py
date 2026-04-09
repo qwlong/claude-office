@@ -44,8 +44,8 @@ async def test_multi_session_same_project_merges_agents():
 
     event_processor.sessions["s1"] = sm1
     event_processor.sessions["s2"] = sm2
-    event_processor.project_registry.register_session("s1", "shared-proj", "/shared")
-    event_processor.project_registry.register_session("s2", "shared-proj", "/shared")
+    event_processor.project_registry.register_session_sync("s1", "shared-proj", "/shared")
+    event_processor.project_registry.register_session_sync("s2", "shared-proj", "/shared")
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None
@@ -68,8 +68,8 @@ async def test_grouped_state_boss_picks_first_active():
 
     event_processor.sessions["s1"] = sm1
     event_processor.sessions["s2"] = sm2
-    event_processor.project_registry.register_session("s1", "proj", "/proj")
-    event_processor.project_registry.register_session("s2", "proj", "/proj")
+    event_processor.project_registry.register_session_sync("s1", "proj", "/proj")
+    event_processor.project_registry.register_session_sync("s2", "proj", "/proj")
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None
@@ -86,7 +86,7 @@ async def test_grouped_state_desk_numbers_are_sequential():
         )
 
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "proj", "/proj")
+    event_processor.project_registry.register_session_sync("s1", "proj", "/proj")
 
     result = await event_processor.get_project_grouped_state()
     desks = sorted([a.desk for a in result.projects[0].agents])
@@ -98,7 +98,7 @@ async def test_grouped_state_serializes_to_json():
     """MultiProjectGameState should serialize correctly for WebSocket."""
     sm = StateMachine()
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "proj", "/proj")
+    event_processor.project_registry.register_session_sync("s1", "proj", "/proj")
 
     result = await event_processor.get_project_grouped_state()
     json_data = result.model_dump(by_alias=True, mode="json")

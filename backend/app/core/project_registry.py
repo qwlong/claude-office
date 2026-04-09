@@ -127,13 +127,40 @@ class ProjectRegistry:
 
         return project
 
+    def register_session_sync(
+        self, session_id: str, project_name: str, project_root: str | None
+    ) -> ProjectState:
+        """Register a session in memory only (no DB). For use during state building."""
+        key = normalize_project_key(project_name)
+
+        if key not in self._projects:
+            color = PROJECT_COLORS[self._color_index % len(PROJECT_COLORS)]
+            self._color_index += 1
+            import uuid
+            self._projects[key] = ProjectState(
+                id=str(uuid.uuid4()),
+                key=key,
+                name=project_name,
+                root=project_root,
+                color=color,
+                session_ids=[],
+            )
+            logger.info(f"New project registered (memory): {key} (color={color})")
+
+        project = self._projects[key]
+        if session_id not in project.session_ids:
+            project.session_ids.append(session_id)
+        self._session_to_project[session_id] = key
+        return project
+
     def unregister_session(self, session_id: str) -> None:
-        """Remove a session from in-memory cache. Does NOT delete from DB."""
+        """Remove a session mapping from cache. Project itself persists."""
         key = self._session_to_project.pop(session_id, None)
         if key and key in self._projects:
             project = self._projects[key]
             if session_id in project.session_ids:
                 project.session_ids.remove(session_id)
+            # Project stays in cache even with 0 sessions (DB-backed)
 
     def get_project_for_session(self, session_id: str) -> ProjectState | None:
         """Get the project a session belongs to (from cache)."""

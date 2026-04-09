@@ -412,7 +412,7 @@ class EventProcessor:
                         continue
                     pname = rec.project_name or derive_project_name_from_path(rec.project_root)
                     if pname:
-                        self.project_registry.register_session(
+                        self.project_registry.register_session_sync(
                             rec.id, pname, rec.project_root
                         )
                         # Backfill project_name in DB if it was derived
@@ -601,7 +601,8 @@ class EventProcessor:
             project_name = event.data.project_name if event.data else None
             project_root = await self.get_project_root(event.session_id)
             if project_name:
-                self.project_registry.register_session(event.session_id, project_name, project_root)
+                async with AsyncSessionLocal() as db:
+                    await self.project_registry.register_session(db, event.session_id, project_name, project_root)
             # Configure git service immediately so polling starts without waiting
             # for a WebSocket reconnect (avoids race condition where WS connects
             # before the session_start event is persisted to the DB).
@@ -882,7 +883,8 @@ class EventProcessor:
 
         if project_name:
             project_root = await self.get_project_root(session_id)
-            self.project_registry.register_session(session_id, project_name, project_root)
+            async with AsyncSessionLocal() as db:
+                await self.project_registry.register_session(db, session_id, project_name, project_root)
 
     async def _persist_event(self, event: Event) -> None:
         """Save event to database and manage session records.

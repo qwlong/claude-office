@@ -23,7 +23,7 @@ async def test_broadcast_state_sends_to_project_subscribers():
     """broadcast_state should send project_state to project WebSocket subscribers."""
     sm = StateMachine()
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "my-proj", "/proj")
+    event_processor.project_registry.register_session_sync("s1", "my-proj", "/proj")
 
     mock_ws = MagicMock()
 
@@ -63,7 +63,7 @@ async def test_broadcast_project_state_has_correct_shape():
     """The project_state message should have the expected structure."""
     sm = StateMachine()
     event_processor.sessions["s1"] = sm
-    event_processor.project_registry.register_session("s1", "test-proj", "/test")
+    event_processor.project_registry.register_session_sync("s1", "test-proj", "/test")
 
     with patch("app.core.broadcast_service.manager") as mock_manager:
         mock_manager.broadcast = AsyncMock()
