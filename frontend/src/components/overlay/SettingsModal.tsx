@@ -32,8 +32,9 @@ export default function SettingsModal({
   const setAutoFollowNewSessions = usePreferencesStore(
     (s) => s.setAutoFollowNewSessions,
   );
+  const setThemeMode = usePreferencesStore((s) => s.setThemeMode);
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
   const handleLanguageChange = (locale: Locale) => {
     setLanguage(locale);
@@ -83,7 +84,7 @@ export default function SettingsModal({
                 role="radio"
                 aria-checked={theme === value}
                 tabIndex={theme === value ? 0 : -1}
-                onClick={() => setTheme(value)}
+                onClick={() => setThemeMode(value)}
                 onKeyDown={(e) => {
                   const values = ["light", "dark", "system"] as const;
                   const parent = e.currentTarget.parentElement;
@@ -99,7 +100,7 @@ export default function SettingsModal({
                     nextIdx = (idx - 1 + values.length) % values.length;
                   }
                   if (nextIdx !== null) {
-                    setTheme(values[nextIdx]);
+                    setThemeMode(values[nextIdx]);
                     buttons[nextIdx].focus();
                   }
                 }}
