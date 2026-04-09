@@ -174,14 +174,22 @@ export function SessionSidebar({
             <ProjectSidebar
               collapsed={projectsCollapsed}
               onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
-              onDeleteProject={(project) => {
-                const projectSessions = sessions.filter(
-                  (s) => s.id !== "__all__" && s.projectName === project.name
-                );
-                if (projectSessions.length === 0) return;
-                // Delete all sessions in this project sequentially
-                for (const session of projectSessions) {
-                  onDeleteSession(session);
+              onDeleteProject={async (project) => {
+                try {
+                  const resp = await fetch(`http://localhost:8000/api/v1/projects/${project.key}`, {
+                    method: "DELETE",
+                  });
+                  if (resp.ok) {
+                    window.location.reload();
+                  }
+                } catch {
+                  // Fallback: delete sessions individually
+                  const projectSessions = sessions.filter(
+                    (s) => s.id !== "__all__" && s.projectName === project.name
+                  );
+                  for (const session of projectSessions) {
+                    onDeleteSession(session);
+                  }
                 }
               }}
             />
