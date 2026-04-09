@@ -58,7 +58,7 @@ export function MobileAgentActivity({
               {boss.currentTask}
             </p>
           )}
-          {boss.bubble.content && (
+          {boss.bubble?.content && (
             <p className="text-blue-400 text-[11px] mt-1 truncate italic">
               &quot;{boss.bubble.content.text}&quot;
             </p>

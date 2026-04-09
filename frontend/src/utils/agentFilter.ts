@@ -25,26 +25,6 @@ export function groupAgentsBySessionId(
 }
 
 /**
- * Filter agents based on the current view mode and active room key.
- * Returns null when the caller should use gameStore agents instead.
- */
-export function getFilteredAgents(
-  viewMode: ViewMode,
-  activeRoomKey: string | null,
-  projects: ProjectGroup[],
-): Agent[] | null {
-  if (viewMode === "project" && activeRoomKey) {
-    const project = projects.find((p) => p.key === activeRoomKey);
-    return [...(project?.agents ?? [])].sort((a, b) => a.number - b.number);
-  }
-  if (viewMode === "session" && activeRoomKey) {
-    const bySession = groupAgentsBySessionId(projects);
-    return (bySession.get(activeRoomKey) ?? []).sort((a, b) => a.number - b.number);
-  }
-  return null;
-}
-
-/**
  * Get the set of agent IDs for the current view.
  * Returns null when no filtering needed (show all agents).
  */
@@ -60,6 +40,31 @@ export function getFilteredAgentIds(
   if (viewMode === "session" && activeRoomKey) {
     const bySession = groupAgentsBySessionId(projects);
     return new Set((bySession.get(activeRoomKey) ?? []).map((a) => a.id));
+  }
+  return null;
+}
+
+/**
+ * Get the set of session IDs for the current view.
+ * Returns null when no filtering needed (show everything).
+ */
+export function getFilteredSessionIds(
+  viewMode: ViewMode,
+  activeRoomKey: string | null,
+  projects: ProjectGroup[],
+  sessions: { id: string; projectName: string | null }[],
+): Set<string> | null {
+  if (viewMode === "project" && activeRoomKey) {
+    const project = projects.find((p) => p.key === activeRoomKey);
+    if (!project) return new Set();
+    const ids = new Set<string>();
+    for (const s of sessions) {
+      if (s.projectName === project.name) ids.add(s.id);
+    }
+    return ids;
+  }
+  if (viewMode === "session" && activeRoomKey) {
+    return new Set([activeRoomKey]);
   }
   return null;
 }

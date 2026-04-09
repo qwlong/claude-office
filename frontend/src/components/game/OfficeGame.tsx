@@ -481,7 +481,7 @@ export function OfficeGame(): ReactNode {
                     x={PRINTER_STATION_POSITION.x}
                     y={PRINTER_STATION_POSITION.y}
                     isPrinting={
-                      printReport && !isCompacting && !!boss.bubble.content
+                      printReport && !isCompacting && !!boss.bubble?.content
                     }
                     deskTexture={textures.desk}
                     printerTexture={textures.printer}
@@ -616,7 +616,7 @@ export function OfficeGame(): ReactNode {
                   <BossSprite
                     position={boss.position}
                     state={boss.backendState}
-                    bubble={boss.bubble.content}
+                    bubble={boss.bubble?.content ?? null}
                     inUseBy={boss.inUseBy}
                     currentTask={boss.currentTask}
                     chairTexture={textures.chair}
@@ -712,7 +712,7 @@ export function OfficeGame(): ReactNode {
                         />
                       </pixiContainer>
                     ))}
-                  {boss.bubble.content && (
+                  {boss.bubble?.content && (
                     <pixiContainer x={boss.position.x} y={boss.position.y}>
                       <BossBubble content={boss.bubble.content} yOffset={-80} />
                     </pixiContainer>
