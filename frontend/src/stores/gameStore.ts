@@ -924,6 +924,10 @@ export const useGameStore = create<GameStore>()(
 
     addEventLog: (event, sessionId) =>
       set((state) => {
+        // Deduplicate by event id
+        if (event.id && state.eventLog.some((e) => e.id === event.id)) {
+          return state;
+        }
         const timestamp = event.timestamp
           ? new Date(event.timestamp)
           : new Date();
