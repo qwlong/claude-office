@@ -249,7 +249,6 @@ export function useWebSocketEvents({
       // Update multi-boss state (merged view)
       // state.bosses comes from GameState.bosses (Boss[]) in generated types
       const backendBosses = (state as Record<string, unknown>).bosses as Array<Record<string, unknown>> | undefined;
-      console.log(`[WS] backendBosses:`, backendBosses?.length ?? 0);
 
       if (backendBosses && backendBosses.length > 0) {
         const currentBosses = store.bosses;
@@ -269,7 +268,6 @@ export function useWebSocketEvents({
             projectColor: (bb.projectColor as string) ?? undefined,
           });
         }
-        console.log(`[WS] Setting ${newBosses.size} bosses in store`);
         useGameStore.setState({ bosses: newBosses });
 
         // Per-boss bubbles
