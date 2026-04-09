@@ -928,12 +928,12 @@ class EventProcessor:
                 )
                 session_rec = await db.merge(session_rec)
 
-            # Update project info if not yet set.
-            if project_name and not session_rec.project_name:
+            # Always update project metadata from events — hooks may be
+            # upgraded and produce better names than what was stored initially.
+            if project_name:
                 session_rec.project_name = project_name
-            if project_root and not session_rec.project_root:
+            if project_root:
                 session_rec.project_root = project_root
-                logger.info(f"Cached project_root for session {event.session_id}: {project_root}")
 
             if event.event_type == EventType.SESSION_START:
                 await db.execute(
