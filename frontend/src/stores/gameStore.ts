@@ -116,6 +116,10 @@ export interface BossAnimationState {
   inUseBy: "arrival" | "departure" | null;
   currentTask: string | null;
   isTyping: boolean; // True when boss is actively using tools (typing animation)
+  // Identity fields for multi-boss (populated in merged view)
+  sessionId?: string;
+  projectKey?: string;
+  projectColor?: string;
 }
 
 /**
@@ -179,6 +183,7 @@ interface GameStore {
 
   // ========== Boss State ==========
   boss: BossAnimationState;
+  bosses: Map<string, BossAnimationState>; // sessionId -> boss state (merged view)
 
   // Boss actions
   updateBossBackendState: (state: BossState) => void;
@@ -358,6 +363,7 @@ const initialState = {
 
   // Boss
   boss: initialBossState,
+  bosses: new Map<string, BossAnimationState>(),
 
   // Office
   sessionId: "None",
@@ -1197,6 +1203,7 @@ export const useGameStore = create<GameStore>()(
 
 export const selectAgents = (state: GameStore) => state.agents;
 export const selectBoss = (state: GameStore) => state.boss;
+export const selectBosses = (state: GameStore) => state.bosses;
 export const selectArrivalQueue = (state: GameStore) => state.arrivalQueue;
 export const selectDepartureQueue = (state: GameStore) => state.departureQueue;
 export const selectIsConnected = (state: GameStore) => state.isConnected;

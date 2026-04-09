@@ -36,6 +36,7 @@ export interface BossSpriteProps {
   renderBubble?: boolean; // Whether to render bubble (default true)
   isTyping?: boolean; // Whether boss is typing (animates arms)
   isAway?: boolean; // Whether boss is away from desk (hides body, shows only furniture)
+  label?: string; // Boss display name (default "Claude")
 }
 
 // ============================================================================
@@ -202,6 +203,7 @@ function BossSpriteComponent({
   renderBubble = true,
   isTyping = false,
   isAway = false,
+  label,
 }: BossSpriteProps): ReactNode {
   // Animation state for typing
   const [typingTime, setTypingTime] = useState(0);
@@ -346,7 +348,7 @@ function BossSpriteComponent({
       {!isAway && (
         <pixiContainer y={-63} scale={0.5}>
           <pixiText
-            text="Claude"
+            text={label ?? "Claude"}
             anchor={0.5}
             style={{
               fontFamily: "monospace",

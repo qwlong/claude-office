@@ -4,6 +4,8 @@
  * All positions are in pixels relative to the canvas origin (top-left).
  */
 
+import type { Position } from "@/types";
+
 // ============================================================================
 // WALL DECORATIONS
 // ============================================================================
@@ -51,3 +53,37 @@ export const BOSS_RUG_POSITION = { x: 640, y: 940 };
 
 /** Trash can offset from boss desk position */
 export const TRASH_CAN_OFFSET = { x: 110, y: 65 };
+
+// ============================================================================
+// MULTI-BOSS POSITIONING
+// ============================================================================
+
+/** Y position for boss row (matches single-boss BOSS_POSITION.y in queuePositions.ts) */
+export const BOSS_ROW_Y = 900;
+
+/** Y offset for rug below boss position */
+export const BOSS_RUG_OFFSET_Y = 40;
+
+/** Horizontal spacing between boss areas */
+export const BOSS_SPACING = 280;
+
+/** Half the boss desk width — used for edge padding */
+export const BOSS_HALF_WIDTH = 70;
+
+/**
+ * Calculate horizontal positions for N bosses, centered in the canvas.
+ * Spacing automatically reduces if bosses would overflow canvas width.
+ */
+export function getBossPositions(count: number, canvasWidth: number): Position[] {
+  if (count === 0) return [];
+  if (count === 1) return [{ x: canvasWidth / 2, y: BOSS_ROW_Y }];
+
+  const usableWidth = canvasWidth - BOSS_HALF_WIDTH * 2;
+  const spacing = Math.min(BOSS_SPACING, usableWidth / (count - 1));
+  const totalWidth = (count - 1) * spacing;
+  const startX = (canvasWidth - totalWidth) / 2;
+  return Array.from({ length: count }, (_, i) => ({
+    x: startX + i * spacing,
+    y: BOSS_ROW_Y,
+  }));
+}
