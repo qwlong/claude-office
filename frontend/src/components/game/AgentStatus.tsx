@@ -9,7 +9,6 @@
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { useFilteredData } from "@/hooks/useFilteredData";
-import { useGameStore, selectBoss } from "@/stores/gameStore";
 import {
   Users,
   Briefcase,
@@ -85,8 +84,7 @@ function formatState(state: string | undefined): string {
 
 export function AgentStatus() {
   const { t } = useTranslation();
-  const { agents: agentArray } = useFilteredData();
-  const boss = useGameStore(selectBoss);
+  const { agents: agentArray, boss } = useFilteredData();
 
   const totalCount = agentArray.length + 1; // +1 for boss
 
