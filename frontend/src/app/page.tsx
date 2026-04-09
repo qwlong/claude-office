@@ -33,6 +33,7 @@ import {
 import Modal from "@/components/overlay/Modal";
 import SettingsModal from "@/components/overlay/SettingsModal";
 import { usePreferencesStore } from "@/stores/preferencesStore";
+import { useThemeSync } from "@/hooks/useThemeSync";
 import { useProjectStore, selectViewMode, selectPreviousViewMode } from "@/stores/projectStore";
 import { useProjectWebSocket } from "@/hooks/useProjectWebSocket";
 
@@ -172,6 +173,9 @@ export default function V2TestPage(): React.ReactNode {
   useEffect(() => {
     loadPreferences();
   }, [loadPreferences]);
+
+  // Sync preferencesStore theme → next-themes (single source of truth for DOM)
+  useThemeSync();
 
   useEffect(() => {
     document.documentElement.lang = language;
