@@ -147,7 +147,11 @@ interface GameStore {
   agents: Map<string, AgentAnimationState>;
 
   // Agent actions
-  addAgent: (backendAgent: BackendAgent, initialPosition: Position, sessionId?: string) => void;
+  addAgent: (
+    backendAgent: BackendAgent,
+    initialPosition: Position,
+    sessionId?: string,
+  ) => void;
   removeAgent: (agentId: string) => void;
   updateAgentPhase: (agentId: string, phase: AgentPhase) => void;
   updateAgentPosition: (agentId: string, position: Position) => void;
@@ -208,10 +212,11 @@ interface GameStore {
   deskCount: number;
   elevatorState: ElevatorState;
   phoneState: PhoneState;
-  contextUtilization: number; // 0.0 to 1.0 representing context window usage
+  // Per-session compaction state (keyed by sessionId)
+  compactionPhases: Map<string, CompactionAnimationPhase>;
+  isCompactingMap: Map<string, boolean>;
+  contextUtilizations: Map<string, number>;
   toolUsesSinceCompaction: number; // Counter for safety sign - resets on compaction
-  isCompacting: boolean; // True when context compaction animation is active
-  compactionPhase: CompactionAnimationPhase; // Phase of the compaction animation
   printReport: boolean; // True when user requested a report and session ended
   todos: TodoItem[];
   gitStatus: GitStatus | null;
@@ -222,18 +227,27 @@ interface GameStore {
   setElevatorState: (state: ElevatorState) => void;
   setPhoneState: (state: PhoneState) => void;
   setDeskCount: (count: number) => void;
-  setContextUtilization: (utilization: number) => void;
+  setContextUtilization: (utilization: number, sessionId?: string) => void;
   setToolUsesSinceCompaction: (count: number) => void;
-  triggerCompaction: () => void; // Trigger context compaction animation
-  setCompactionPhase: (phase: CompactionAnimationPhase) => void; // Set compaction animation phase
-  setIsCompacting: (isCompacting: boolean) => void; // Set isCompacting flag
+  triggerCompaction: (sessionId?: string) => void;
+  setCompactionPhase: (sessionId: string, phase: CompactionAnimationPhase) => void;
+  setIsCompacting: (sessionId: string, isCompacting: boolean) => void;
   setTodos: (todos: TodoItem[]) => void;
   setPrintReport: (printReport: boolean) => void;
   setGitStatus: (status: GitStatus | null) => void;
-  addEventLog: (event: NonNullable<WebSocketMessage["event"]>, sessionId?: string) => void;
-  setEventHistory: (history: NonNullable<WebSocketMessage["event"]>[], sessionId?: string) => void;
+  addEventLog: (
+    event: NonNullable<WebSocketMessage["event"]>,
+    sessionId?: string,
+  ) => void;
+  setEventHistory: (
+    history: NonNullable<WebSocketMessage["event"]>[],
+    sessionId?: string,
+  ) => void;
   conversation: ConversationEntryWithSession[];
-  setConversation: (conversation: ConversationEntry[], sessionId?: string) => void;
+  setConversation: (
+    conversation: ConversationEntry[],
+    sessionId?: string,
+  ) => void;
 
   // Whiteboard actions
   whiteboardData: WhiteboardData;
@@ -370,10 +384,10 @@ const initialState = {
   deskCount: 8,
   elevatorState: "closed" as ElevatorState,
   phoneState: "idle" as PhoneState,
-  contextUtilization: 0.0,
+  compactionPhases: new Map<string, CompactionAnimationPhase>(),
+  isCompactingMap: new Map<string, boolean>(),
+  contextUtilizations: new Map<string, number>(),
   toolUsesSinceCompaction: 0,
-  isCompacting: false,
-  compactionPhase: "idle" as CompactionAnimationPhase,
   printReport: false,
   todos: [] as TodoItem[],
   gitStatus: null as GitStatus | null,
@@ -416,7 +430,8 @@ export const useGameStore = create<GameStore>()(
         const newAgents = new Map(state.agents);
         const animState: AgentAnimationState = {
           id: backendAgent.id,
-          agentType: (backendAgent.agentType as "main" | "subagent") ?? "subagent",
+          agentType:
+            (backendAgent.agentType as "main" | "subagent") ?? "subagent",
           name: backendAgent.name ?? null,
           color: backendAgent.color,
           number: backendAgent.number,
@@ -430,7 +445,7 @@ export const useGameStore = create<GameStore>()(
           bubble: createEmptyBubbleState(),
           queueType: null,
           queueIndex: -1,
-          sessionId: sessionId ?? null,
+          sessionId: backendAgent.sessionId ?? sessionId ?? null,
           isTyping: false,
         };
         newAgents.set(backendAgent.id, animState);
@@ -728,7 +743,11 @@ export const useGameStore = create<GameStore>()(
           // 2. There's already a bubble displaying
           // The immediate flag is used for conversation bubbles that need to
           // proceed normally to avoid blocking the agent state machine.
-          const isCompacting = state.compactionPhase !== "idle";
+          // Check if any session is currently compacting (covers "__all__" and "None" sessionId)
+          let isCompacting = false;
+          for (const phase of state.compactionPhases.values()) {
+            if (phase !== "idle") { isCompacting = true; break; }
+          }
           const shouldQueueForCompaction = isCompacting && !options?.immediate;
           const shouldQueue = shouldQueueForCompaction || bossBubble.content;
 
@@ -914,22 +933,40 @@ export const useGameStore = create<GameStore>()(
     setElevatorState: (elevatorState) => set({ elevatorState }),
     setPhoneState: (phoneState) => set({ phoneState }),
     setDeskCount: (deskCount) => set({ deskCount }),
-    setContextUtilization: (contextUtilization) =>
-      // Only update context utilization - don't reset compaction state
-      // The compaction animation system controls when compaction ends via setCompactionPhase
-      set({ contextUtilization }),
+    setContextUtilization: (utilization, sessionId) =>
+      set((state) => {
+        const sid = sessionId ?? state.sessionId;
+        const next = new Map(state.contextUtilizations);
+        next.set(sid, utilization);
+        return { contextUtilizations: next };
+      }),
     setToolUsesSinceCompaction: (toolUsesSinceCompaction) =>
       set({ toolUsesSinceCompaction }),
-    triggerCompaction: () => {
-      // Start compaction animation - boss will walk to trash can and jump on it
-      set({
-        isCompacting: true,
-        toolUsesSinceCompaction: 0,
-        compactionPhase: "walking_to_trash",
-      });
-    },
-    setCompactionPhase: (compactionPhase) => set({ compactionPhase }),
-    setIsCompacting: (isCompacting) => set({ isCompacting }),
+    triggerCompaction: (sessionId) =>
+      set((state) => {
+        const sid = sessionId ?? state.sessionId;
+        const phases = new Map(state.compactionPhases);
+        const compacting = new Map(state.isCompactingMap);
+        phases.set(sid, "walking_to_trash");
+        compacting.set(sid, true);
+        return {
+          compactionPhases: phases,
+          isCompactingMap: compacting,
+          toolUsesSinceCompaction: 0,
+        };
+      }),
+    setCompactionPhase: (sessionId, phase) =>
+      set((state) => {
+        const next = new Map(state.compactionPhases);
+        next.set(sessionId, phase);
+        return { compactionPhases: next };
+      }),
+    setIsCompacting: (sessionId, isCompacting) =>
+      set((state) => {
+        const next = new Map(state.isCompactingMap);
+        next.set(sessionId, isCompacting);
+        return { isCompactingMap: next };
+      }),
     setTodos: (todos) => set({ todos }),
     setPrintReport: (printReport) => set({ printReport }),
     setGitStatus: (gitStatus) => set({ gitStatus }),
@@ -960,11 +997,12 @@ export const useGameStore = create<GameStore>()(
         return { eventLog: entries.reverse().slice(0, MAX_EVENT_LOG) };
       }),
 
-    setConversation: (conversation, sessionId) => set({
-      conversation: sessionId
-        ? conversation.map((c) => ({ ...c, sessionId }))
-        : conversation,
-    }),
+    setConversation: (conversation, sessionId) =>
+      set({
+        conversation: sessionId
+          ? conversation.map((c) => ({ ...c, sessionId }))
+          : conversation,
+      }),
 
     // ========================================================================
     // WHITEBOARD ACTIONS
@@ -1055,6 +1093,9 @@ export const useGameStore = create<GameStore>()(
         ...initialState,
         agents: new Map(),
         boss: { ...initialBossState, bubble: createEmptyBubbleState() },
+        compactionPhases: new Map(),
+        isCompactingMap: new Map(),
+        contextUtilizations: new Map(),
         whiteboardData: { ...initialWhiteboardData },
         whiteboardMode: 0,
       }),
@@ -1064,6 +1105,9 @@ export const useGameStore = create<GameStore>()(
         ...initialState,
         agents: new Map(),
         boss: { ...initialBossState, bubble: createEmptyBubbleState() },
+        compactionPhases: new Map(),
+        isCompactingMap: new Map(),
+        contextUtilizations: new Map(),
         whiteboardData: { ...initialWhiteboardData },
         whiteboardMode: 0,
         isReplaying: true,
@@ -1080,10 +1124,10 @@ export const useGameStore = create<GameStore>()(
         deskCount: 8,
         elevatorState: "closed",
         phoneState: "idle",
-        contextUtilization: 0.0,
+        compactionPhases: new Map(),
+        isCompactingMap: new Map(),
+        contextUtilizations: new Map(),
         toolUsesSinceCompaction: 0,
-        isCompacting: false,
-        compactionPhase: "idle",
         todos: [],
         gitStatus: null,
         eventLog: [], // Clear event log for new session
@@ -1185,7 +1229,10 @@ export const useGameStore = create<GameStore>()(
           // NOTE: elevatorState is NOT synced from backend - it's controlled by
           // the frontend's agent state machine for smooth animations
           phoneState: backendState.office.phoneState,
-          contextUtilization: backendState.office.contextUtilization ?? 0.0,
+          contextUtilizations: new Map([
+            ...get().contextUtilizations,
+            [backendState.sessionId, backendState.office.contextUtilization ?? 0.0],
+          ]),
           toolUsesSinceCompaction:
             backendState.office.toolUsesSinceCompaction ?? 0,
           printReport: backendState.office.printReport ?? false,
@@ -1217,10 +1264,21 @@ export const selectShowPhaseLabels = (state: GameStore) =>
 export const selectShowObstacles = (state: GameStore) => state.showObstacles;
 export const selectElevatorState = (state: GameStore) => state.elevatorState;
 export const selectContextUtilization = (state: GameStore) =>
-  state.contextUtilization;
-export const selectIsCompacting = (state: GameStore) => state.isCompacting;
+  state.contextUtilizations.get(state.sessionId) ?? 0;
+export const selectIsCompacting = (state: GameStore) =>
+  state.isCompactingMap.get(state.sessionId) ?? false;
 export const selectCompactionPhase = (state: GameStore) =>
-  state.compactionPhase;
+  state.compactionPhases.get(state.sessionId) ?? "idle";
+// Per-session selectors (for multi-room use)
+export const selectCompactionPhaseForSession =
+  (sessionId: string) => (state: GameStore) =>
+    state.compactionPhases.get(sessionId) ?? "idle";
+export const selectIsCompactingForSession =
+  (sessionId: string) => (state: GameStore) =>
+    state.isCompactingMap.get(sessionId) ?? false;
+export const selectContextUtilizationForSession =
+  (sessionId: string) => (state: GameStore) =>
+    state.contextUtilizations.get(sessionId) ?? 0;
 export const selectTodos = (state: GameStore) => state.todos;
 export const selectGitStatus = (state: GameStore) => state.gitStatus;
 export const selectEventLog = (state: GameStore) => state.eventLog;

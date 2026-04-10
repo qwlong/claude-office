@@ -332,7 +332,7 @@ class AnimationSystem {
       // - The queueing logic in enqueueBubble already handles when to queue vs display
       // - By the time we're here, the bubble was already queued for a reason
       // - We just need to wait for compaction to finish
-      if (store.compactionPhase === "idle") {
+      if ((store.compactionPhases.get(store.sessionId) ?? "idle") === "idle") {
         console.log(
           `[AnimSys] No boss bubble content but queue has ${bossBubble.queue.length} items, advancing`,
         );

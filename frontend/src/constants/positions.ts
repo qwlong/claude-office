@@ -74,7 +74,10 @@ export const BOSS_HALF_WIDTH = 70;
  * Calculate horizontal positions for N bosses, centered in the canvas.
  * Spacing automatically reduces if bosses would overflow canvas width.
  */
-export function getBossPositions(count: number, canvasWidth: number): Position[] {
+export function getBossPositions(
+  count: number,
+  canvasWidth: number,
+): Position[] {
   if (count === 0) return [];
   if (count === 1) return [{ x: canvasWidth / 2, y: BOSS_ROW_Y }];
 

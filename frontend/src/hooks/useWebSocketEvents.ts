@@ -17,7 +17,13 @@ import {
   getQueuePosition,
   resetSpawnIndex,
 } from "@/systems/queuePositions";
-import type { GameState, WebSocketMessage, Position, BossState, BubbleContent } from "@/types";
+import type {
+  GameState,
+  WebSocketMessage,
+  Position,
+  BossState,
+  BubbleContent,
+} from "@/types";
 
 // ============================================================================
 // TYPES
@@ -205,10 +211,9 @@ export function useWebSocketEvents({
           if (agent && agent.phase === "idle") {
             // Agent at desk — trigger departure animation
             agentMachineService.triggerDeparture(agentId);
-          } else if (currentSessionIdRef.current === "__all__") {
-            // In multi-session view, force-remove stale agents that aren't
-            // in the backend state (they may be stuck in non-idle phases
-            // from a previous single-session view)
+          } else {
+            // Agent in non-idle phase (arriving, departing, etc.) but gone from backend.
+            // Force-remove to prevent ghost agents accumulating.
             agentMachineService.forceRemove(agentId);
             store.removeAgent(agentId);
             processedAgentsRef.current.delete(agentId);
@@ -216,12 +221,14 @@ export function useWebSocketEvents({
         }
       }
 
-      // Update boss state
-      store.updateBossBackendState(state.boss.state);
-      store.updateBossTask(state.boss.currentTask ?? null);
+      // Update boss state (guard against missing boss in __all__ mode)
+      if (state.boss) {
+        store.updateBossBackendState(state.boss.state);
+        store.updateBossTask(state.boss.currentTask ?? null);
+      }
 
       // Enqueue boss bubble if present
-      if (state.boss.bubble) {
+      if (state.boss?.bubble) {
         const bubbleText = state.boss.bubble.text;
         const lastSeen = lastSeenBubbleTextRef.current.get("boss");
         const isPersistent = state.boss.bubble.persistent;
@@ -233,7 +240,7 @@ export function useWebSocketEvents({
           lastSeenBubbleTextRef.current.set("boss", bubbleText);
           const alreadyHas = store.hasBubbleText("boss", bubbleText);
           console.log(
-            `[WS] Boss bubble NEW text, alreadyHas=${alreadyHas}, compactionPhase=${store.compactionPhase}`,
+            `[WS] Boss bubble NEW text, alreadyHas=${alreadyHas}, compactionPhase=${store.compactionPhases.get(store.sessionId) ?? "idle"}`,
           );
           if (!alreadyHas) {
             console.log(
@@ -248,7 +255,9 @@ export function useWebSocketEvents({
 
       // Update multi-boss state (merged view)
       // state.bosses comes from GameState.bosses (Boss[]) in generated types
-      const backendBosses = (state as Record<string, unknown>).bosses as Array<Record<string, unknown>> | undefined;
+      const backendBosses = (state as Record<string, unknown>).bosses as
+        | Array<Record<string, unknown>>
+        | undefined;
 
       if (backendBosses && backendBosses.length > 0) {
         const currentBosses = store.bosses;
@@ -259,7 +268,11 @@ export function useWebSocketEvents({
           newBosses.set(sid, {
             backendState: (bb.state as BossState) ?? "idle",
             position: existing?.position ?? { x: 640, y: 900 },
-            bubble: existing?.bubble ?? { content: null, displayStartTime: null, queue: [] },
+            bubble: existing?.bubble ?? {
+              content: null,
+              displayStartTime: null,
+              queue: [],
+            },
             inUseBy: existing?.inUseBy ?? null,
             currentTask: (bb.currentTask as string | null) ?? null,
             isTyping: existing?.isTyping ?? false,
@@ -309,7 +322,7 @@ export function useWebSocketEvents({
         state.office.contextUtilization !== null &&
         state.office.contextUtilization !== undefined
       ) {
-        store.setContextUtilization(state.office.contextUtilization);
+        store.setContextUtilization(state.office.contextUtilization, state.sessionId);
       }
       // Update safety sign counter
       if (
@@ -331,7 +344,11 @@ export function useWebSocketEvents({
       }
       // Sync event history from backend on initial connection / reconnection
       // Only populate if frontend eventLog is empty (avoids overwriting live events)
-      if (state.history && state.history.length > 0 && store.eventLog.length === 0) {
+      if (
+        state.history &&
+        state.history.length > 0 &&
+        store.eventLog.length < state.history.length
+      ) {
         // HistoryEntry shape matches WebSocketMessage.event; cast type from string to EventType
         store.setEventHistory(
           state.history.map((h) => ({
@@ -439,7 +456,9 @@ export function useWebSocketEvents({
 
               // Trigger compaction animation on context_compaction event
               if (message.event.type === "context_compaction") {
-                useGameStore.getState().triggerCompaction();
+                // context_compaction events may include a sessionId from the backend
+                const compactionSessionId = (message.event as Record<string, unknown>).sessionId as string | undefined;
+                useGameStore.getState().triggerCompaction(compactionSessionId);
               }
             }
             break;
@@ -491,9 +510,10 @@ export function useWebSocketEvents({
       reconnectTimeoutRef.current = null;
     }
 
-    const wsUrl = sessionId === "__all__"
-      ? `${WS_BASE_URL}/ws/all`
-      : `${WS_BASE_URL}/ws/${sessionId}`;
+    const wsUrl =
+      sessionId === "__all__"
+        ? `${WS_BASE_URL}/ws/all`
+        : `${WS_BASE_URL}/ws/${sessionId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -507,9 +527,10 @@ export function useWebSocketEvents({
       setConnected(true);
       setSessionId(sessionId);
 
-      // Clear processed agents, bubble tracking, and reset spawn positions on reconnect
+      // Clear processed agents, bubble tracking, queue sync, and reset spawn positions on reconnect
       processedAgentsRef.current.clear();
       lastSeenBubbleTextRef.current.clear();
+      initialQueueSyncDoneRef.current = null;
       resetSpawnIndex();
     };
 

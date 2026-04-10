@@ -216,7 +216,7 @@ class AgentMachineService {
   notifyBossAvailable(): void {
     const store = useGameStore.getState();
 
-    if (store.compactionPhase !== "idle") return;
+    if ((store.compactionPhases.get(store.sessionId) ?? "idle") !== "idle") return;
 
     if (store.arrivalQueue.length > 0) {
       if (this.queue.getReadyOccupant("arrival")) return;

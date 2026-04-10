@@ -113,10 +113,20 @@ function lerpPosition(
  * Hook to manage compaction animation state.
  * Returns animated position and state for the boss during compaction.
  */
-export function useCompactionAnimation(): CompactionAnimationState {
-  const phase = useGameStore(selectCompactionPhase);
+export function useCompactionAnimation(sessionId?: string): CompactionAnimationState {
+  // When sessionId is provided, read per-session state; otherwise use current session selectors
+  const phase = useGameStore(
+    sessionId
+      ? (s) => s.compactionPhases.get(sessionId) ?? "idle"
+      : selectCompactionPhase,
+  );
   const boss = useGameStore(selectBoss);
-  const contextUtilization = useGameStore(selectContextUtilization);
+  const contextUtilization = useGameStore(
+    sessionId
+      ? (s) => s.contextUtilizations.get(sessionId) ?? 0
+      : selectContextUtilization,
+  );
+  const resolvedSessionId = useGameStore((s) => sessionId ?? s.sessionId);
   const setCompactionPhase = useGameStore((s) => s.setCompactionPhase);
   const setContextUtilization = useGameStore((s) => s.setContextUtilization);
 
@@ -166,7 +176,7 @@ export function useCompactionAnimation(): CompactionAnimationState {
           initialContextRef.current = contextUtilization;
           lastStompJumpRef.current = 0;
           setCurrentJump(1);
-          setCompactionPhase("jumping");
+          setCompactionPhase(resolvedSessionId, "jumping");
         }
       } else if (phase === "jumping") {
         const overallProgress = Math.min(elapsed / TOTAL_JUMP_DURATION, 1);
@@ -247,9 +257,9 @@ export function useCompactionAnimation(): CompactionAnimationState {
           setIsStomping(false);
           setCurrentJump(0);
           // Set context to 0 after all jumps
-          setContextUtilization(0);
+          setContextUtilization(0, resolvedSessionId);
           setAnimatedContextUtilization(0);
-          setCompactionPhase("walking_back");
+          setCompactionPhase(resolvedSessionId, "walking_back");
         }
       } else if (phase === "walking_back") {
         const progress = Math.min(elapsed / WALK_DURATION, 1);
@@ -258,9 +268,9 @@ export function useCompactionAnimation(): CompactionAnimationState {
         if (progress >= 1) {
           // Animation complete - return to idle
           setAnimatedPosition(null);
-          setCompactionPhase("idle");
+          setCompactionPhase(resolvedSessionId, "idle");
           // Reset isCompacting flag
-          useGameStore.getState().setIsCompacting(false);
+          useGameStore.getState().setIsCompacting(resolvedSessionId, false);
           // Process any queued boss bubbles that accumulated during compaction
           const store = useGameStore.getState();
           console.log(
@@ -290,6 +300,7 @@ export function useCompactionAnimation(): CompactionAnimationState {
     setCompactionPhase,
     contextUtilization,
     setContextUtilization,
+    resolvedSessionId,
   ]);
 
   // Start/stop animation based on phase changes
@@ -329,7 +340,7 @@ export function useCompactionAnimation(): CompactionAnimationState {
         rafIdRef.current = null;
       }
     };
-  }, [phase, bossDesk, animatedPosition, contextUtilization]);
+  }, [phase, bossDesk, animatedPosition, contextUtilization, resolvedSessionId]);
 
   return {
     bossPosition: animatedPosition,

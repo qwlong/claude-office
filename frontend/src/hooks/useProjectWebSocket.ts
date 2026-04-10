@@ -15,7 +15,10 @@ export function useProjectWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    let unmounted = false;
+
     function connect() {
+      if (unmounted) return;
       const ws = new WebSocket(`${WS_URL}/ws/projects`);
       wsRef.current = ws;
 
@@ -33,9 +36,9 @@ export function useProjectWebSocket() {
       };
 
       ws.onclose = () => {
-        // Reconnect after 3 seconds
+        // Reconnect after 3 seconds — but not if unmounted
         setTimeout(() => {
-          if (wsRef.current === ws || wsRef.current === null) {
+          if (!unmounted && (wsRef.current === ws || wsRef.current === null)) {
             connect();
           }
         }, 3000);
@@ -45,23 +48,28 @@ export function useProjectWebSocket() {
     connect();
 
     // Fetch initial task state so TaskDrawer renders immediately
-    fetch(`${API_BASE_URL}/api/v1/tasks/status`)
+    const abortController = new AbortController();
+    fetch(`${API_BASE_URL}/api/v1/tasks/status`, { signal: abortController.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((status) => {
-        if (!status) return;
-        fetch(`${API_BASE_URL}/api/v1/tasks`)
+        if (!status || unmounted) return;
+        fetch(`${API_BASE_URL}/api/v1/tasks`, { signal: abortController.signal })
           .then((r) => (r.ok ? r.json() : []))
           .then((tasks) => {
-            updateTasks({
-              connected: status.connected,
-              adapterType: status.adapterType,
-              tasks,
-            });
+            if (!unmounted) {
+              updateTasks({
+                connected: status.connected,
+                adapterType: status.adapterType,
+                tasks,
+              });
+            }
           });
       })
       .catch(() => {});
 
     return () => {
+      unmounted = true;
+      abortController.abort();
       const ws = wsRef.current;
       wsRef.current = null;
       if (ws) ws.close();

@@ -17,10 +17,19 @@ import {
   selectBoss,
   selectBosses,
   selectTodos,
+  selectDebugMode,
+  selectShowPaths,
+  selectShowQueueSlots,
+  selectShowPhaseLabels,
+  selectShowObstacles,
   selectElevatorState,
   selectContextUtilization,
+  selectIsCompacting,
+  selectContextUtilizationForSession,
+  selectIsCompactingForSession,
   selectPrintReport,
 } from "@/stores/gameStore";
+import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useRoomContext } from "@/contexts/RoomContext";
 import { getCanvasHeight, CANVAS_WIDTH } from "@/constants/canvas";
 import {
@@ -60,9 +69,19 @@ import {
   AgentLabel,
   Bubble as AgentBubble,
 } from "./AgentSprite";
-import { BossSprite, BossBubble } from "./BossSprite";
+import { BossSprite, BossBubble, MobileBoss } from "./BossSprite";
 import { TrashCanSprite } from "./TrashCanSprite";
+import { DebugOverlays } from "./DebugOverlays";
 import { isInElevatorZone } from "@/systems/queuePositions";
+
+import type { BossState } from "@/types";
+import { getProjectDisplayName } from "@/types/projects";
+
+/** Map agent state to BossState. Main agents use boss states at runtime but are typed as AgentState. */
+const BOSS_STATE_SET = new Set<string>(["idle", "phone_ringing", "on_phone", "receiving", "working", "delegating", "waiting_permission", "reviewing", "completing"]);
+function toBossState(state: string): BossState {
+  return BOSS_STATE_SET.has(state) ? (state as BossState) : "idle";
+}
 
 interface OfficeRoomProps {
   textures: OfficeTextures;
@@ -79,20 +98,65 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const storeSessionId = useGameStore((s) => s.sessionId);
   const storeTodos = useGameStore(selectTodos);
   const elevatorState = useGameStore(selectElevatorState);
-  const contextUtilization = useGameStore(selectContextUtilization);
+  const roomKey = isRoom ? roomCtx.project.key : null;
+  const contextUtilization = useGameStore(
+    roomKey !== null
+      ? selectContextUtilizationForSession(roomKey)
+      : selectContextUtilization,
+  );
+  const isCompacting = useGameStore(
+    roomKey !== null
+      ? selectIsCompactingForSession(roomKey)
+      : selectIsCompacting,
+  );
   const printReport = useGameStore(selectPrintReport);
+  const debugMode = useGameStore(selectDebugMode);
+  const showPaths = useGameStore(selectShowPaths);
+  const showQueueSlots = useGameStore(selectShowQueueSlots);
+  const showPhaseLabels = useGameStore(selectShowPhaseLabels);
+  const showObstacles = useGameStore(selectShowObstacles);
 
-  // Multi-boss merged view
+  // Compaction animation — in room mode, use the room's key as sessionId
+  // (In sessions view, project.key IS the session ID; in projects view, no match = no animation)
+  const compactionSessionId = isRoom ? roomCtx.project.key : undefined;
+  const compactionAnimation = useCompactionAnimation(compactionSessionId);
+
+  // Multi-boss: merged view (whole office) or room with multiple main agents (project view)
   const isMergedView = !isRoom && storeSessionId === "__all__";
 
+  // Room bosses: extract main agents from room data for multi-boss display (top 3)
+  const roomAgents = isRoom ? roomCtx.project.agents : [];
+  const roomBossAgents = useMemo(() => {
+    const mains = roomAgents.filter(
+      (a: { agentType?: string }) => a.agentType === "main",
+    );
+    // Sort by activity (non-idle first) and limit to 3, matching Whole Office behavior
+    mains.sort((a, b) => {
+      const aActive = a.state === "working" ? 1 : 0;
+      const bActive = b.state === "working" ? 1 : 0;
+      return bActive - aActive;
+    });
+    return mains.slice(0, 3);
+  }, [roomAgents]);
+  const isMultiBossRoom = isRoom && roomBossAgents.length > 1;
+
+  // Boss count for positioning: merged view uses storeBosses, room uses roomBossAgents
+  const multiBossCount = isMergedView
+    ? storeBosses.size
+    : isMultiBossRoom
+      ? roomBossAgents.length
+      : 0;
+
   const bossPositions = useMemo(() => {
-    if (!isMergedView || !storeBosses.size) return [];
-    return getBossPositions(storeBosses.size, CANVAS_WIDTH);
-  }, [isMergedView, storeBosses.size]);
+    if (!multiBossCount) return [];
+    return getBossPositions(multiBossCount, CANVAS_WIDTH);
+  }, [multiBossCount]);
 
   const sortedBosses = useMemo(() => {
     if (!isMergedView) return [];
-    return Array.from(storeBosses.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return Array.from(storeBosses.entries()).sort(([a], [b]) =>
+      a.localeCompare(b),
+    );
   }, [isMergedView, storeBosses]);
 
   // In merged view, filter out main agents (bosses) from desk rendering
@@ -111,8 +175,13 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // Filter out main agents (boss) from desk rendering — boss uses BossSprite
   const roomSubagents = useMemo(
-    () => isRoom ? roomCtx.project.agents.filter((a: { agentType?: string }) => a.agentType !== "main") : [],
-    [isRoom, roomCtx],
+    () =>
+      isRoom
+        ? roomCtx.project.agents.filter(
+            (a: { agentType?: string }) => a.agentType !== "main",
+          )
+        : [],
+    [isRoom, roomAgents],
   );
   const agentCount = isRoom ? roomSubagents.length : deskAgents.size;
   // In overview mode, use fixed 8 desks for consistent room sizing
@@ -129,7 +198,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       }
     }
     return desks;
-  }, [isRoom, roomCtx, storeAgents]);
+  }, [isRoom, roomSubagents, storeAgents]);
 
   const deskTasks = useMemo(() => {
     const tasks = new Map<number, string>();
@@ -148,17 +217,18 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       }
     }
     return tasks;
-  }, [isRoom, roomCtx, storeAgents]);
+  }, [isRoom, roomSubagents, storeAgents]);
 
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
 
   // Boss data
   const rawBossPos = isRoom ? roomCtx.project.boss.position : null;
-  const bossPosition = rawBossPos && "x" in rawBossPos && "y" in rawBossPos
-    ? { x: rawBossPos.x, y: rawBossPos.y }
-    : isRoom
-      ? { x: 640, y: 830 }
-      : storeBoss.position;
+  const bossPosition =
+    rawBossPos && "x" in rawBossPos && "y" in rawBossPos
+      ? { x: rawBossPos.x, y: rawBossPos.y }
+      : isRoom
+        ? { x: 640, y: 830 }
+        : storeBoss.position;
   const bossState = isRoom
     ? roomCtx.project.boss.state
     : storeBoss.backendState;
@@ -178,30 +248,28 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       />
 
       {/* Boss area rug(s) */}
-      {isMergedView && sortedBosses.length > 0 ? (
-        sortedBosses.map(([sid], i) =>
-          textures.bossRug && bossPositions[i] ? (
+      {(isMergedView && sortedBosses.length > 0) || isMultiBossRoom
+        ? bossPositions.map((pos, i) =>
+            textures.bossRug ? (
+              <pixiSprite
+                key={`rug-${i}`}
+                texture={textures.bossRug}
+                anchor={0.5}
+                x={pos.x}
+                y={pos.y + BOSS_RUG_OFFSET_Y}
+                scale={0.3}
+              />
+            ) : null,
+          )
+        : textures.bossRug && (
             <pixiSprite
-              key={`rug-${sid}`}
               texture={textures.bossRug}
               anchor={0.5}
-              x={bossPositions[i].x}
-              y={bossPositions[i].y + BOSS_RUG_OFFSET_Y}
+              x={BOSS_RUG_POSITION.x}
+              y={BOSS_RUG_POSITION.y}
               scale={0.3}
             />
-          ) : null,
-        )
-      ) : (
-        textures.bossRug && (
-          <pixiSprite
-            texture={textures.bossRug}
-            anchor={0.5}
-            x={BOSS_RUG_POSITION.x}
-            y={BOSS_RUG_POSITION.y}
-            scale={0.3}
-          />
-        )
-      )}
+          )}
 
       {/* Wall decorations */}
       <pixiContainer
@@ -210,22 +278,13 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       >
         <EmployeeOfTheMonth />
       </pixiContainer>
-      <pixiContainer
-        x={CITY_WINDOW_POSITION.x}
-        y={CITY_WINDOW_POSITION.y}
-      >
+      <pixiContainer x={CITY_WINDOW_POSITION.x} y={CITY_WINDOW_POSITION.y}>
         <CityWindow />
       </pixiContainer>
-      <pixiContainer
-        x={SAFETY_SIGN_POSITION.x}
-        y={SAFETY_SIGN_POSITION.y}
-      >
+      <pixiContainer x={SAFETY_SIGN_POSITION.x} y={SAFETY_SIGN_POSITION.y}>
         <SafetySign />
       </pixiContainer>
-      <pixiContainer
-        x={WALL_CLOCK_POSITION.x}
-        y={WALL_CLOCK_POSITION.y}
-      >
+      <pixiContainer x={WALL_CLOCK_POSITION.x} y={WALL_CLOCK_POSITION.y}>
         <WallClock />
       </pixiContainer>
       {textures.wallOutlet && (
@@ -237,10 +296,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
           scale={0.04}
         />
       )}
-      <pixiContainer
-        x={WHITEBOARD_POSITION.x}
-        y={WHITEBOARD_POSITION.y}
-      >
+      <pixiContainer x={WHITEBOARD_POSITION.x} y={WHITEBOARD_POSITION.y}>
         <Whiteboard todos={todos} />
       </pixiContainer>
       {textures.waterCooler && (
@@ -266,7 +322,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       <PrinterStation
         x={PRINTER_STATION_POSITION.x}
         y={PRINTER_STATION_POSITION.y}
-        isPrinting={!isRoom && printReport && !!bossBubble}
+        isPrinting={!isRoom && printReport && !isCompacting && !!bossBubble}
         deskTexture={textures.desk}
         printerTexture={textures.printer}
       />
@@ -347,8 +403,8 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
               (agent) =>
                 !isAgentInElevator(
                   agent.currentPosition.x,
-                  agent.currentPosition.y
-                )
+                  agent.currentPosition.y,
+                ),
             )
             .map((agent) => (
               <pixiContainer key={agent.id} zIndex={agent.currentPosition.y}>
@@ -464,7 +520,31 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
               renderBubble={false}
               isTyping={boss.isTyping}
               isAway={false}
-              label={boss.projectKey ?? sid.slice(0, 8)}
+              label={boss.projectKey ? getProjectDisplayName({ name: boss.projectKey, root: null }) : sid.slice(0, 8)}
+            />
+          ) : null,
+        )
+      ) : isMultiBossRoom ? (
+        roomBossAgents.map((agent, i) =>
+          bossPositions[i] ? (
+            <BossSprite
+              key={`boss-${agent.id}`}
+              position={bossPositions[i]}
+              state={toBossState(agent.state)}
+              bubble={agent.bubble ?? null}
+              inUseBy={null}
+              currentTask={agent.currentTask ?? null}
+              chairTexture={textures.chair}
+              deskTexture={textures.desk}
+              keyboardTexture={textures.keyboard}
+              monitorTexture={textures.monitor}
+              phoneTexture={textures.phone}
+              headsetTexture={textures.headset}
+              sunglassesTexture={textures.sunglasses}
+              renderBubble={false}
+              isTyping={agent.state === "working"}
+              isAway={false}
+              label={agent.sessionId?.slice(0, 8) ?? agent.name ?? ""}
             />
           ) : null,
         )
@@ -484,18 +564,74 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
           sunglassesTexture={textures.sunglasses}
           renderBubble={false}
           isTyping={isRoom ? bossState === "working" : storeBoss.isTyping}
-          isAway={false}
+          isAway={!isRoom && compactionAnimation.phase !== "idle"}
         />
       )}
 
-      {/* Trash Can (all-merged only) */}
-      {!isRoom && (
+      {/* Mobile Boss — walks to/from trash can during compaction (single-office only) */}
+      {!isRoom && compactionAnimation.bossPosition && (
+        <MobileBoss
+          position={compactionAnimation.bossPosition}
+          jumpOffset={compactionAnimation.jumpOffset}
+          scale={compactionAnimation.bossScale}
+          sunglassesTexture={textures.sunglasses}
+          headsetTexture={textures.headset}
+        />
+      )}
+
+      {/* Trash Can(s) */}
+      {(isMergedView && sortedBosses.length > 0) || isMultiBossRoom ? (
+        bossPositions.map((pos, i) => (
+          <TrashCanSprite
+            key={`trash-${i}`}
+            x={pos.x + TRASH_CAN_OFFSET.x}
+            y={pos.y + TRASH_CAN_OFFSET.y}
+            contextUtilization={0}
+            isCompacting={false}
+            isStomping={false}
+          />
+        ))
+      ) : !isRoom ? (
+        <TrashCanSprite
+          x={bossPosition.x + TRASH_CAN_OFFSET.x}
+          y={bossPosition.y + TRASH_CAN_OFFSET.y}
+          contextUtilization={
+            compactionAnimation.phase !== "idle"
+              ? compactionAnimation.animatedContextUtilization
+              : contextUtilization
+          }
+          isCompacting={isCompacting}
+          isStomping={compactionAnimation.isStomping}
+        />
+      ) : (
         <TrashCanSprite
           x={bossPosition.x + TRASH_CAN_OFFSET.x}
           y={bossPosition.y + TRASH_CAN_OFFSET.y}
           contextUtilization={contextUtilization}
           isCompacting={false}
           isStomping={false}
+        />
+      )}
+
+      {/* Debug overlays (single-office only) */}
+      {!isRoom && debugMode && (
+        <DebugOverlays
+          showPaths={showPaths}
+          showQueueSlots={showQueueSlots}
+          showPhaseLabels={showPhaseLabels}
+          showObstacles={showObstacles}
+        />
+      )}
+      {!isRoom && debugMode && (
+        <pixiText
+          text="DEBUG MODE (D=toggle, P=paths, Q=queue, L=labels, O=obstacles, T=time)"
+          x={10}
+          y={10}
+          style={{
+            fontSize: 12,
+            fill: 0x00ff00,
+            fontFamily: "monospace",
+          }}
         />
       )}
 
@@ -515,8 +651,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
           })
         : Array.from(storeAgents.values())
             .filter(
-              (agent) =>
-                agent.name && !isInElevatorZone(agent.currentPosition)
+              (agent) => agent.name && !isInElevatorZone(agent.currentPosition),
             )
             .map((agent) => (
               <AgentLabel
@@ -535,11 +670,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
               const desk = deskPositions[deskIdx];
               if (!desk) return null;
               return (
-                <pixiContainer
-                  key={`bubble-${agent.id}`}
-                  x={desk.x}
-                  y={desk.y}
-                >
+                <pixiContainer key={`bubble-${agent.id}`} x={desk.x} y={desk.y}>
                   <AgentBubble content={agent.bubble!} yOffset={-80} />
                 </pixiContainer>
               );
@@ -548,7 +679,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
             .filter(
               (agent) =>
                 agent.bubble.content &&
-                !isInElevatorZone(agent.currentPosition)
+                !isInElevatorZone(agent.currentPosition),
             )
             .map((agent) => (
               <pixiContainer
@@ -559,11 +690,35 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
                 <AgentBubble content={agent.bubble.content!} yOffset={-80} />
               </pixiContainer>
             ))}
-      {bossBubble && (
-        <pixiContainer x={bossPosition.x} y={bossPosition.y}>
-          <BossBubble content={bossBubble} yOffset={-80} />
-        </pixiContainer>
-      )}
+      {isMergedView && sortedBosses.length > 0
+        ? sortedBosses.map(([sid, boss], i) =>
+            boss.bubble.content && bossPositions[i] ? (
+              <pixiContainer
+                key={`boss-bubble-${sid}`}
+                x={bossPositions[i].x}
+                y={bossPositions[i].y}
+              >
+                <BossBubble content={boss.bubble.content} yOffset={-80} />
+              </pixiContainer>
+            ) : null,
+          )
+        : isMultiBossRoom
+          ? roomBossAgents.map((agent, i) =>
+              agent.bubble && bossPositions[i] ? (
+                <pixiContainer
+                  key={`boss-bubble-${agent.id}`}
+                  x={bossPositions[i].x}
+                  y={bossPositions[i].y}
+                >
+                  <BossBubble content={agent.bubble} yOffset={-80} />
+                </pixiContainer>
+              ) : null,
+            )
+          : bossBubble && (
+              <pixiContainer x={bossPosition.x} y={bossPosition.y}>
+                <BossBubble content={bossBubble} yOffset={-80} />
+              </pixiContainer>
+            )}
     </>
   );
 }

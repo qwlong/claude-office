@@ -8,15 +8,11 @@
 "use client";
 
 import { type ReactNode } from "react";
-import type { ProjectGroup } from "@/types/projects";
+import { type ProjectGroup, getProjectDisplayName } from "@/types/projects";
 import { RoomProvider } from "@/contexts/RoomContext";
 import { OfficeRoom } from "./OfficeRoom";
 import { RoomLabel } from "./RoomLabel";
-import {
-  ROOM_SCALE,
-  ROOM_GAP,
-  getRoomGridCols,
-} from "@/constants/rooms";
+import { ROOM_SCALE, ROOM_GAP, getRoomGridCols } from "@/constants/rooms";
 import { CANVAS_WIDTH, getCanvasHeight } from "@/constants/canvas";
 import type { OfficeTextures } from "@/hooks/useOfficeTextures";
 
@@ -74,7 +70,7 @@ export function MultiRoomCanvas({
             {/* Label at top (nudged down 4px full-scale = 2px rendered) */}
             <pixiContainer y={4}>
               <RoomLabel
-                name={room.name}
+                name={getProjectDisplayName(room)}
                 color={room.color}
                 agentCount={room.agents.length}
                 sessionCount={room.sessionCount}
