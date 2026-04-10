@@ -18,9 +18,7 @@ export function RoomProvider({
   children: ReactNode;
 }) {
   return (
-    <RoomContext.Provider value={{ project }}>
-      {children}
-    </RoomContext.Provider>
+    <RoomContext.Provider value={{ project }}>{children}</RoomContext.Provider>
   );
 }
 

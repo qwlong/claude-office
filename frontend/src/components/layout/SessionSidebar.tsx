@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Building2,
   ChevronDown,
@@ -17,10 +17,17 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR as dateFnsPtBR, es as dateFnsEs } from "date-fns/locale";
 import { GitStatusPanel } from "@/components/game/GitStatusPanel";
 import { ProjectSidebar } from "@/components/layout/ProjectSidebar";
+import Modal from "@/components/overlay/Modal";
+import { type ProjectGroup, getProjectDisplayName } from "@/types/projects";
 import type { Session } from "@/hooks/useSessions";
 import { useDragResize } from "@/hooks/useDragResize";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useProjectStore, selectViewMode, selectActiveRoomKey } from "@/stores/projectStore";
+import {
+  useProjectStore,
+  selectViewMode,
+  selectActiveRoomKey,
+  selectProjects,
+} from "@/stores/projectStore";
 import { useGameStore, selectGitStatus } from "@/stores/gameStore";
 import { API_BASE_URL } from "@/config";
 
@@ -79,12 +86,21 @@ export function SessionSidebar({
 
   const viewMode = useProjectStore(selectViewMode);
   const activeRoomKey = useProjectStore(selectActiveRoomKey);
+  const projects = useProjectStore(selectProjects);
   const setViewMode = useProjectStore((s) => s.setViewMode);
   const zoomToSession = useProjectStore((s) => s.zoomToSession);
   const gitStatus = useGameStore(selectGitStatus);
   const isWholeOfficeActive = viewMode === "office";
+
+  // Build name→project lookup for session display names
+  const projectByName = useMemo(() => {
+    const map = new Map<string, { name: string; root: string | null }>();
+    for (const p of projects) map.set(p.name, p);
+    return map;
+  }, [projects]);
   const [projectsCollapsed, setProjectsCollapsed] = useState(false);
   const [sessionsCollapsed, setSessionsCollapsed] = useState(false);
+  const [projectPendingDelete, setProjectPendingDelete] = useState<ProjectGroup | null>(null);
 
   const {
     size: sidebarWidth,
@@ -122,9 +138,65 @@ export function SessionSidebar({
     edge: "up",
   });
 
-  const isDragging = isWidthDragging || isProjectHeightDragging || isGitStatusHeightDragging;
+  const isDragging =
+    isWidthDragging || isProjectHeightDragging || isGitStatusHeightDragging;
+
+  const handleConfirmDeleteProject = async () => {
+    if (!projectPendingDelete) return;
+    const project = projectPendingDelete;
+    setProjectPendingDelete(null);
+    try {
+      const resp = await fetch(
+        `${API_BASE_URL}/api/v1/projects/${project.key}`,
+        { method: "DELETE" },
+      );
+      if (resp.ok) {
+        window.location.reload();
+      }
+    } catch {
+      // Fallback: delete sessions individually
+      const projectSessions = sessions.filter(
+        (s) => s.id !== "__all__" && s.projectName === project.name,
+      );
+      for (const session of projectSessions) {
+        onDeleteSession(session);
+      }
+    }
+  };
 
   return (
+    <>
+      {/* Delete Project Confirmation Modal */}
+      <Modal
+        isOpen={projectPendingDelete !== null}
+        onClose={() => setProjectPendingDelete(null)}
+        title={t("modal.deleteProject")}
+        footer={
+          <>
+            <button
+              onClick={() => setProjectPendingDelete(null)}
+              className="px-4 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm font-bold transition-colors"
+            >
+              {t("modal.cancel")}
+            </button>
+            <button
+              onClick={handleConfirmDeleteProject}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-rose-900/20"
+            >
+              {t("modal.delete")}
+            </button>
+          </>
+        }
+      >
+        <p>
+          {t("modal.deleteProjectConfirm")}{" "}
+          <span className="font-mono text-purple-400">
+            {projectPendingDelete ? getProjectDisplayName(projectPendingDelete) : ""}
+          </span>
+          {" "}{t("modal.deleteProjectWarning")}
+        </p>
+      </Modal>
+
     <aside
       className={`relative flex flex-col gap-1.5 flex-shrink-0 overflow-hidden ${
         isDragging ? "select-none" : "transition-all duration-300"
@@ -150,7 +222,9 @@ export function SessionSidebar({
           }`}
         >
           <Building2 size={14} />
-          <span className="text-xs font-bold flex-1 text-left">{t("sidebar.wholeOffice")}</span>
+          <span className="text-xs font-bold flex-1 text-left">
+            {t("sidebar.wholeOffice")}
+          </span>
           <span
             role="button"
             tabIndex={0}
@@ -160,8 +234,16 @@ export function SessionSidebar({
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
             }`}
             title={t("sessions.collapseSidebar")}
-            onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onToggleCollapsed(); } }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCollapsed();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.stopPropagation();
+                onToggleCollapsed();
+              }
+            }}
           >
             <PanelLeftClose size={14} />
           </span>
@@ -171,44 +253,26 @@ export function SessionSidebar({
       {!isCollapsed && (
         <>
           {/* Project Groups */}
-          <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0" style={{ height: projectsCollapsed ? "auto" : projectsHeight }}>
+          <div
+            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex-shrink-0"
+            style={{ height: projectsCollapsed ? "auto" : projectsHeight }}
+          >
             <ProjectSidebar
               collapsed={projectsCollapsed}
               onToggleCollapsed={() => setProjectsCollapsed(!projectsCollapsed)}
-              onDeleteProject={async (project) => {
-                const confirmed = window.confirm(
-                  `Delete project "${project.name}" and all its sessions? This cannot be undone.`
-                );
-                if (!confirmed) return;
-                try {
-                  const resp = await fetch(`${API_BASE_URL}/api/v1/projects/${project.key}`, {
-                    method: "DELETE",
-                  });
-                  if (resp.ok) {
-                    window.location.reload();
-                  }
-                } catch {
-                  // Fallback: delete sessions individually
-                  const projectSessions = sessions.filter(
-                    (s) => s.id !== "__all__" && s.projectName === project.name
-                  );
-                  for (const session of projectSessions) {
-                    onDeleteSession(session);
-                  }
-                }
-              }}
+              onDeleteProject={(project) => setProjectPendingDelete(project)}
             />
           </div>
 
           {/* Drag handle between projects and sessions — controls project area height */}
           {!projectsCollapsed && (
-          <div
-            className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1 z-10"
-            onMouseDown={handleProjectHeightDragStart}
-            title={t("sessions.dragToResize")}
-          >
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
-          </div>
+            <div
+              className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1 z-10"
+              onMouseDown={handleProjectHeightDragStart}
+              title={t("sessions.dragToResize")}
+            >
+              <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
+            </div>
           )}
 
           {/* Session Browser */}
@@ -228,153 +292,187 @@ export function SessionSidebar({
                 ({sessions.length})
               </span>
               <span className="ml-auto text-slate-400">
-                {sessionsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                {sessionsCollapsed ? (
+                  <ChevronRight size={12} />
+                ) : (
+                  <ChevronDown size={12} />
+                )}
               </span>
             </button>
 
             {!sessionsCollapsed && (
-            <div className="overflow-y-auto flex-grow p-2">
-              {/* All Sessions item */}
-              <div
-                role="button"
-                tabIndex={0}
-                className={`px-3 py-2.5 mb-2 rounded-md cursor-pointer transition-colors ${
-                  viewMode === "sessions"
-                    ? "bg-amber-500/15 border-l-2 border-amber-500"
-                    : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                }`}
-                onClick={() => setViewMode("sessions")}
-                onKeyDown={(e) => e.key === "Enter" && setViewMode("sessions")}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Users size={10} className={viewMode === "sessions" ? "text-amber-500" : "text-slate-400 dark:text-slate-500"} />
-                  <span className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-                    {t("sidebar.allSessions")}
-                  </span>
-                </div>
-                {(() => {
-                  const filtered = sessions.filter((s) => s.id !== "__all__");
-                  const activeCount = filtered.filter((s) => s.status === "active").length;
-                  const totalEvents = filtered.reduce((sum, s) => sum + s.eventCount, 0);
-                  return (
-                    <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
-                      <span>{t("sessions.events", { count: totalEvents })}</span>
-                      {activeCount > 0 && (
-                        <span><span className="text-emerald-500">{activeCount}</span> {t("sessions.activeSessions")}</span>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              {sessionsLoading && sessions.length === 0 ? (
-                <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
-                  {t("sessions.loading")}
-                </div>
-              ) : sessions.length === 0 ? (
-                <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
-                  {t("sessions.noSessions")}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {sessions.filter((s) => s.id !== "__all__").map((session) => {
-                    const isActive = viewMode === "session" && activeRoomKey === session.id;
-                    const isLive = session.status === "active";
+              <div className="overflow-y-auto flex-grow p-2">
+                {/* All Sessions item */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className={`px-3 py-2.5 mb-2 rounded-md cursor-pointer transition-colors ${
+                    viewMode === "sessions"
+                      ? "bg-amber-500/15 border-l-2 border-amber-500"
+                      : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                  }`}
+                  onClick={() => setViewMode("sessions")}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && setViewMode("sessions")
+                  }
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users
+                      size={10}
+                      className={
+                        viewMode === "sessions"
+                          ? "text-amber-500"
+                          : "text-slate-400 dark:text-slate-500"
+                      }
+                    />
+                    <span
+                      className={`text-xs font-bold ${viewMode === "sessions" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}
+                    >
+                      {t("sidebar.allSessions")}
+                    </span>
+                  </div>
+                  {(() => {
+                    const filtered = sessions.filter((s) => s.id !== "__all__");
+                    const activeCount = filtered.filter(
+                      (s) => s.status === "active",
+                    ).length;
+                    const totalEvents = filtered.reduce(
+                      (sum, s) => sum + s.eventCount,
+                      0,
+                    );
                     return (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        key={session.id}
-                        className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md ${
-                          isActive
-                            ? "bg-amber-500/15 border-l-2 border-amber-500"
-                            : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                        }`}
-                        onClick={() => {
-                          onSessionSelect(session.id);
-                          zoomToSession(session.id);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            onSessionSelect(session.id);
-                            zoomToSession(session.id);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          {isLive ? (
-                            <Radio
-                              size={10}
-                              className="text-emerald-400 animate-pulse flex-shrink-0"
-                            />
-                          ) : (
-                            <PlayCircle
-                              size={10}
-                              className="text-slate-400 dark:text-slate-500 flex-shrink-0"
-                            />
-                          )}
-                          <span
-                            className={`text-xs font-bold truncate flex-1 ${
-                              isActive
-                                ? "text-amber-600 dark:text-amber-300"
-                                : "text-slate-700 dark:text-slate-300"
-                            }`}
-                          >
-                            {session.projectName ||
-                              t("sessions.unknownProject")}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteSession(session);
-                            }}
-                            className="p-1 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
-                            aria-label={`${t("sessions.deleteSession")} ${session.id}`}
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate mb-1">
-                          {session.id}
-                        </div>
-                        <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                      <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                        <span>
+                          {t("sessions.events", { count: totalEvents })}
+                        </span>
+                        {activeCount > 0 && (
                           <span>
-                            {t("sessions.events", {
-                              count: session.eventCount,
-                            })}
+                            <span className="text-emerald-500">
+                              {activeCount}
+                            </span>{" "}
+                            {t("sessions.activeSessions")}
                           </span>
-                          <span>
-                            {formatDistanceToNow(new Date(session.updatedAt), {
-                              addSuffix: true,
-                              locale: dateFnsLocale,
-                            })}
-                          </span>
-                        </div>
+                        )}
                       </div>
                     );
-                  })}
+                  })()}
                 </div>
-              )}
-            </div>
+                {sessionsLoading && sessions.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
+                    {t("sessions.loading")}
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400 dark:text-slate-600 text-xs italic">
+                    {t("sessions.noSessions")}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {sessions
+                      .filter((s) => s.id !== "__all__")
+                      .map((session) => {
+                        const isActive =
+                          viewMode === "session" &&
+                          activeRoomKey === session.id;
+                        const isLive = session.status === "active";
+                        return (
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            key={session.id}
+                            className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md ${
+                              isActive
+                                ? "bg-amber-500/15 border-l-2 border-amber-500"
+                                : "hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                            }`}
+                            onClick={() => {
+                              onSessionSelect(session.id);
+                              zoomToSession(session.id);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                onSessionSelect(session.id);
+                                zoomToSession(session.id);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              {isLive ? (
+                                <Radio
+                                  size={10}
+                                  className="text-emerald-400 animate-pulse flex-shrink-0"
+                                />
+                              ) : (
+                                <PlayCircle
+                                  size={10}
+                                  className="text-slate-400 dark:text-slate-500 flex-shrink-0"
+                                />
+                              )}
+                              <span
+                                className={`text-xs font-bold truncate flex-1 ${
+                                  isActive
+                                    ? "text-amber-600 dark:text-amber-300"
+                                    : "text-slate-700 dark:text-slate-300"
+                                }`}
+                              >
+                                {session.projectName
+                                  ? getProjectDisplayName(projectByName.get(session.projectName) ?? { name: session.projectName, root: null })
+                                  : t("sessions.unknownProject")}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteSession(session);
+                                }}
+                                className="p-1 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                aria-label={`${t("sessions.deleteSession")} ${session.id}`}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate mb-1">
+                              {session.id}
+                            </div>
+                            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
+                              <span>
+                                {t("sessions.events", {
+                                  count: session.eventCount,
+                                })}
+                              </span>
+                              <span>
+                                {formatDistanceToNow(
+                                  new Date(session.updatedAt),
+                                  {
+                                    addSuffix: true,
+                                    locale: dateFnsLocale,
+                                  },
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Git Status Panel — only visible when viewing a specific session */}
-          {gitStatus && viewMode === "session" && (
-            <>
-              <div
-                className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
-                onMouseDown={handleGitStatusHeightDragStart}
-                title={t("sessions.dragToResize")}
-              >
-                <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
-              </div>
-              <div className="flex-shrink-0 overflow-y-auto" style={{ height: gitStatusHeight }}>
-                <GitStatusPanel />
-              </div>
-            </>
-          )}
+          {/* Git Status Panel — always visible, collapsible to title bar */}
+          <div
+            className="flex-shrink-0 h-3 cursor-ns-resize flex items-center justify-center group -my-1"
+            onMouseDown={handleGitStatusHeightDragStart}
+            title={t("sessions.dragToResize")}
+          >
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-purple-500 group-active:bg-purple-400 transition-colors" />
+          </div>
+          <div
+            className="flex-shrink-0 overflow-y-auto"
+            style={{ height: gitStatusHeight }}
+          >
+            <GitStatusPanel />
+          </div>
         </>
       )}
 
@@ -387,5 +485,6 @@ export function SessionSidebar({
         />
       )}
     </aside>
+    </>
   );
 }

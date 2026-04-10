@@ -20,7 +20,7 @@ import {
   selectBoss,
 } from "@/stores/gameStore";
 import { useShallow } from "zustand/react/shallow";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronUp, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { SessionSidebar } from "@/components/layout/SessionSidebar";
 import { MobileDrawer } from "@/components/layout/MobileDrawer";
 import { MobileAgentActivity } from "@/components/layout/MobileAgentActivity";
@@ -34,7 +34,11 @@ import Modal from "@/components/overlay/Modal";
 import SettingsModal from "@/components/overlay/SettingsModal";
 import { usePreferencesStore } from "@/stores/preferencesStore";
 import { useThemeSync } from "@/hooks/useThemeSync";
-import { useProjectStore, selectViewMode, selectPreviousViewMode } from "@/stores/projectStore";
+import {
+  useProjectStore,
+  selectViewMode,
+  selectPreviousViewMode,
+} from "@/stores/projectStore";
 import { useProjectWebSocket } from "@/hooks/useProjectWebSocket";
 
 import { useTranslation } from "@/hooks/useTranslation";
@@ -85,11 +89,13 @@ export default function V2TestPage(): React.ReactNode {
     null,
   );
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [aiSummaryEnabled, setAiSummaryEnabled] = useState<boolean | null>(
     null,
   );
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Session pending delete drives the delete-confirmation modal
   const [sessionPendingDelete, setSessionPendingDelete] =
@@ -193,6 +199,34 @@ export default function V2TestPage(): React.ReactNode {
   }, []);
 
   // ------------------------------------------------------------------
+  // Fullscreen mode
+  // ------------------------------------------------------------------
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => {
+      if (!prev) {
+        // Entering fullscreen — collapse header
+        setHeaderCollapsed(true);
+      } else {
+        // Exiting fullscreen — restore header
+        setHeaderCollapsed(false);
+      }
+      return !prev;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsFullscreen(false);
+        setHeaderCollapsed(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFullscreen]);
+
+  // ------------------------------------------------------------------
   // Session selection via custom event (from OfficeGame clicks)
   // ------------------------------------------------------------------
   useEffect(() => {
@@ -289,25 +323,33 @@ export default function V2TestPage(): React.ReactNode {
             <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-900 dark:text-white font-bold">
               D
             </kbd>
-            <span className="text-slate-700 dark:text-slate-300">{t("modal.toggleDebug")}</span>
+            <span className="text-slate-700 dark:text-slate-300">
+              {t("modal.toggleDebug")}
+            </span>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-slate-300 dark:border-slate-700">
             <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-900 dark:text-white font-bold">
               P
             </kbd>
-            <span className="text-slate-700 dark:text-slate-300">{t("modal.showAgentPaths")}</span>
+            <span className="text-slate-700 dark:text-slate-300">
+              {t("modal.showAgentPaths")}
+            </span>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-slate-300 dark:border-slate-700">
             <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-900 dark:text-white font-bold">
               Q
             </kbd>
-            <span className="text-slate-700 dark:text-slate-300">{t("modal.showQueueSlots")}</span>
+            <span className="text-slate-700 dark:text-slate-300">
+              {t("modal.showQueueSlots")}
+            </span>
           </div>
           <div className="flex justify-between items-center py-2">
             <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-900 dark:text-white font-bold">
               L
             </kbd>
-            <span className="text-slate-700 dark:text-slate-300">{t("modal.showPhaseLabels")}</span>
+            <span className="text-slate-700 dark:text-slate-300">
+              {t("modal.showPhaseLabels")}
+            </span>
           </div>
         </div>
       </Modal>
@@ -356,66 +398,94 @@ export default function V2TestPage(): React.ReactNode {
       {/* ----------------------------------------------------------------
           Header
       ---------------------------------------------------------------- */}
-      <header className="flex justify-between items-center mb-2 px-1 relative h-[60px] flex-shrink-0">
-        <div className="flex items-center gap-3">
-          {isMobile && (
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? t("modal.close") : t("mobile.menu")}
-              aria-expanded={mobileMenuOpen}
-              className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg text-slate-900 dark:text-white transition-colors"
+      {/* Hover trigger zone — visible only when header is collapsed */}
+      {headerCollapsed && (
+        <div
+          className="fixed top-0 left-0 right-0 h-2 z-50 group"
+        >
+          <button
+            onClick={() => setHeaderCollapsed(false)}
+            className="absolute top-0 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1 px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-b-lg shadow-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs flex items-center gap-1"
+          >
+            <ChevronDown size={12} /> Show Header
+          </button>
+        </div>
+      )}
+      {!headerCollapsed && (
+        <header className="flex justify-between items-center mb-2 px-1 relative h-[60px] flex-shrink-0 transition-all duration-300">
+          <div className="flex items-center gap-3">
+            {isMobile && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={mobileMenuOpen ? t("modal.close") : t("mobile.menu")}
+                aria-expanded={mobileMenuOpen}
+                className="p-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg text-slate-900 dark:text-white transition-colors"
+              >
+                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            )}
+            <h1
+              className={`font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2 ${
+                isMobile ? "text-lg" : "text-2xl"
+              }`}
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              <span className="text-orange-500">Claude</span>{" "}
+              {!isMobile && t("app.title")}
+              {!isMobile && (
+                <span className="text-xs font-mono font-normal px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                  v0.13.0
+                </span>
+              )}
+            </h1>
+          </div>
+
+          {/* Centered status toast */}
+          <div className="absolute left-1/3 -translate-x-1/2 flex items-center pointer-events-none">
+            <StatusToast message={statusMessage} />
+          </div>
+
+          {!isMobile && (
+            <HeaderControls
+              isConnected={isConnected}
+              debugMode={debugMode}
+              aiSummaryEnabled={aiSummaryEnabled}
+              isFullscreen={isFullscreen}
+              onSimulate={handleSimulate}
+              onReset={handleReset}
+              onClearDB={() => setIsClearModalOpen(true)}
+              onCleanupAgents={handleCleanupAgents}
+              onToggleDebug={handleToggleDebug}
+              onOpenSettings={() => setIsSettingsModalOpen(true)}
+              onOpenHelp={() => setIsHelpModalOpen(true)}
+              onToggleFullscreen={handleToggleFullscreen}
+            />
+          )}
+
+          {isMobile && (
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isConnected ? "bg-emerald-400 animate-pulse" : "bg-rose-500"
+                }`}
+              />
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                {agents.size} {t("header.agents")}
+              </span>
+            </div>
+          )}
+
+          {/* Collapse button — bottom center of header */}
+          {!isMobile && (
+            <button
+              onClick={() => setHeaderCollapsed(true)}
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors z-10"
+              title="Hide header"
+            >
+              <ChevronUp size={12} />
             </button>
           )}
-          <h1
-            className={`font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2 ${
-              isMobile ? "text-lg" : "text-2xl"
-            }`}
-          >
-            <span className="text-orange-500">Claude</span>{" "}
-            {!isMobile && t("app.title")}
-            {!isMobile && (
-              <span className="text-xs font-mono font-normal px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                v0.13.0
-              </span>
-            )}
-          </h1>
-        </div>
-
-        {/* Centered status toast */}
-        <div className="absolute left-1/3 -translate-x-1/2 flex items-center pointer-events-none">
-          <StatusToast message={statusMessage} />
-        </div>
-
-        {!isMobile && (
-          <HeaderControls
-            isConnected={isConnected}
-            debugMode={debugMode}
-            aiSummaryEnabled={aiSummaryEnabled}
-            onSimulate={handleSimulate}
-            onReset={handleReset}
-            onClearDB={() => setIsClearModalOpen(true)}
-            onCleanupAgents={handleCleanupAgents}
-            onToggleDebug={handleToggleDebug}
-            onOpenSettings={() => setIsSettingsModalOpen(true)}
-            onOpenHelp={() => setIsHelpModalOpen(true)}
-          />
-        )}
-
-        {isMobile && (
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? "bg-emerald-400 animate-pulse" : "bg-rose-500"
-              }`}
-            />
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-              {agents.size} {t("header.agents")}
-            </span>
-          </div>
-        )}
-      </header>
+        </header>
+      )}
 
       {/* ----------------------------------------------------------------
           Mobile Drawer
@@ -447,17 +517,41 @@ export default function V2TestPage(): React.ReactNode {
         </div>
       ) : (
         <div className="flex-grow flex gap-2 overflow-hidden min-h-0">
-          <SessionSidebar
-            sessions={sessions}
-            sessionsLoading={sessionsLoading}
-            sessionId={sessionId}
-            isCollapsed={leftSidebarCollapsed}
-            onToggleCollapsed={() =>
-              setLeftSidebarCollapsed(!leftSidebarCollapsed)
-            }
-            onSessionSelect={handleSessionSelect}
-            onDeleteSession={setSessionPendingDelete}
-          />
+          {/* Left sidebar — hidden in fullscreen, replaced by hover zone */}
+          {!isFullscreen && (
+            <SessionSidebar
+              sessions={sessions}
+              sessionsLoading={sessionsLoading}
+              sessionId={sessionId}
+              isCollapsed={leftSidebarCollapsed}
+              onToggleCollapsed={() =>
+                setLeftSidebarCollapsed(!leftSidebarCollapsed)
+              }
+              onSessionSelect={handleSessionSelect}
+              onDeleteSession={setSessionPendingDelete}
+            />
+          )}
+
+          {/* Left edge hover zone — fullscreen only */}
+          {isFullscreen && (
+            <div className="fixed left-0 top-0 bottom-0 w-2 z-40 group">
+              <div className="fixed left-0 top-0 bottom-0 w-72 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 z-50">
+                <div className="h-full p-2">
+                  <SessionSidebar
+                    sessions={sessions}
+                    sessionsLoading={sessionsLoading}
+                    sessionId={sessionId}
+                    isCollapsed={false}
+                    onToggleCollapsed={() =>
+                      setLeftSidebarCollapsed(!leftSidebarCollapsed)
+                    }
+                    onSessionSelect={handleSessionSelect}
+                    onDeleteSession={setSessionPendingDelete}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 min-w-0 min-h-0 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
             {/* View Mode Toggle */}
@@ -467,9 +561,9 @@ export default function V2TestPage(): React.ReactNode {
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`px-2 py-1 text-xs rounded transition-colors ${
-                    viewMode === mode
-                      || (mode === "projects" && viewMode === "project")
-                      || (mode === "sessions" && viewMode === "session")
+                    viewMode === mode ||
+                    (mode === "projects" && viewMode === "project") ||
+                    (mode === "sessions" && viewMode === "session")
                       ? "bg-purple-600 text-white"
                       : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-slate-700"
                   }`}
@@ -486,7 +580,9 @@ export default function V2TestPage(): React.ReactNode {
                   onClick={goBackToMultiRoom}
                   className="ml-1 px-2 py-1 text-xs rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border-l border-slate-300 dark:border-slate-600"
                 >
-                  {viewMode === "session" ? t("viewMode.backToSessions") : t("viewMode.backToProjects")}
+                  {viewMode === "session"
+                    ? t("viewMode.backToSessions")
+                    : t("viewMode.backToProjects")}
                 </button>
               )}
             </div>
@@ -494,7 +590,19 @@ export default function V2TestPage(): React.ReactNode {
             <OfficeGame />
           </div>
 
-          <RightSidebar />
+          {/* Right sidebar — hidden in fullscreen, replaced by hover zone */}
+          {!isFullscreen && <RightSidebar />}
+
+          {/* Right edge hover zone — fullscreen only */}
+          {isFullscreen && (
+            <div className="fixed right-0 top-0 bottom-0 w-2 z-40 group">
+              <div className="fixed right-0 top-0 bottom-0 w-80 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 z-50">
+                <div className="h-full p-2">
+                  <RightSidebar />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </main>

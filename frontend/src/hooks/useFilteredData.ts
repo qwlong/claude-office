@@ -7,7 +7,10 @@ import {
   selectBoss,
   selectBosses,
 } from "@/stores/gameStore";
-import type { AgentAnimationState, BossAnimationState } from "@/stores/gameStore";
+import type {
+  AgentAnimationState,
+  BossAnimationState,
+} from "@/stores/gameStore";
 import {
   useProjectStore,
   selectViewMode,
@@ -43,7 +46,8 @@ export function useFilteredData() {
   const allConversation = useGameStore(selectConversation);
 
   const sessionIds = useMemo(
-    () => getFilteredSessionIds(viewMode, activeRoomKey, projects, storeSessions),
+    () =>
+      getFilteredSessionIds(viewMode, activeRoomKey, projects, storeSessions),
     [viewMode, activeRoomKey, projects, storeSessions],
   );
 
@@ -63,7 +67,11 @@ export function useFilteredData() {
         backendState: projectBoss.state,
         currentTask: projectBoss.currentTask ?? null,
         bubble: projectBoss.bubble
-          ? { content: projectBoss.bubble, displayStartTime: Date.now(), queue: [] }
+          ? {
+              content: projectBoss.bubble,
+              displayStartTime: Date.now(),
+              queue: [],
+            }
           : gameBoss.bubble,
       };
     }

@@ -13,6 +13,8 @@ import {
   Moon,
   Monitor,
   Rocket,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -30,6 +32,7 @@ interface HeaderControlsProps {
   isConnected: boolean;
   debugMode: boolean;
   aiSummaryEnabled: boolean | null;
+  isFullscreen?: boolean;
   onSimulate: () => Promise<void>;
   onReset: () => void;
   onClearDB: () => void;
@@ -37,6 +40,7 @@ interface HeaderControlsProps {
   onToggleDebug: () => void;
   onOpenSettings: () => void;
   onOpenHelp: () => void;
+  onToggleFullscreen?: () => void;
 }
 
 // ============================================================================
@@ -53,6 +57,7 @@ export function HeaderControls({
   isConnected,
   debugMode,
   aiSummaryEnabled,
+  isFullscreen,
   onSimulate,
   onReset,
   onClearDB,
@@ -60,6 +65,7 @@ export function HeaderControls({
   onToggleDebug,
   onOpenSettings,
   onOpenHelp,
+  onToggleFullscreen,
 }: HeaderControlsProps): React.ReactNode {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -93,7 +99,9 @@ export function HeaderControls({
           className="group relative flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30 rounded text-xs font-bold transition-colors"
         >
           <Rocket size={14} />
-          <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.spawn")}</span>
+          <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+            {t("header.spawn")}
+          </span>
         </button>
       )}
 
@@ -109,7 +117,9 @@ export function HeaderControls({
         title={t("header.simulate")}
       >
         <Play size={14} fill="currentColor" />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.simulate")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {t("header.simulate")}
+        </span>
       </button>
 
       <button
@@ -118,7 +128,9 @@ export function HeaderControls({
         title={t("header.reset")}
       >
         <RefreshCw size={14} />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.reset")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {t("header.reset")}
+        </span>
       </button>
 
       <button
@@ -127,7 +139,9 @@ export function HeaderControls({
         title={t("header.clearDb")}
       >
         <Trash2 size={14} />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.clearDb")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {t("header.clearDb")}
+        </span>
       </button>
 
       <button
@@ -136,7 +150,9 @@ export function HeaderControls({
         title={t("header.cleanupAgents")}
       >
         <UserX size={14} />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.cleanupAgents")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {t("header.cleanupAgents")}
+        </span>
       </button>
 
       <button
@@ -149,7 +165,9 @@ export function HeaderControls({
         title={debugMode ? t("header.debugOn") : t("header.debugOff")}
       >
         <Bug size={14} />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{debugMode ? t("header.debugOn") : t("header.debugOff")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {debugMode ? t("header.debugOn") : t("header.debugOff")}
+        </span>
       </button>
 
       <div className="relative flex items-center bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-lg p-0.5">
@@ -190,7 +208,9 @@ export function HeaderControls({
         title={t("header.settings")}
       >
         <Settings size={14} />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.settings")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {t("header.settings")}
+        </span>
       </button>
 
       <button
@@ -199,13 +219,30 @@ export function HeaderControls({
         title={t("header.help")}
       >
         <HelpCircle size={14} />
-        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">{t("header.help")}</span>
+        <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+          {t("header.help")}
+        </span>
       </button>
+
+      {onToggleFullscreen && (
+        <button
+          onClick={onToggleFullscreen}
+          className="group relative flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors whitespace-nowrap"
+          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+        >
+          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          <span className="xl:static xl:opacity-100 xl:bg-transparent xl:text-inherit xl:shadow-none xl:px-0 xl:py-0 xl:rounded-none xl:translate-x-0 xl:translate-y-0 xl:mt-0 absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-slate-900 text-white rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity text-[10px] whitespace-nowrap z-50">
+            {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          </span>
+        </button>
+      )}
 
       {/* Connection and AI status */}
       <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-4 flex-shrink-0">
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">{t("header.serverLabel")}</span>
+          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">
+            {t("header.serverLabel")}
+          </span>
           <div
             className={`flex items-center gap-1 font-mono text-xs ${
               isConnected ? "text-emerald-400" : "text-rose-500"
@@ -219,7 +256,9 @@ export function HeaderControls({
           </div>
         </div>
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">{t("header.aiSummaryLabel")}</span>
+          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider leading-none">
+            {t("header.aiSummaryLabel")}
+          </span>
           <div
             className={`font-mono text-xs ${
               aiSummaryEnabled ? "text-violet-400" : "text-slate-500"
