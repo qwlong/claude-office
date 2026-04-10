@@ -31,7 +31,7 @@ export function RoomLabel({
       g.rect(0, 0, CANVAS_WIDTH, 5);
       g.fill(colorHex);
     },
-    [colorHex]
+    [colorHex],
   );
 
   const nameStyle = useMemo(
@@ -42,7 +42,7 @@ export function RoomLabel({
         fontWeight: "bold",
         fill: color,
       }),
-    [color]
+    [color],
   );
 
   const countStyle = useMemo(
@@ -52,7 +52,7 @@ export function RoomLabel({
         fontSize: 18,
         fill: "#94a3b8",
       }),
-    []
+    [],
   );
 
   return (

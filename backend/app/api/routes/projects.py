@@ -90,9 +90,7 @@ async def update_project(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Update a project's editable fields."""
-    result = await db.execute(
-        select(ProjectRecord).where(ProjectRecord.key == key)
-    )
+    result = await db.execute(select(ProjectRecord).where(ProjectRecord.key == key))
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -116,23 +114,23 @@ async def update_project(
 @router.delete("/{key}")
 async def delete_project(key: str, db: Annotated[AsyncSession, Depends(get_db)]):
     """Delete a project and cascade-delete all its sessions and events."""
-    result = await db.execute(
-        select(ProjectRecord).where(ProjectRecord.key == key)
-    )
-    project = result.scalar_one_or_none()
-    if not project:
+    # Check both in-memory registry and DB
+    registry_project = event_processor.project_registry.get_project(key)
+    result = await db.execute(select(ProjectRecord).where(ProjectRecord.key == key))
+    db_project = result.scalar_one_or_none()
+
+    if not registry_project and not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    # Remove from in-memory state first
-    registry_project = event_processor.project_registry.get_project(key)
+    # Remove from in-memory state
     if registry_project:
-        # Remove sessions from event_processor.sessions
         for sid in list(registry_project.session_ids):
             event_processor.sessions.pop(sid, None)
     event_processor.project_registry.remove_project(key)
 
-    # Cascade delete from DB
-    await db.delete(project)
-    await db.commit()
+    # Cascade delete from DB (if present)
+    if db_project:
+        await db.delete(db_project)
+        await db.commit()
 
     return {"status": "success", "message": f"Project '{key}' deleted with all sessions"}

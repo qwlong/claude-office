@@ -13,7 +13,9 @@ async def test_register_session_creates_project(db_session):
     registry = ProjectRegistry()
     await registry.load_from_db(db_session)
 
-    project = await registry.register_session(db_session, "sess-reg-1", "My Project", "/path/to/project")
+    project = await registry.register_session(
+        db_session, "sess-reg-1", "My Project", "/path/to/project"
+    )
     assert project.key == "my-project"
     assert project.name == "My Project"
     assert project.color is not None
@@ -122,9 +124,7 @@ async def test_get_all_projects(db_session):
 
     # Cleanup
     for key in ["project-a", "project-b"]:
-        result = await db_session.execute(
-            select(ProjectRecord).where(ProjectRecord.key == key)
-        )
+        result = await db_session.execute(select(ProjectRecord).where(ProjectRecord.key == key))
         rec = result.scalar_one_or_none()
         if rec:
             await db_session.delete(rec)

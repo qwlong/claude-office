@@ -80,8 +80,12 @@ class AOAdapter:
     async def send_message(self, session_id: str, message: str) -> bool:
         """Send a message to a running session via ao CLI."""
         import asyncio
+
         proc = await asyncio.create_subprocess_exec(
-            "ao", "send", session_id, message,
+            "ao",
+            "send",
+            session_id,
+            message,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

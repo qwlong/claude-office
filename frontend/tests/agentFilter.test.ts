@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getFilteredSessionIds, groupAgentsBySessionId } from "../src/utils/agentFilter";
+import {
+  getFilteredSessionIds,
+  groupAgentsBySessionId,
+} from "../src/utils/agentFilter";
 import type { Agent } from "../src/types/generated";
 import type { ProjectGroup } from "../src/types/projects";
 
@@ -40,27 +43,39 @@ describe("getFilteredSessionIds", () => {
   ];
 
   it("returns null for office view", () => {
-    expect(getFilteredSessionIds("office", null, projects, sessions)).toBeNull();
+    expect(
+      getFilteredSessionIds("office", null, projects, sessions),
+    ).toBeNull();
   });
 
   it("returns null for projects overview", () => {
-    expect(getFilteredSessionIds("projects", null, projects, sessions)).toBeNull();
+    expect(
+      getFilteredSessionIds("projects", null, projects, sessions),
+    ).toBeNull();
   });
 
   it("returns null for sessions overview", () => {
-    expect(getFilteredSessionIds("sessions", null, projects, sessions)).toBeNull();
+    expect(
+      getFilteredSessionIds("sessions", null, projects, sessions),
+    ).toBeNull();
   });
 
   it("returns all session IDs for a project in project view", () => {
-    expect(getFilteredSessionIds("project", "proj-1", projects, sessions)).toEqual(new Set(["sess-1", "sess-2"]));
+    expect(
+      getFilteredSessionIds("project", "proj-1", projects, sessions),
+    ).toEqual(new Set(["sess-1", "sess-2"]));
   });
 
   it("returns single session ID in session view", () => {
-    expect(getFilteredSessionIds("session", "sess-1", projects, sessions)).toEqual(new Set(["sess-1"]));
+    expect(
+      getFilteredSessionIds("session", "sess-1", projects, sessions),
+    ).toEqual(new Set(["sess-1"]));
   });
 
   it("returns empty Set for unknown project", () => {
-    expect(getFilteredSessionIds("project", "nonexistent", projects, sessions)).toEqual(new Set());
+    expect(
+      getFilteredSessionIds("project", "nonexistent", projects, sessions),
+    ).toEqual(new Set());
   });
 });
 

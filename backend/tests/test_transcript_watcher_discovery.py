@@ -35,7 +35,9 @@ def test_extract_project_name_worktree_co():
 
 def test_extract_project_name_worktree_ao():
     """AO worktree path with ao- session ID."""
-    path = "/Users/apple/.claude/projects/-Users-apple--worktrees-agent-orchestrator-ao-141/abc.jsonl"
+    path = (
+        "/Users/apple/.claude/projects/-Users-apple--worktrees-agent-orchestrator-ao-141/abc.jsonl"
+    )
     assert extract_project_name(path) == "agent-orchestrator/ao-141"
 
 

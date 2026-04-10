@@ -46,7 +46,9 @@ export const selectConnected = (s: TaskStoreState) => s.connected;
 export const selectDrawerOpen = (s: TaskStoreState) => s.drawerOpen;
 export const selectDrawerHeight = (s: TaskStoreState) => s.drawerHeight;
 
-export const selectTasksByProject = (s: TaskStoreState): Record<string, Task[]> => {
+export const selectTasksByProject = (
+  s: TaskStoreState,
+): Record<string, Task[]> => {
   const grouped: Record<string, Task[]> = {};
   for (const task of s.tasks) {
     if (!grouped[task.projectKey]) grouped[task.projectKey] = [];
@@ -56,4 +58,5 @@ export const selectTasksByProject = (s: TaskStoreState): Record<string, Task[]> 
 };
 
 export const selectActiveTaskCount = (s: TaskStoreState): number =>
-  s.tasks.filter((t) => (ACTIVE_TASK_STATUSES as string[]).includes(t.status)).length;
+  s.tasks.filter((t) => (ACTIVE_TASK_STATUSES as string[]).includes(t.status))
+    .length;

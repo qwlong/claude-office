@@ -87,7 +87,9 @@ function ToolEntry({ entry }: { entry: ConversationEntry }) {
       <span className="text-[10px] text-amber-400/80 font-mono flex-shrink-0">
         {getToolIcon(entry.toolName)} {entry.toolName}
       </span>
-      <span className="text-slate-500 dark:text-slate-400 text-[10px] truncate">{entry.text}</span>
+      <span className="text-slate-500 dark:text-slate-400 text-[10px] truncate">
+        {entry.text}
+      </span>
     </div>
   );
 }
@@ -135,10 +137,14 @@ function MarkdownContent({ text }: { text: string }) {
           </h3>
         ),
         strong: ({ children }) => (
-          <strong className="text-slate-900 dark:text-slate-100 font-bold">{children}</strong>
+          <strong className="text-slate-900 dark:text-slate-100 font-bold">
+            {children}
+          </strong>
         ),
         em: ({ children }) => (
-          <em className="text-slate-700 dark:text-slate-300 italic">{children}</em>
+          <em className="text-slate-700 dark:text-slate-300 italic">
+            {children}
+          </em>
         ),
         code: ({ children, className }) => {
           const isBlock = className?.startsWith("language-");
@@ -181,7 +187,9 @@ function MarkdownContent({ text }: { text: string }) {
             {children}
           </a>
         ),
-        hr: () => <hr className="border-slate-300 dark:border-slate-700 my-2" />,
+        hr: () => (
+          <hr className="border-slate-300 dark:border-slate-700 my-2" />
+        ),
       }}
     >
       {text}

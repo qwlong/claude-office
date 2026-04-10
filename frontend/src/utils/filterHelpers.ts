@@ -2,7 +2,9 @@ import type { EventLogEntry } from "@/stores/gameStore";
 import type { ConversationEntry } from "@/types";
 
 /** ConversationEntry extended with sessionId injected by setConversation. */
-export type ConversationEntryWithSession = ConversationEntry & { sessionId?: string };
+export type ConversationEntryWithSession = ConversationEntry & {
+  sessionId?: string;
+};
 
 /**
  * Filter events by a set of session IDs.

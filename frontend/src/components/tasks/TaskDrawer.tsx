@@ -37,12 +37,15 @@ export function TaskDrawer() {
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    draggingRef.current = true;
-    startYRef.current = e.clientY;
-    startHeightRef.current = drawerHeight;
-  }, [drawerHeight]);
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      draggingRef.current = true;
+      startYRef.current = e.clientY;
+      startHeightRef.current = drawerHeight;
+    },
+    [drawerHeight],
+  );
 
   const handleSpawn = useCallback(async (projectId: string, issue: string) => {
     const res = await fetch(`${API_BASE_URL}/api/v1/tasks/spawn`, {
@@ -98,11 +101,7 @@ export function TaskDrawer() {
             onClick={toggleDrawer}
             className="flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
           >
-            {drawerOpen ? (
-              <ChevronDown size={14} />
-            ) : (
-              <ChevronUp size={14} />
-            )}
+            {drawerOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             <span className="font-bold">{t("tasks.title")}</span>
             {activeCount > 0 && (
               <span className="px-1.5 py-0.5 text-xs bg-purple-600 text-white rounded-full">
@@ -122,7 +121,9 @@ export function TaskDrawer() {
               </button>
             )}
             {!connected && (
-              <span className="text-xs text-slate-500">{t("tasks.notConnected")}</span>
+              <span className="text-xs text-slate-500">
+                {t("tasks.notConnected")}
+              </span>
             )}
             {connected && (
               <span className="text-xs text-emerald-400 flex items-center gap-1">

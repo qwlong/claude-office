@@ -96,9 +96,7 @@ class ProjectRegistry:
         if key not in self._projects:
             color = PROJECT_COLORS[self._color_index % len(PROJECT_COLORS)]
             self._color_index += 1
-            record = ProjectRecord(
-                key=key, name=project_name, color=color, path=project_root
-            )
+            record = ProjectRecord(key=key, name=project_name, color=color, path=project_root)
             db.add(record)
             await db.flush()
             self._projects[key] = ProjectState(
@@ -117,9 +115,7 @@ class ProjectRegistry:
         self._session_to_project[session_id] = key
 
         # Update session record's project_id
-        result = await db.execute(
-            select(SessionRecord).where(SessionRecord.id == session_id)
-        )
+        result = await db.execute(select(SessionRecord).where(SessionRecord.id == session_id))
         session_rec = result.scalar_one_or_none()
         if session_rec and session_rec.project_id != project.id:
             session_rec.project_id = project.id
@@ -137,6 +133,7 @@ class ProjectRegistry:
             color = PROJECT_COLORS[self._color_index % len(PROJECT_COLORS)]
             self._color_index += 1
             import uuid
+
             self._projects[key] = ProjectState(
                 id=str(uuid.uuid4()),
                 key=key,

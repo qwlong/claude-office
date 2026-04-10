@@ -90,6 +90,11 @@ out/
 claude_scratch/
 *-mcp.json
 .gemini-clipboard/
+.claude-flow/
+.superpowers/
+.claude/settings.json
+.claude/metadata-updater.sh
+.claude/projects/
 
 # --- Local Data ---
 backend/visualizer.db

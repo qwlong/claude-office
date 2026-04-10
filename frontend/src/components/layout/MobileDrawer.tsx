@@ -90,7 +90,9 @@ export function MobileDrawer({
         <div className="p-4">
           {/* Drawer Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("mobile.menu")}</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              {t("mobile.menu")}
+            </h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400"
@@ -181,7 +183,9 @@ export function MobileDrawer({
                         )}
                         <span
                           className={`text-xs font-bold truncate ${
-                            isActive ? "text-purple-300" : "text-slate-700 dark:text-slate-300"
+                            isActive
+                              ? "text-purple-300"
+                              : "text-slate-700 dark:text-slate-300"
                           }`}
                         >
                           {session.projectName || t("sessions.unknownProject")}

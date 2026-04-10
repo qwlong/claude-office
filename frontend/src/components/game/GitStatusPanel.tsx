@@ -174,7 +174,9 @@ export function GitStatusPanel() {
         <span className="font-bold uppercase tracking-wider text-[10px]">
           {t("git.recentCommits")}
         </span>
-        <span className="text-slate-400 dark:text-slate-600 text-[10px]">({commits.length})</span>
+        <span className="text-slate-400 dark:text-slate-600 text-[10px]">
+          ({commits.length})
+        </span>
       </div>
 
       {/* Commits List (Scrollable) */}

@@ -21,9 +21,14 @@ async def test_create_agent(db_session):
     project = await _setup(db_session, "p-cr", "s-cr")
 
     agent = await agent_store.create_agent(
-        db_session, session_id="s-cr", project_id="p-cr",
-        external_id="main", agent_type="main", name="Claude",
-        state="working", assignment="Fix bug"
+        db_session,
+        session_id="s-cr",
+        project_id="p-cr",
+        external_id="main",
+        agent_type="main",
+        name="Claude",
+        state="working",
+        assignment="Fix bug",
     )
     assert agent.external_id == "main"
     assert agent.assignment == "Fix bug"
@@ -38,8 +43,12 @@ async def test_update_state(db_session):
     project = await _setup(db_session, "p-us", "s-us")
 
     agent = await agent_store.create_agent(
-        db_session, session_id="s-us", project_id="p-us",
-        external_id="main", agent_type="main", state="idle"
+        db_session,
+        session_id="s-us",
+        project_id="p-us",
+        external_id="main",
+        agent_type="main",
+        state="idle",
     )
     await agent_store.update_state(db_session, agent.id, "working")
 
@@ -55,8 +64,7 @@ async def test_update_assignment(db_session):
     project = await _setup(db_session, "p-ua", "s-ua")
 
     agent = await agent_store.create_agent(
-        db_session, session_id="s-ua", project_id="p-ua",
-        external_id="main", agent_type="main"
+        db_session, session_id="s-ua", project_id="p-ua", external_id="main", agent_type="main"
     )
     await agent_store.update_assignment(db_session, agent.id, "New task")
 
@@ -72,8 +80,12 @@ async def test_mark_ended(db_session):
     project = await _setup(db_session, "p-me", "s-me")
 
     agent = await agent_store.create_agent(
-        db_session, session_id="s-me", project_id="p-me",
-        external_id="sub1", agent_type="subagent", state="working"
+        db_session,
+        session_id="s-me",
+        project_id="p-me",
+        external_id="sub1",
+        agent_type="subagent",
+        state="working",
     )
     await agent_store.mark_ended(db_session, agent.id, "completed")
 
@@ -91,12 +103,20 @@ async def test_get_active_agents(db_session):
     project = await _setup(db_session, "p-ga", "s-ga")
 
     await agent_store.create_agent(
-        db_session, session_id="s-ga", project_id="p-ga",
-        external_id="main", agent_type="main", state="working"
+        db_session,
+        session_id="s-ga",
+        project_id="p-ga",
+        external_id="main",
+        agent_type="main",
+        state="working",
     )
     a2 = await agent_store.create_agent(
-        db_session, session_id="s-ga", project_id="p-ga",
-        external_id="sub1", agent_type="subagent", state="working"
+        db_session,
+        session_id="s-ga",
+        project_id="p-ga",
+        external_id="sub1",
+        agent_type="subagent",
+        state="working",
     )
     await agent_store.mark_ended(db_session, a2.id, "completed")
 
@@ -113,8 +133,12 @@ async def test_find_by_external_id(db_session):
     project = await _setup(db_session, "p-fe", "s-fe")
 
     await agent_store.create_agent(
-        db_session, session_id="s-fe", project_id="p-fe",
-        external_id="main", agent_type="main", state="working"
+        db_session,
+        session_id="s-fe",
+        project_id="p-fe",
+        external_id="main",
+        agent_type="main",
+        state="working",
     )
 
     found = await agent_store.find_by_external_id(db_session, "s-fe", "main")

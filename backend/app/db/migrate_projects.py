@@ -39,9 +39,7 @@ async def migrate_projects(db: AsyncSession) -> int:
         if key in key_to_id:
             continue
         color = PROJECT_COLORS[created % len(PROJECT_COLORS)]
-        record = ProjectRecord(
-            key=key, name=project_name, color=color, path=project_root
-        )
+        record = ProjectRecord(key=key, name=project_name, color=color, path=project_root)
         db.add(record)
         await db.flush()
         key_to_id[key] = record.id
@@ -65,8 +63,7 @@ async def migrate_projects(db: AsyncSession) -> int:
 
     if created > 0 or backfilled > 0:
         logger.info(
-            f"Migration: created {created} projects, "
-            f"backfilled {backfilled} session project_ids"
+            f"Migration: created {created} projects, backfilled {backfilled} session project_ids"
         )
 
     return created

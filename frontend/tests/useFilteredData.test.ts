@@ -3,9 +3,24 @@ import { filterEvents, filterConversation } from "../src/utils/filterHelpers";
 
 describe("filterEvents", () => {
   const events = [
-    { agentId: "main", type: "pre_tool_use", summary: "test1", sessionId: "s1" },
-    { agentId: "main", type: "session_start", summary: "test2", sessionId: "s2" },
-    { agentId: "main", type: "pre_tool_use", summary: "test3", sessionId: "s1" },
+    {
+      agentId: "main",
+      type: "pre_tool_use",
+      summary: "test1",
+      sessionId: "s1",
+    },
+    {
+      agentId: "main",
+      type: "session_start",
+      summary: "test2",
+      sessionId: "s2",
+    },
+    {
+      agentId: "main",
+      type: "pre_tool_use",
+      summary: "test3",
+      sessionId: "s1",
+    },
   ] as any[];
 
   it("returns same array reference when sessionIds is null", () => {

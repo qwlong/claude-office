@@ -38,7 +38,9 @@ export function MobileAgentActivity({
         <span className="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-xs">
           {t("mobile.agentActivity")}
         </span>
-        <span className="text-slate-400 dark:text-slate-600 text-xs">({agents.size})</span>
+        <span className="text-slate-400 dark:text-slate-600 text-xs">
+          ({agents.size})
+        </span>
       </div>
 
       <div className="overflow-y-auto h-[calc(100%-36px)] p-2">

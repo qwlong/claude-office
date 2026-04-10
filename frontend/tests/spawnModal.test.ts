@@ -4,9 +4,11 @@ describe("SpawnModal double-submit prevention", () => {
   it("should not call onSpawn twice when handleSpawn is invoked rapidly", async () => {
     // Simulate the logic of handleSpawn
     let loading = false;
-    const onSpawn = vi.fn().mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
-    );
+    const onSpawn = vi
+      .fn()
+      .mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
+      );
 
     const handleSpawn = async (projectId: string, issue: string) => {
       if (!projectId || !issue || loading) return;

@@ -28,8 +28,12 @@ async def test_merged_state_has_bosses_from_each_session():
     sm2.boss_state = BossState.WORKING
     event_processor.sessions["session-aaa"] = sm1
     event_processor.sessions["session-bbb"] = sm2
-    event_processor.project_registry.register_session_sync("session-aaa", "Project Alpha", "/tmp/alpha")
-    event_processor.project_registry.register_session_sync("session-bbb", "Project Beta", "/tmp/beta")
+    event_processor.project_registry.register_session_sync(
+        "session-aaa", "Project Alpha", "/tmp/alpha"
+    )
+    event_processor.project_registry.register_session_sync(
+        "session-bbb", "Project Beta", "/tmp/beta"
+    )
 
     state = await event_processor.get_merged_state()
     assert state is not None
@@ -116,7 +120,7 @@ async def test_merged_state_bosses_sorted_by_activity():
     assert len(session_ids) == 3
     assert session_ids[0] == "s-working-2"  # working + most agents
     assert session_ids[1] == "s-working-0"  # working + 0 agents
-    assert session_ids[2] == "s-idle-1"     # idle but has agent
+    assert session_ids[2] == "s-idle-1"  # idle but has agent
 
 
 @pytest.mark.asyncio

@@ -111,10 +111,9 @@ export function useSessionSwitch({
   const handleSimulate = async (): Promise<void> => {
     try {
       showStatus(t("status.triggeringSimulation"), "info");
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/sessions/simulate`,
-        { method: "POST" },
-      );
+      const res = await fetch(`${API_BASE_URL}/api/v1/sessions/simulate`, {
+        method: "POST",
+      });
       if (res.ok) {
         showStatus(t("status.simulationStarted"), "success");
       } else {

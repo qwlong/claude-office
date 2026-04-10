@@ -313,7 +313,9 @@ export default function SettingsModal({
 
         {/* Tip */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-          <p className="text-slate-400 dark:text-slate-500 text-xs">{t("settings.clockTip")}</p>
+          <p className="text-slate-400 dark:text-slate-500 text-xs">
+            {t("settings.clockTip")}
+          </p>
         </div>
       </div>
     </Modal>

@@ -82,9 +82,7 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
     logger.debug("API: list_sessions called")
     try:
         # Find all session IDs that have at least one event.
-        sessions_with_events_stmt = (
-            select(EventRecord.session_id).distinct()
-        )
+        sessions_with_events_stmt = select(EventRecord.session_id).distinct()
         events_result = await db.execute(sessions_with_events_stmt)
         sessions_with_events: set[str] = {row[0] for row in events_result.all()}
 

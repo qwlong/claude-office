@@ -13,11 +13,17 @@ class TestDeriveProjectNameFromPath:
         assert derive_project_name_from_path("/Users/apple/Projects/my-app") == "my-app"
 
     def test_derives_from_nested_path(self):
-        assert derive_project_name_from_path("/Users/apple/Projects/others/random/claude-office") == "claude-office"
+        assert (
+            derive_project_name_from_path("/Users/apple/Projects/others/random/claude-office")
+            == "claude-office"
+        )
 
     def test_derives_from_startups_path(self):
         """This is the exact case from the bug: sessions in startups dir had no project_name."""
-        assert derive_project_name_from_path("/Users/apple/Projects/others/startups/startup-x") == "startup-x"
+        assert (
+            derive_project_name_from_path("/Users/apple/Projects/others/startups/startup-x")
+            == "startup-x"
+        )
 
     def test_returns_none_for_empty_string(self):
         assert derive_project_name_from_path("") is None
@@ -64,8 +70,13 @@ class TestPersistEventDerivesProjectName:
         mock_session_record.project_name = None
         mock_session_record.project_root = None
 
-        with patch("app.core.event_processor.AsyncSessionLocal") as mock_db_cls, \
-             patch("app.core.event_processor.derive_git_root", return_value="/Users/apple/Projects/others/startups/startup-x"):
+        with (
+            patch("app.core.event_processor.AsyncSessionLocal") as mock_db_cls,
+            patch(
+                "app.core.event_processor.derive_git_root",
+                return_value="/Users/apple/Projects/others/startups/startup-x",
+            ),
+        ):
             mock_db = AsyncMock()
             mock_db_cls.return_value.__aenter__ = AsyncMock(return_value=mock_db)
             mock_db_cls.return_value.__aexit__ = AsyncMock(return_value=False)

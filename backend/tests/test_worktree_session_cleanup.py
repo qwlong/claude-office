@@ -68,11 +68,13 @@ class TestWorktreeSessionCleanup:
 
         async def mock_cleanup(db_session=None):
             from app.services.task_service import cleanup_worktree_db_sessions
+
             # We test the logic separately: identify which sessions should be deleted
             pass
 
         # Test the identification logic directly
         from app.services.task_service import _should_cleanup_session
+
         assert _should_cleanup_session(stale_session) is True
         assert _should_cleanup_session(active_session) is False
 
@@ -88,6 +90,7 @@ class TestWorktreeSessionCleanup:
             updated_at=datetime.now(UTC),
         )
         from app.services.task_service import _should_cleanup_session
+
         assert _should_cleanup_session(active_worktree) is False
 
     @pytest.mark.asyncio
@@ -102,6 +105,7 @@ class TestWorktreeSessionCleanup:
             updated_at=datetime.now(UTC) - timedelta(minutes=3),
         )
         from app.services.task_service import _should_cleanup_session
+
         assert _should_cleanup_session(normal_session) is False
 
     @pytest.mark.asyncio
@@ -116,6 +120,7 @@ class TestWorktreeSessionCleanup:
             updated_at=datetime.now(UTC) - timedelta(hours=25),
         )
         from app.services.task_service import _should_cleanup_session
+
         assert _should_cleanup_session(old_session) is True
 
     @pytest.mark.asyncio
@@ -130,4 +135,5 @@ class TestWorktreeSessionCleanup:
             updated_at=datetime.now(UTC) - timedelta(hours=12),
         )
         from app.services.task_service import _should_cleanup_session
+
         assert _should_cleanup_session(recent_session) is False

@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useTaskStore, selectTasksByProject, selectActiveTaskCount } from "../src/stores/taskStore";
+import {
+  useTaskStore,
+  selectTasksByProject,
+  selectActiveTaskCount,
+} from "../src/stores/taskStore";
 import type { TasksUpdate, Task } from "../src/types/tasks";
 
 function makeTask(overrides: Partial<Task> = {}): Task {

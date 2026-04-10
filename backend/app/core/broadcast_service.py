@@ -105,9 +105,7 @@ async def broadcast_tasks_update(
                 "connected": connected,
                 "adapterType": adapter_type,
                 "tasks": [
-                    t.model_dump(by_alias=True, mode="json")
-                    if isinstance(t, Task)
-                    else t
+                    t.model_dump(by_alias=True, mode="json") if isinstance(t, Task) else t
                     for t in tasks
                 ],
             },

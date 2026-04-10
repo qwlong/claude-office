@@ -301,11 +301,13 @@ class EventProcessor:
             proj_color = project.color if project else colors[idx % len(colors)]
 
             # Collect real boss with identity info (for BossSprite)
-            boss = state.boss.model_copy(update={
-                "session_id": session_id,
-                "project_key": project.key if project else None,
-                "project_color": proj_color,
-            })
+            boss = state.boss.model_copy(
+                update={
+                    "session_id": session_id,
+                    "project_key": project.key if project else None,
+                    "project_color": proj_color,
+                }
+            )
             all_bosses.append(boss)
 
             # Also keep boss-as-agent in agents list (unified model)
@@ -365,14 +367,16 @@ class EventProcessor:
         for b in all_bosses:
             sid = b.session_id or ""
             is_active = 1 if b.state != BossState.IDLE else 0
-            agent_count = sum(1 for a in all_agents if a.session_id == sid and a.agent_type != "main")
+            agent_count = sum(
+                1 for a in all_agents if a.session_id == sid and a.agent_type != "main"
+            )
             boss_activity[sid] = (is_active, agent_count)
 
         all_bosses.sort(
             key=lambda b: (
-                -boss_activity.get(b.session_id or "", (0, 0))[0],   # non-idle first
-                -boss_activity.get(b.session_id or "", (0, 0))[1],   # more agents first
-                b.session_id or "",                                    # stable tiebreak
+                -boss_activity.get(b.session_id or "", (0, 0))[0],  # non-idle first
+                -boss_activity.get(b.session_id or "", (0, 0))[1],  # more agents first
+                b.session_id or "",  # stable tiebreak
             )
         )
         all_bosses = all_bosses[:3]  # Show at most 3 bosses
@@ -429,7 +433,9 @@ class EventProcessor:
                 sessions_with_events_result = await db.execute(
                     select(EventRecord.session_id).distinct()
                 )
-                sessions_with_events: set[str] = {row[0] for row in sessions_with_events_result.all()}
+                sessions_with_events: set[str] = {
+                    row[0] for row in sessions_with_events_result.all()
+                }
 
                 all_result = await db.execute(select(SessionRecord))
                 all_records = all_result.scalars().all()
@@ -441,9 +447,7 @@ class EventProcessor:
                         continue
                     pname = rec.project_name or derive_project_name_from_path(rec.project_root)
                     if pname:
-                        self.project_registry.register_session_sync(
-                            rec.id, pname, rec.project_root
-                        )
+                        self.project_registry.register_session_sync(rec.id, pname, rec.project_root)
                         # Backfill project_name in DB if it was derived
                         if not rec.project_name:
                             rec.project_name = pname
@@ -658,10 +662,13 @@ class EventProcessor:
             project_root = await self.get_project_root(event.session_id)
             if project_name:
                 async with AsyncSessionLocal() as db:
-                    await self.project_registry.register_session(db, event.session_id, project_name, project_root)
+                    await self.project_registry.register_session(
+                        db, event.session_id, project_name, project_root
+                    )
             # Create main agent record in DB
             try:
                 from app.db.agent_store import agent_store as _agent_store
+
                 project = self.project_registry.get_project_for_session(event.session_id)
                 async with AsyncSessionLocal() as db:
                     await _agent_store.create_agent(
@@ -704,6 +711,7 @@ class EventProcessor:
             # Mark main agent as ended in DB
             try:
                 from app.db.agent_store import agent_store as _agent_store
+
                 async with AsyncSessionLocal() as db:
                     rec = await _agent_store.find_by_external_id(db, event.session_id, "main")
                     if rec:
@@ -734,6 +742,7 @@ class EventProcessor:
             # Persist subagent to DB
             try:
                 from app.db.agent_store import agent_store as _agent_store
+
                 ext_id = event.data.agent_id or ""
                 agent = sm.agents.get(ext_id)
                 project = self.project_registry.get_project_for_session(event.session_id)
@@ -746,7 +755,9 @@ class EventProcessor:
                         agent_type="subagent",
                         name=agent.name if agent else None,
                         state=str(agent.state) if agent else None,
-                        assignment=agent.currentTask if agent else (event.data.task_description if event.data else None),
+                        assignment=agent.currentTask
+                        if agent
+                        else (event.data.task_description if event.data else None),
                         color=agent.color if agent else None,
                     )
             except Exception:
@@ -772,6 +783,7 @@ class EventProcessor:
             # Mark subagent as ended in DB
             try:
                 from app.db.agent_store import agent_store as _agent_store
+
                 ext_id = event.data.agent_id or event.data.native_agent_id or ""
                 async with AsyncSessionLocal() as db:
                     rec = await _agent_store.find_by_external_id(db, event.session_id, ext_id)
@@ -956,9 +968,10 @@ class EventProcessor:
             'random'             -> 'random'
         """
         import re
+
         # Detect AO worktree pattern: <project>-<session-id>
         # Session IDs look like: co-7, ao-3, etc.
-        m = re.match(r'^(.+?)-((?:co|ao|sess|s)-\d+)$', project_name)
+        m = re.match(r"^(.+?)-((?:co|ao|sess|s)-\d+)$", project_name)
         if m:
             return f"{m.group(1)}/{m.group(2)}"
         return project_name
@@ -995,7 +1008,9 @@ class EventProcessor:
         if project_name:
             project_root = await self.get_project_root(session_id)
             async with AsyncSessionLocal() as db:
-                await self.project_registry.register_session(db, session_id, project_name, project_root)
+                await self.project_registry.register_session(
+                    db, session_id, project_name, project_root
+                )
 
     async def _persist_event(self, event: Event) -> None:
         """Save event to database and manage session records.

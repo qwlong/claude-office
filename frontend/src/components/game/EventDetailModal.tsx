@@ -79,7 +79,9 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-widest mb-1">
               {t("eventDetail.summary")}
             </div>
-            <div className="text-slate-800 dark:text-slate-200 text-[12px]">{event.summary}</div>
+            <div className="text-slate-800 dark:text-slate-200 text-[12px]">
+              {event.summary}
+            </div>
           </div>
 
           {/* Detail fields */}

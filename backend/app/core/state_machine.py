@@ -360,8 +360,7 @@ class StateMachine:
 
         now = time.monotonic()
         expired = [
-            aid for aid, (_, ts) in self.departed_agents.items()
-            if now - ts > self.DEPARTED_TTL
+            aid for aid, (_, ts) in self.departed_agents.items() if now - ts > self.DEPARTED_TTL
         ]
         for aid in expired:
             del self.departed_agents[aid]

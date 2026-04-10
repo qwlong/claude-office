@@ -204,9 +204,10 @@ class TaskService:
         # Mark tasks as done if their session disappeared from AO
         active_session_ids = {ext.session_id for ext in sessions}
         for task in self.tasks.values():
-            if (
-                task.external_session_id not in active_session_ids
-                and task.status not in (TaskStatus.done, TaskStatus.merged, TaskStatus.error)
+            if task.external_session_id not in active_session_ids and task.status not in (
+                TaskStatus.done,
+                TaskStatus.merged,
+                TaskStatus.error,
             ):
                 task.status = TaskStatus.done
                 task.updated_at = datetime.now(UTC)
@@ -224,10 +225,7 @@ class TaskService:
             for sid, wdir in dirs.items():
                 if not wdir:
                     continue
-                if (
-                    task.worktree_path.startswith(wdir)
-                    or wdir.startswith(task.worktree_path)
-                ):
+                if task.worktree_path.startswith(wdir) or wdir.startswith(task.worktree_path):
                     if task.office_session_id != sid:
                         task.office_session_id = sid
                     break

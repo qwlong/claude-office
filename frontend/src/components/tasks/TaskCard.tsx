@@ -22,7 +22,10 @@ export function TaskCard({ task }: Props) {
           {task.externalSessionId}
         </a>
         {task.issue && (
-          <span className="text-slate-400 dark:text-slate-500 truncate text-xs" title={task.issue}>
+          <span
+            className="text-slate-400 dark:text-slate-500 truncate text-xs"
+            title={task.issue}
+          >
             {task.issue}
           </span>
         )}
@@ -48,7 +51,12 @@ export function TaskCard({ task }: Props) {
                   : "text-yellow-400"
             }
           >
-            CI {task.ciStatus === "passing" ? "\u2713" : task.ciStatus === "failing" ? "\u2717" : "\u23F3"}
+            CI{" "}
+            {task.ciStatus === "passing"
+              ? "\u2713"
+              : task.ciStatus === "failing"
+                ? "\u2717"
+                : "\u23F3"}
           </span>
         )}
         {task.reviewStatus && (
@@ -61,7 +69,11 @@ export function TaskCard({ task }: Props) {
                   : "text-yellow-400"
             }
           >
-            {task.reviewStatus === "approved" ? "Rev \u2713" : task.reviewStatus === "changes_requested" ? "Rev \u2717" : "Rev \u23F3"}
+            {task.reviewStatus === "approved"
+              ? "Rev \u2713"
+              : task.reviewStatus === "changes_requested"
+                ? "Rev \u2717"
+                : "Rev \u23F3"}
           </span>
         )}
       </div>

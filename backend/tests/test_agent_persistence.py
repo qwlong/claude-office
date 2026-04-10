@@ -51,8 +51,9 @@ async def test_agent_cascade_delete_with_session(db_session):
     session = SessionRecord(id="s-agcs", project_id="p-agcs")
     db_session.add(session)
     await db_session.flush()
-    agent = AgentRecord(id="a-agcs", session_id="s-agcs", project_id="p-agcs",
-                        external_id="main", agent_type="main")
+    agent = AgentRecord(
+        id="a-agcs", session_id="s-agcs", project_id="p-agcs", external_id="main", agent_type="main"
+    )
     db_session.add(agent)
     await db_session.commit()
 
@@ -76,8 +77,13 @@ async def test_agent_cascade_delete_with_project(db_session):
     session = SessionRecord(id="s-agcp", project_id="p-agcp")
     db_session.add(session)
     await db_session.flush()
-    agent = AgentRecord(id="a-agcp", session_id="s-agcp", project_id="p-agcp",
-                        external_id="sub1", agent_type="subagent")
+    agent = AgentRecord(
+        id="a-agcp",
+        session_id="s-agcp",
+        project_id="p-agcp",
+        external_id="sub1",
+        agent_type="subagent",
+    )
     db_session.add(agent)
     await db_session.commit()
 

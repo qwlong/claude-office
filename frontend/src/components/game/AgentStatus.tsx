@@ -123,7 +123,10 @@ export function AgentStatus() {
           </div>
           <div className="px-2 py-1.5 space-y-1.5">
             <div className="flex items-start gap-2">
-              <Briefcase size={11} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+              <Briefcase
+                size={11}
+                className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0"
+              />
               <div className="text-slate-700 dark:text-slate-300 text-[11px] leading-tight min-w-0">
                 {boss.currentTask ? (
                   <span className="line-clamp-2">{boss.currentTask}</span>
@@ -135,7 +138,10 @@ export function AgentStatus() {
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <Terminal size={11} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+              <Terminal
+                size={11}
+                className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0"
+              />
               <div className="text-[11px] leading-tight min-w-0">
                 {boss.bubble?.content ? (
                   <span className="text-blue-400 line-clamp-2">
@@ -150,8 +156,13 @@ export function AgentStatus() {
               </div>
             </div>
             <div className="flex items-center gap-2 pt-1">
-              <Activity size={10} className="text-slate-400 dark:text-slate-500" />
-              <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-semibold border ${getBackendStateColor(boss.backendState)}`}>
+              <Activity
+                size={10}
+                className="text-slate-400 dark:text-slate-500"
+              />
+              <span
+                className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-semibold border ${getBackendStateColor(boss.backendState)}`}
+              >
                 {formatState(boss.backendState)}
               </span>
             </div>
@@ -159,7 +170,9 @@ export function AgentStatus() {
         </div>
 
         {/* Subagent cards */}
-        {agentArray.filter((a) => a.agentType !== "main").map((agent) => (
+        {agentArray
+          .filter((a) => a.agentType !== "main")
+          .map((agent) => (
             <div
               key={agent.id}
               className="bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
@@ -230,7 +243,10 @@ export function AgentStatus() {
                 <div className="flex items-center gap-2 pt-1">
                   {/* Backend State */}
                   <div className="flex items-center gap-1">
-                    <Activity size={10} className="text-slate-400 dark:text-slate-500" />
+                    <Activity
+                      size={10}
+                      className="text-slate-400 dark:text-slate-500"
+                    />
                     <span
                       className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-semibold border ${getBackendStateColor(agent.backendState)}`}
                     >
@@ -240,7 +256,10 @@ export function AgentStatus() {
 
                   {/* Frontend Phase */}
                   <div className="flex items-center gap-1">
-                    <Layers size={10} className="text-slate-400 dark:text-slate-500" />
+                    <Layers
+                      size={10}
+                      className="text-slate-400 dark:text-slate-500"
+                    />
                     <span
                       className={`px-1.5 py-0.5 rounded text-[9px] font-medium border ${getPhaseColor(agent.phase)}`}
                     >

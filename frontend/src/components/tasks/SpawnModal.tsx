@@ -71,7 +71,9 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm text-slate-400 mb-1">{t("tasks.project")}</label>
+          <label className="block text-sm text-slate-400 mb-1">
+            {t("tasks.project")}
+          </label>
           {projects.length > 0 ? (
             <select
               value={projectId}
@@ -95,14 +97,21 @@ export function SpawnModal({ isOpen, onClose, onSpawn }: Props) {
           )}
         </div>
         <div>
-          <label className="block text-sm text-slate-400 mb-1">{t("tasks.taskDescription")}</label>
+          <label className="block text-sm text-slate-400 mb-1">
+            {t("tasks.taskDescription")}
+          </label>
           <textarea
             value={issue}
             onChange={(e) => setIssue(e.target.value)}
             placeholder={t("tasks.taskPlaceholder")}
             rows={3}
             className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500 resize-y min-h-[80px] max-h-[300px]"
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && (e.preventDefault(), handleSpawn())}
+            onKeyDown={(e) =>
+              e.key === "Enter" &&
+              !e.shiftKey &&
+              !e.nativeEvent.isComposing &&
+              (e.preventDefault(), handleSpawn())
+            }
           />
         </div>
       </div>

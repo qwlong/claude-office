@@ -18,11 +18,7 @@ interface RoomBorderProps {
   isActive?: boolean;
 }
 
-export function RoomBorder({
-  color,
-  name,
-  isActive = false,
-}: RoomBorderProps) {
+export function RoomBorder({ color, name, isActive = false }: RoomBorderProps) {
   const style = useMemo(
     () =>
       new TextStyle({
@@ -31,7 +27,7 @@ export function RoomBorder({
         fill: color,
         fontWeight: "bold",
       }),
-    [color]
+    [color],
   );
 
   const drawBorder = useCallback(
@@ -41,7 +37,7 @@ export function RoomBorder({
       g.lineStyle(isActive ? 4 : 2, c, isActive ? 1 : 0.7);
       g.drawRoundedRect(0, 0, ROOM_WIDTH, ROOM_HEIGHT, 8);
     },
-    [color, isActive]
+    [color, isActive],
   );
 
   return (

@@ -87,7 +87,9 @@ class TestAOAdapterPoll:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
-            mock_client.get = AsyncMock(return_value=Response(200, json=ao_response, request=_DUMMY_REQ))
+            mock_client.get = AsyncMock(
+                return_value=Response(200, json=ao_response, request=_DUMMY_REQ)
+            )
             mock_client_cls.return_value = mock_client
 
             sessions = await adapter.poll()
@@ -103,7 +105,9 @@ class TestAOAdapterPoll:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
-            mock_client.get = AsyncMock(return_value=Response(200, json={"sessions": []}, request=_DUMMY_REQ))
+            mock_client.get = AsyncMock(
+                return_value=Response(200, json={"sessions": []}, request=_DUMMY_REQ)
+            )
             mock_client_cls.return_value = mock_client
 
             sessions = await adapter.poll()
@@ -127,7 +131,9 @@ class TestAOAdapterSpawn:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
-            mock_client.post = AsyncMock(return_value=Response(200, json=spawn_response, request=_DUMMY_REQ))
+            mock_client.post = AsyncMock(
+                return_value=Response(200, json=spawn_response, request=_DUMMY_REQ)
+            )
             mock_client_cls.return_value = mock_client
 
             session = await adapter.spawn("my-project", "#99")
@@ -152,4 +158,6 @@ class TestAOStatusMapping:
     def test_all_ao_statuses_map_to_valid_task_status(self):
         """Every AO status should map to a valid TaskStatus."""
         for ao_status, task_status in _AO_STATUS_MAP.items():
-            assert TaskStatus(task_status), f"AO status '{ao_status}' maps to invalid '{task_status}'"
+            assert TaskStatus(task_status), (
+                f"AO status '{ao_status}' maps to invalid '{task_status}'"
+            )

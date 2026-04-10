@@ -43,10 +43,10 @@ function makeProject(): ProjectGroup {
 describe("RoomContext", () => {
   it("RoomProvider creates a valid React element", () => {
     const project = makeProject();
-    const element = createElement(
-      RoomProvider,
-      { project, children: createElement("div") },
-    );
+    const element = createElement(RoomProvider, {
+      project,
+      children: createElement("div"),
+    });
     expect(element).toBeDefined();
     expect(element.type).toBe(RoomProvider);
   });
