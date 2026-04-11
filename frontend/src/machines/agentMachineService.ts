@@ -161,6 +161,13 @@ class AgentMachineService {
     if (managed) {
       managed.actor.stop();
       this.agents.delete(agentId);
+
+      // If this agent had claimed the boss, release it so the queue can advance
+      const store = useGameStore.getState();
+      if (store.boss.inUseBy !== null) {
+        store.setBossInUse(null);
+        setTimeout(() => this.notifyBossAvailable(), 0);
+      }
     }
   }
 

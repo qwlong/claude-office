@@ -167,6 +167,9 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
                 on: {
                   BUBBLE_DISPLAYED: "agent_responds",
                 },
+                after: {
+                  5000: "agent_responds", // Safety timeout if bubble event never fires
+                },
               },
               agent_responds: {
                 entry: ["incrementConversationStep", "showArrivalAgentBubble"],
@@ -287,11 +290,17 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
                 on: {
                   BUBBLE_DISPLAYED: "boss_responds",
                 },
+                after: {
+                  5000: "boss_responds", // Safety timeout
+                },
               },
               boss_responds: {
                 entry: ["incrementConversationStep", "showDepartureBossBubble"],
                 on: {
                   BUBBLE_DISPLAYED: "done",
+                },
+                after: {
+                  5000: "done", // Safety timeout
                 },
               },
               done: {

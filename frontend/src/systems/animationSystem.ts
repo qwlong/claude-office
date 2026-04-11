@@ -25,6 +25,7 @@ import type { Position } from "@/types";
 
 const MOVEMENT_SPEED = 200; // pixels per second
 const BUBBLE_DURATION_MS = 3000; // 3 seconds per bubble
+const BOSS_CLAIM_TIMEOUT_MS = 10000; // Force-release boss if claimed >10s
 
 // ============================================================================
 // ANIMATION SYSTEM CLASS
@@ -42,6 +43,9 @@ class AnimationSystem {
     lastTickTime: 0,
     rafId: null,
   };
+
+  // Track when boss was claimed to detect deadlocks
+  private bossClaimedAt: number | null = null;
 
   /**
    * Start the animation loop.
@@ -381,8 +385,21 @@ class AnimationSystem {
   private checkQueueAdvancement(): void {
     const store = useGameStore.getState();
 
-    // If boss is in use, don't advance
-    if (store.boss.inUseBy !== null) return;
+    // If boss is in use, check for deadlock
+    if (store.boss.inUseBy !== null) {
+      if (this.bossClaimedAt === null) {
+        this.bossClaimedAt = performance.now();
+      } else if (performance.now() - this.bossClaimedAt > BOSS_CLAIM_TIMEOUT_MS) {
+        // Boss has been claimed for too long — force release (deadlock recovery)
+        console.warn(
+          `[AnimationSystem] Boss claimed by "${store.boss.inUseBy}" for >${BOSS_CLAIM_TIMEOUT_MS}ms, force-releasing`,
+        );
+        store.setBossInUse(null);
+        this.bossClaimedAt = null;
+      }
+      return;
+    }
+    this.bossClaimedAt = null; // Reset when boss is free
 
     // Priority: arrival queue first
     if (store.arrivalQueue.length > 0) {
