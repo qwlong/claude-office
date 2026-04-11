@@ -379,7 +379,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       {/* Elevator */}
       <Elevator
         isOpen={isElevatorOpen}
-        agents={isRoom ? new Map() : storeAgents}
+        agents={isRoom ? new Map() : deskAgents}
         frameTexture={textures.elevatorFrame}
         doorTexture={textures.elevatorDoor}
         headsetTexture={textures.headset}
@@ -486,7 +486,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
               />
             );
           })
-        : Array.from(storeAgents.values())
+        : Array.from(deskAgents.values())
             .filter((agent) => agent.phase === "idle")
             .map((agent) => (
               <AgentArms
@@ -511,7 +511,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
                 />
               );
             })
-          : Array.from(storeAgents.values())
+          : Array.from(deskAgents.values())
               .filter((agent) => agent.phase === "idle")
               .map((agent) => (
                 <AgentHeadset
@@ -687,7 +687,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
               />
             );
           })
-        : Array.from(storeAgents.values())
+        : Array.from(deskAgents.values())
             .filter(
               (agent) => agent.name && !isInElevatorZone(agent.currentPosition),
             )
@@ -713,7 +713,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
                 </pixiContainer>
               );
             })
-        : Array.from(storeAgents.values())
+        : Array.from(deskAgents.values())
             .filter(
               (agent) =>
                 agent.bubble.content &&
