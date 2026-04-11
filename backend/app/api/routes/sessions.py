@@ -49,6 +49,7 @@ class SessionSummary(TypedDict):
     id: str
     label: str | None
     projectName: str | None
+    projectKey: str | None
     projectRoot: str | None
     createdAt: str
     updatedAt: str
@@ -121,11 +122,13 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
                 else rec.updated_at.replace(tzinfo=UTC)
             )
 
+            project = event_processor.project_registry.get_project_for_session(rec.id)
             sessions.append(
                 {
                     "id": rec.id,
                     "label": rec.label,
                     "projectName": rec.project_name,
+                    "projectKey": project.key if project else None,
                     "projectRoot": rec.project_root,
                     "createdAt": created_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                     "updatedAt": updated_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),

@@ -11,6 +11,7 @@ import type {
 export interface SessionInfo {
   id: string;
   projectName: string | null;
+  projectKey: string | null;
 }
 
 interface ProjectStoreState {

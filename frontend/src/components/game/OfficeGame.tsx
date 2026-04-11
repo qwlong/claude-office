@@ -80,7 +80,7 @@ export function OfficeGame(): ReactNode {
   // Derive one room per session using gameStore agents (unified data source).
   // Sessions list is the source of truth for room count — even zero-agent sessions get a room.
   const sessionRooms = useMemo(() => {
-    const projectByName = new Map(projects.map((p) => [p.name, p]));
+    const projectByKey = new Map(projects.map((p) => [p.key, p]));
 
     // Group gameStore agents by sessionId
     const agentsBySession = new Map<string, Agent[]>();
@@ -105,7 +105,7 @@ export function OfficeGame(): ReactNode {
 
     return storeSessions.map((session) => {
       const project =
-        projectByName.get(session.projectName ?? "") ?? projects[0];
+        projectByKey.get(session.projectKey ?? "") ?? projects[0];
       const agents = agentsBySession.get(session.id) ?? [];
       const mainAgent = agents.find((a) => a.agentType === "main");
       const sessionBoss = mainAgent
@@ -163,8 +163,7 @@ export function OfficeGame(): ReactNode {
     // Build sessionId → projectKey lookup
     const sessionToProject = new Map<string, string>();
     for (const s of storeSessions) {
-      const proj = projects.find((p) => p.name === s.projectName);
-      if (proj) sessionToProject.set(s.id, proj.key);
+      if (s.projectKey) sessionToProject.set(s.id, s.projectKey);
     }
 
     // Group gameStore agents by project
