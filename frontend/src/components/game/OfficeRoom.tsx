@@ -120,7 +120,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // View mode and filtered data for project-level filtering
   const viewMode = useProjectStore(selectViewMode);
-  const { sessionIds, boss: filteredBoss, bosses: filteredBosses } = useFilteredData();
+  const { sessionIds, boss: filteredBoss, bosses: filteredBosses, todos: filteredTodos } = useFilteredData();
 
   // Compaction animation — in room mode, use the room's key as sessionId
   // (In sessions view, project.key IS the session ID; in projects view, no match = no animation)
@@ -202,7 +202,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   }, [isMergedView, isProjectView, storeAgents, sessionIds]);
 
   // Pick data source
-  const todos: TodoItem[] = isRoom ? roomCtx.project.todos : storeTodos;
+  const todos: TodoItem[] = isRoom ? roomCtx.project.todos : filteredTodos;
   const isElevatorOpen = isRoom ? false : elevatorState === "open";
 
   // Filter out main agents (boss) from desk rendering — boss uses BossSprite

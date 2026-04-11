@@ -208,10 +208,14 @@ class GitService:
         message = {
             "type": "git_status",
             "timestamp": status.last_updated.isoformat(),
+            "session_id": self._session_id,
             "gitStatus": status.model_dump(mode="json"),
         }
         if self._session_id:
             await manager.broadcast(message, self._session_id)
+            # Also broadcast to __all__ subscribers so unified view gets git status
+            if manager.all_session_connections:
+                await manager.broadcast_to_all_subscribers(message)
             logger.debug(
                 f"Broadcast git status to session {self._session_id}: "
                 f"{status.branch}, {len(status.commits)} commits"

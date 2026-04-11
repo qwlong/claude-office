@@ -220,6 +220,7 @@ interface GameStore {
   printReport: boolean; // True when user requested a report and session ended
   todos: TodoItem[];
   gitStatus: GitStatus | null;
+  gitStatusMap: Map<string, GitStatus>;
   eventLog: EventLogEntry[];
 
   // Office actions
@@ -234,7 +235,7 @@ interface GameStore {
   setIsCompacting: (sessionId: string, isCompacting: boolean) => void;
   setTodos: (todos: TodoItem[]) => void;
   setPrintReport: (printReport: boolean) => void;
-  setGitStatus: (status: GitStatus | null) => void;
+  setGitStatus: (status: GitStatus | null, sessionId?: string) => void;
   addEventLog: (
     event: NonNullable<WebSocketMessage["event"]>,
     sessionId?: string,
@@ -391,6 +392,7 @@ const initialState = {
   printReport: false,
   todos: [] as TodoItem[],
   gitStatus: null as GitStatus | null,
+  gitStatusMap: new Map<string, GitStatus>(),
   eventLog: [] as EventLogEntry[],
   conversation: [] as ConversationEntry[],
 
@@ -969,7 +971,19 @@ export const useGameStore = create<GameStore>()(
       }),
     setTodos: (todos) => set({ todos }),
     setPrintReport: (printReport) => set({ printReport }),
-    setGitStatus: (gitStatus) => set({ gitStatus }),
+    setGitStatus: (gitStatus, sessionId) =>
+      set((state) => {
+        if (sessionId) {
+          const next = new Map(state.gitStatusMap);
+          if (gitStatus) {
+            next.set(sessionId, gitStatus);
+          } else {
+            next.delete(sessionId);
+          }
+          return { gitStatus, gitStatusMap: next };
+        }
+        return { gitStatus };
+      }),
 
     addEventLog: (event, sessionId) =>
       set((state) => {
@@ -1281,6 +1295,7 @@ export const selectContextUtilizationForSession =
     state.contextUtilizations.get(sessionId) ?? 0;
 export const selectTodos = (state: GameStore) => state.todos;
 export const selectGitStatus = (state: GameStore) => state.gitStatus;
+export const selectGitStatusMap = (state: GameStore) => state.gitStatusMap;
 export const selectEventLog = (state: GameStore) => state.eventLog;
 export const selectToolUsesSinceCompaction = (state: GameStore) =>
   state.toolUsesSinceCompaction;

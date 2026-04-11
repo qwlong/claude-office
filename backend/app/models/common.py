@@ -56,3 +56,4 @@ class TodoItem(BaseModel):
     blocked_by: list[str] = []
     owner: str | None = None
     metadata: dict[str, Any] | None = None
+    session_id: str | None = None

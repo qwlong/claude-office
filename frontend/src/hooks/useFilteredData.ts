@@ -6,7 +6,11 @@ import {
   selectConversation,
   selectBoss,
   selectBosses,
+  selectTodos,
+  selectGitStatus,
+  selectGitStatusMap,
 } from "@/stores/gameStore";
+import type { GitStatus } from "@/types";
 import type {
   AgentAnimationState,
   BossAnimationState,
@@ -42,6 +46,9 @@ export function useFilteredData() {
   const gameBosses = useGameStore(selectBosses);
   const allEvents = useGameStore(selectEventLog);
   const allConversation = useGameStore(selectConversation);
+  const allTodos = useGameStore(selectTodos);
+  const globalGitStatus = useGameStore(selectGitStatus);
+  const gitStatusMap = useGameStore(selectGitStatusMap);
 
   const sessionIds = useMemo(
     () =>
@@ -88,5 +95,22 @@ export function useFilteredData() {
     [allConversation, sessionIds],
   );
 
-  return { agents, boss, bosses, events, conversation, sessionIds };
+  const todos = useMemo(() => {
+    if (!sessionIds) return allTodos;
+    return allTodos.filter(
+      (t: Record<string, unknown>) =>
+        t.sessionId && sessionIds.has(t.sessionId as string),
+    );
+  }, [allTodos, sessionIds]);
+
+  const gitStatus = useMemo((): GitStatus | null => {
+    if (!sessionIds) return globalGitStatus;
+    // Return the first matching session's git status
+    for (const [sid, status] of gitStatusMap) {
+      if (sessionIds.has(sid)) return status;
+    }
+    return null;
+  }, [sessionIds, globalGitStatus, gitStatusMap]);
+
+  return { agents, boss, bosses, events, conversation, sessionIds, todos, gitStatus };
 }
