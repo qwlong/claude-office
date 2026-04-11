@@ -29,6 +29,11 @@ export function useProjectWebSocket() {
             updateFromServer(msg.data as MultiProjectGameState);
           } else if (msg.type === "tasks_update" && msg.data) {
             updateTasks(msg.data as TasksUpdate);
+          } else if (msg.type === "sessions_update" && msg.data) {
+            // Push session list update to useSessions via custom event
+            window.dispatchEvent(
+              new CustomEvent("sessions-updated", { detail: msg.data }),
+            );
           }
         } catch {
           // Ignore parse errors
