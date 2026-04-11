@@ -181,3 +181,24 @@ class UserPreference(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
+
+
+class StateSnapshot(Base):
+    """Point-in-time serialized StateMachine state for fast cold-start recovery.
+
+    One row per session (upserted). The event_id watermark indicates the last
+    EventRecord included in the snapshot — on restore, only events after this
+    ID need to be replayed.
+    """
+
+    __tablename__ = "state_snapshots"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(
+        String, ForeignKey("sessions.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    event_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot_data: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )

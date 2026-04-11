@@ -63,6 +63,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     git_service.start()
     event_processor.start_stale_agent_checker()
 
+    # Restore sessions from snapshots for instant cold start
+    await event_processor.restore_all_active_sessions()
+    event_processor.start_snapshot_task()
+
     from app.services.task_service import get_task_service
 
     task_service = get_task_service()
@@ -70,6 +74,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
     yield
 
+    # Flush snapshots before shutdown
+    await event_processor.flush_snapshots()
     await task_service.stop()
     await git_service.stop()
     await get_engine().dispose()
