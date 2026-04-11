@@ -8,13 +8,20 @@ Claude Code hooks fire lifecycle events during operation. These are configured i
 
 ```
 Claude Code session
-  ├── session_start      → POST /api/v1/events
-  ├── pre_tool_use       → POST /api/v1/events
-  ├── post_tool_use      → POST /api/v1/events
-  ├── subagent_spawn     → POST /api/v1/events
-  ├── subagent_complete   → POST /api/v1/events
-  ├── context_compaction → POST /api/v1/events
-  └── session_end        → POST /api/v1/events
+  ├── session_start        → POST /api/v1/events
+  ├── session_end          → POST /api/v1/events
+  ├── pre_tool_use         → POST /api/v1/events
+  ├── post_tool_use        → POST /api/v1/events
+  ├── user_prompt_submit   → POST /api/v1/events
+  ├── permission_request   → POST /api/v1/events
+  ├── notification         → POST /api/v1/events
+  ├── subagent_start       → POST /api/v1/events
+  ├── subagent_info        → POST /api/v1/events
+  ├── subagent_stop        → POST /api/v1/events
+  ├── agent_update         → POST /api/v1/events
+  ├── context_compaction   → POST /api/v1/events
+  ├── reporting            → POST /api/v1/events
+  └── stop                 → POST /api/v1/events
 ```
 
 Each event includes:
@@ -210,6 +217,7 @@ Agents:     sessionRooms filtered to one session
 Boss:       From main agent
 Animation:  ❌ Disabled
 Canvas:     Grid layout (single room)
+Panel:      AgentStatus/EventLog/Conversation filtered by sessionId
 ```
 
 ## 6. Key Code Paths
@@ -270,7 +278,9 @@ curl http://localhost:8000/api/v1/projects/{key}
 Check: Both AgentStatus and OfficeRoom should use `useFilteredData()` with the same sessionIds.
 - AgentStatus: `agentArray` from `useFilteredData().agents`
 - OfficeRoom: `deskAgents` filtered by `useFilteredData().sessionIds`
-- Count includes `agentType === "main"` in `__all__` mode
+- Count includes `agentType === "main"` in `__all__`/project mode
+- In `__all__`/project mode: main agents render as agent cards (gold border, Crown icon)
+- In single-session mode: standalone boss card + subagent cards
 
 ### Project shows 0 agents but office shows many
 
