@@ -468,89 +468,25 @@ class EventProcessor:
             project_sessions[project.key].append((session_id, sm))
 
         groups: list[ProjectGroup] = []
-        latest_updated: datetime | None = None
 
         for key, sessions in project_sessions.items():
             project = self.project_registry.get_project(key)
-            color = project.color if project else "#888888"
-            name = project.name if project else "Unknown"
-            root = project.root if project else None
-
-            all_agents: list[Agent] = []
-            desk_num = 1
-            group_boss = Boss(state=BossState.IDLE)
-            all_todos: list[TodoItem] = []
-
-            for sid, sm in sessions:
-                state = sm.to_game_state(sid)
-
-                # First non-idle boss becomes the room boss
-                if group_boss.state == BossState.IDLE and state.boss.state != BossState.IDLE:
-                    group_boss = state.boss
-
-                # Add main agent (boss) as an agent in the list
-                # Map BossState to AgentState for display
-                _boss_to_agent_state = {
-                    BossState.IDLE: AgentState.WAITING,
-                    BossState.WORKING: AgentState.WORKING,
-                    BossState.DELEGATING: AgentState.WORKING,
-                    BossState.WAITING_PERMISSION: AgentState.WAITING_PERMISSION,
-                    BossState.REVIEWING: AgentState.WORKING,
-                    BossState.COMPLETING: AgentState.COMPLETED,
-                }
-                boss_agent_state = _boss_to_agent_state.get(state.boss.state, AgentState.WORKING)
-                boss_as_agent = Agent(
-                    id=f"main-{sid}",
-                    agent_type="main",
-                    name="Claude",
-                    color=color,
-                    number=desk_num,
-                    state=boss_agent_state,
-                    desk=desk_num,
-                    current_task=state.boss.current_task,
-                    bubble=state.boss.bubble,
-                    project_key=key,
-                    session_id=sid,
-                )
-                all_agents.append(boss_as_agent)
-                desk_num += 1
-
-                for agent in state.agents:
-                    updated = agent.model_copy(
-                        update={
-                            "project_key": key,
-                            "session_id": sid,
-                            "desk": desk_num,
-                            "number": desk_num,
-                        }
-                    )
-                    all_agents.append(updated)
-                    desk_num += 1
-
-                all_todos.extend(state.todos)
-
-                if latest_updated is None or state.last_updated > latest_updated:
-                    latest_updated = state.last_updated
-
-            # Use registry session count (includes DB-only sessions) when available
+            # Metadata only — agent data comes from /ws/all via frontend gameStore
             registry_count = len(project.session_ids) if project else len(sessions)
             groups.append(
                 ProjectGroup(
                     key=key,
-                    name=name,
-                    color=color,
-                    root=root,
-                    agents=all_agents,
-                    boss=group_boss,
+                    name=project.name if project else "Unknown",
+                    color=project.color if project else "#888888",
+                    root=project.root if project else None,
                     session_count=max(registry_count, len(sessions)),
-                    todos=all_todos,
                 )
             )
 
         return MultiProjectGameState(
             projects=groups,
             office=OfficeState(),
-            last_updated=latest_updated or datetime.now(UTC),
+            last_updated=datetime.now(UTC),
         )
 
     async def get_project_root(self, session_id: str) -> str | None:

@@ -55,7 +55,8 @@ async def test_project_grouped_state_multiple_projects():
 
 
 @pytest.mark.asyncio
-async def test_project_grouped_agents_have_project_key():
+async def test_project_grouped_state_metadata_only():
+    """Project grouped state returns metadata, no agents (agents come from /ws/all)."""
     sm = StateMachine()
     agent = Agent(
         id="agent-1",
@@ -70,6 +71,6 @@ async def test_project_grouped_agents_have_project_key():
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None
-    assert len(result.projects[0].agents) >= 1
-    for a in result.projects[0].agents:
-        assert a.project_key == "proj-a"
+    assert result.projects[0].key == "proj-a"
+    # Agents are empty — frontend derives them from /ws/all gameStore
+    assert len(result.projects[0].agents) == 0
