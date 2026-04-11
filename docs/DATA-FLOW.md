@@ -152,6 +152,8 @@ viewMode + activeRoomKey
   → filter gameStore.bosses by sessionIds
   → filter gameStore.eventLog by sessionIds
   → filter gameStore.conversation by sessionIds
+  → filter gameStore.todos by sessionIds
+  → filter gameStore.gitStatusMap by sessionIds
 ```
 
 ### `getFilteredSessionIds()` (agentFilter.ts)
@@ -164,61 +166,53 @@ viewMode + activeRoomKey
 | `"project"` | project key | `Set<sessionId>` | All sessions in that project |
 | `"session"` | session ID | `Set<sessionId>` | Just that one session |
 
-**Project → sessions lookup:** Matches `project.name === session.projectName` from the sessions list.
+**Project → sessions lookup:** Matches `session.projectKey === activeRoomKey` (key-based, not name-based).
 
 ### Per-view rendering
 
-#### `"office"` — Whole Office
+| | office | projects | project | sessions | session |
+|---|---|---|---|---|---|
+| **Rendering** | Single OfficeRoom | MultiRoomCanvas grid | Single OfficeRoom | MultiRoomCanvas grid | Single OfficeRoom |
+| **Animation** | ✅ Enabled | ❌ Disabled | ✅ Enabled | ❌ Disabled | ✅ Enabled |
+| **isMultiRoom** | false | true | false | true | false |
+| **isProjectView** | false | false | true | false | true |
+| **isMergedView** | true | false | false | false | false |
+| **Agent source** | All (unfiltered) | enrichedProjects | Filtered by sessionIds | sessionRooms | Filtered by sessionIds |
+| **Boss source** | storeBoss + storeBosses | Per-room | filteredBoss | Per-room | filteredBoss |
+| **Todos source** | All | All | Filtered by sessionIds | All | Filtered by sessionIds |
+| **Git status** | Global | Global | Filtered by sessionIds | Global | Filtered by sessionIds |
+| **Boss card (AgentStatus)** | Standalone | Standalone | In agent list (gold) | Standalone | In agent list (gold) |
+| **Multi-boss** | Yes (top 3) | No | Yes (per project) | No | No |
 
-```
-Rendering:  Single OfficeRoom (full animation)
-Agents:     gameStore.agents (all, unfiltered)
-Boss:       gameStore.boss + gameStore.bosses (multi-boss display)
-Animation:  ✅ Enabled
-Canvas:     Full size, dynamic desk count
-```
+### WebSocket connection
 
-#### `"projects"` — All Projects Grid
+All 5 modes connect to `/ws/all`. Session/project switching only affects UI filtering via `getFilteredSessionIds()`.
 
-```
-Rendering:  MultiRoomCanvas → multiple mini OfficeRoom
-Agents:     enrichedProjects (gameStore agents grouped by project)
-Boss:       Per-room from project data
-Animation:  ❌ Disabled (static poses)
-Canvas:     Grid layout, ROOM_SCALE=0.35
-```
+### OfficeRoom data flow per mode
 
-#### `"project"` — Single Project Zoom
+**office (isMergedView=true):**
+- `deskAgents` = all storeAgents, main agents filtered out (bosses use BossSprite)
+- Multiple BossSprite from `storeBosses` (top 3)
+- All events/conversation/todos shown
 
-```
-Rendering:  Single OfficeRoom (full animation)
-Agents:     gameStore.agents filtered by project's sessionIds
-Boss:       filteredBoss from useFilteredData (scoped to project)
-Animation:  ✅ Enabled
-Canvas:     Full size
-Panel:      AgentStatus/EventLog/Conversation filtered by sessionIds
-```
+**projects (isMultiRoom=true):**
+- MultiRoomCanvas renders `enrichedProjects` (gameStore agents grouped by projectKey)
+- Each room: static poses, no animation
+- Room label shows agent count from gameStore
 
-#### `"sessions"` — All Sessions Grid
+**project (isProjectView=true):**
+- `deskAgents` = storeAgents filtered by project's sessionIds, main agents filtered out
+- BossSprite from `filteredBosses` (scoped to project sessions)
+- Events/conversation/todos filtered by sessionIds
 
-```
-Rendering:  MultiRoomCanvas → one mini room per session
-Agents:     sessionRooms (gameStore agents grouped by sessionId)
-Boss:       Per-room from main agent in that session
-Animation:  ❌ Disabled
-Canvas:     Grid layout
-```
+**sessions (isMultiRoom=true):**
+- MultiRoomCanvas renders `sessionRooms` (gameStore agents grouped by sessionId)
+- Each room: static poses, no animation
 
-#### `"session"` — Single Session
-
-```
-Rendering:  MultiRoomCanvas → one mini room
-Agents:     sessionRooms filtered to one session
-Boss:       From main agent
-Animation:  ❌ Disabled
-Canvas:     Grid layout (single room)
-Panel:      AgentStatus/EventLog/Conversation filtered by sessionId
-```
+**session (isProjectView=true):**
+- Same as project but filtered to single sessionId
+- `deskAgents` = storeAgents filtered by that sessionId
+- BossSprite from `filteredBosses`
 
 ## 6. Key Code Paths
 
