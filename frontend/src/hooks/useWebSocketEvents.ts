@@ -183,10 +183,20 @@ export function useWebSocketEvents({
             currentTask: backendAgent.currentTask ?? null,
           });
 
+          // If backend says agent is leaving/completed and agent is idle at desk,
+          // trigger departure immediately (don't wait for backend to remove it)
+          const agent = store.agents.get(backendAgent.id);
+          if (
+            agent?.phase === "idle" &&
+            (backendAgent.state === "leaving" ||
+              backendAgent.state === "completed")
+          ) {
+            agentMachineService.triggerDeparture(backendAgent.id);
+          }
+
           // Enqueue bubbles for agents who are at their desk working
           // Only show bubbles when agent is at desk (phase === "idle")
           // This prevents showing tool calls during arrival/departure animations
-          const agent = store.agents.get(backendAgent.id);
           const isAtDesk = agent?.phase === "idle";
 
           if (backendAgent.bubble && isAtDesk) {
