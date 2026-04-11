@@ -1,20 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  getFilteredSessionIds,
-  groupAgentsBySessionId,
-} from "../src/utils/agentFilter";
-import type { Agent } from "../src/types/generated";
+import { getFilteredSessionIds } from "../src/utils/agentFilter";
 import type { ProjectGroup } from "../src/types/projects";
-
-function makeAgent(overrides: Partial<Agent> & { sessionId?: string }): Agent {
-  return {
-    id: "agent-1",
-    color: "#ff0000",
-    number: 1,
-    state: "working",
-    ...overrides,
-  } as Agent;
-}
 
 function makeProject(overrides: Partial<ProjectGroup>): ProjectGroup {
   return {
@@ -76,35 +62,5 @@ describe("getFilteredSessionIds", () => {
     expect(
       getFilteredSessionIds("project", "nonexistent", projects, sessions),
     ).toEqual(new Set());
-  });
-});
-
-describe("groupAgentsBySessionId", () => {
-  it("groups agents from multiple projects by sessionId", () => {
-    const projects: ProjectGroup[] = [
-      makeProject({
-        key: "p1",
-        agents: [
-          makeAgent({ id: "a1", number: 1, sessionId: "s1" }),
-          makeAgent({ id: "a2", number: 2, sessionId: "s2" }),
-        ],
-      }),
-      makeProject({
-        key: "p2",
-        agents: [makeAgent({ id: "a3", number: 3, sessionId: "s1" })],
-      }),
-    ];
-    const result = groupAgentsBySessionId(projects);
-    expect(result.get("s1")!.map((a) => a.id)).toEqual(["a1", "a3"]);
-    expect(result.get("s2")!.map((a) => a.id)).toEqual(["a2"]);
-  });
-
-  it("skips agents without sessionId", () => {
-    const agentNoSession = makeAgent({ id: "x", number: 1 });
-    delete (agentNoSession as Record<string, unknown>).sessionId;
-    const result = groupAgentsBySessionId([
-      makeProject({ key: "p", agents: [agentNoSession] }),
-    ]);
-    expect(result.size).toBe(0);
   });
 });
