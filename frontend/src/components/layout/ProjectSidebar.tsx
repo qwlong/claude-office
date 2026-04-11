@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -12,7 +13,10 @@ import {
   selectProjects,
   selectViewMode,
   selectActiveRoomKey,
+  selectSessions,
 } from "@/stores/projectStore";
+import { useGameStore, selectAgents } from "@/stores/gameStore";
+import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "@/hooks/useTranslation";
 import { type ProjectGroup, getProjectDisplayName } from "@/types/projects";
 
@@ -31,8 +35,26 @@ export function ProjectSidebar({
   const projects = useProjectStore(selectProjects);
   const viewMode = useProjectStore(selectViewMode);
   const activeRoomKey = useProjectStore(selectActiveRoomKey);
+  const storeSessions = useProjectStore(selectSessions);
   const zoomToProjects = useProjectStore((s) => s.zoomToProjects);
   const zoomToProject = useProjectStore((s) => s.zoomToProject);
+  const gameAgents = useGameStore(useShallow(selectAgents));
+
+  // Live agent counts per project from gameStore (unified data source)
+  const agentCountByProject = useMemo(() => {
+    const sessionToProject = new Map<string, string>();
+    for (const s of storeSessions) {
+      if (s.projectKey) sessionToProject.set(s.id, s.projectKey);
+    }
+    const counts = new Map<string, number>();
+    for (const agent of gameAgents.values()) {
+      if (!agent.sessionId) continue;
+      const projKey = sessionToProject.get(agent.sessionId);
+      if (!projKey) continue;
+      counts.set(projKey, (counts.get(projKey) ?? 0) + 1);
+    }
+    return counts;
+  }, [gameAgents, storeSessions]);
 
   if (projects.length === 0) return null;
 
@@ -93,8 +115,8 @@ export function ProjectSidebar({
                 </span>
                 <span>
                   {t("project.agents", {
-                    count: projects.reduce(
-                      (sum, p) => sum + p.agents.length,
+                    count: Array.from(agentCountByProject.values()).reduce(
+                      (sum, c) => sum + c,
                       0,
                     ),
                   })}
@@ -154,7 +176,7 @@ export function ProjectSidebar({
                       {t("project.sessions", { count: project.sessionCount })}
                     </span>
                     <span>
-                      {t("project.agents", { count: project.agents.length })}
+                      {t("project.agents", { count: agentCountByProject.get(project.key) ?? 0 })}
                     </span>
                   </div>
                 </div>

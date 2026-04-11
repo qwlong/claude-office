@@ -18,21 +18,21 @@ def clean_processor():
 
 
 @pytest.mark.asyncio
-async def test_session_without_registry_grouped_as_unknown():
-    """Sessions not registered with ProjectRegistry should appear under 'unknown'."""
+async def test_session_without_registry_skipped():
+    """Sessions not registered with ProjectRegistry should be skipped."""
     sm = StateMachine()
     event_processor.sessions["orphan-session"] = sm
     # Note: NOT registering with project_registry
 
     result = await event_processor.get_project_grouped_state()
+    # No registered projects → empty projects list
     assert result is not None
-    assert len(result.projects) == 1
-    assert result.projects[0].key == "unknown"
+    assert len(result.projects) == 0
 
 
 @pytest.mark.asyncio
-async def test_multi_session_same_project_merges_agents():
-    """Two sessions under the same project should have all agents in one group."""
+async def test_multi_session_same_project_metadata_only():
+    """Two sessions under the same project should have correct session count, no agents."""
     sm1 = StateMachine()
     sm1.agents["a1"] = Agent(
         id="a1", name="Agent A1", color="#fff", number=1, state=AgentState.WORKING
@@ -51,36 +51,28 @@ async def test_multi_session_same_project_merges_agents():
     assert result is not None
     assert len(result.projects) == 1
     assert result.projects[0].session_count == 2
-    assert len(result.projects[0].agents) == 4  # 2 main + 2 subagents
-    agent_names = {a.name for a in result.projects[0].agents}
-    assert "Agent A1" in agent_names
-    assert "Agent A2" in agent_names
-    assert "Claude" in agent_names
+    # Agents are empty — frontend derives them from /ws/all
+    assert len(result.projects[0].agents) == 0
 
 
 @pytest.mark.asyncio
-async def test_grouped_state_boss_picks_first_active():
-    """Room boss should be the first non-idle boss among sessions."""
+async def test_grouped_state_boss_is_default_idle():
+    """Boss should default to idle since we no longer extract boss state."""
     sm1 = StateMachine()
-    sm1.boss_state = BossState.IDLE
-
-    sm2 = StateMachine()
-    sm2.boss_state = BossState.WORKING
-    sm2.boss_current_task = "Doing important work"
+    sm1.boss_state = BossState.WORKING
 
     event_processor.sessions["s1"] = sm1
-    event_processor.sessions["s2"] = sm2
     event_processor.project_registry.register_session_sync("s1", "proj", "/proj")
-    event_processor.project_registry.register_session_sync("s2", "proj", "/proj")
 
     result = await event_processor.get_project_grouped_state()
     assert result is not None
-    assert result.projects[0].boss.state == BossState.WORKING
+    # Boss is default idle — frontend uses filteredBoss from gameStore
+    assert result.projects[0].boss.state == BossState.IDLE
 
 
 @pytest.mark.asyncio
-async def test_grouped_state_desk_numbers_are_sequential():
-    """Desk numbers within a project should be sequential starting from 1."""
+async def test_grouped_state_no_agents_in_metadata():
+    """Project grouped state should not include agents (agents come from /ws/all)."""
     sm = StateMachine()
     for i in range(4):
         sm.agents[f"a{i}"] = Agent(
@@ -91,8 +83,7 @@ async def test_grouped_state_desk_numbers_are_sequential():
     event_processor.project_registry.register_session_sync("s1", "proj", "/proj")
 
     result = await event_processor.get_project_grouped_state()
-    desks = sorted([a.desk for a in result.projects[0].agents])
-    assert desks == [1, 2, 3, 4, 5]  # 1 main + 4 subagents
+    assert len(result.projects[0].agents) == 0  # Metadata only
 
 
 @pytest.mark.asyncio
