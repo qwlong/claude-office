@@ -434,9 +434,9 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
             );
           })}
 
-        {/* All-merged mode: animated agents */}
+        {/* All-merged/project mode: animated agents (filtered by deskAgents) */}
         {!isRoom &&
-          Array.from(storeAgents.values())
+          Array.from(deskAgents.values())
             .filter(
               (agent) =>
                 !isAgentInElevator(
