@@ -118,8 +118,14 @@ export function useWebSocketEvents({
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.state === "arriving") {
-            // Agent is still arriving - spawn from elevator
+          if (backendAgent.desk) {
+            // Agent has desk assigned — spawn at desk, skip arrival queue
+            // This matches refresh behavior and avoids queue stuck issues
+            // when agents complete faster than the arrival animation
+            spawnPosition = getDeskPosition(backendAgent.desk);
+            skipArrival = true;
+          } else if (backendAgent.state === "arriving") {
+            // Agent arriving with no desk yet - spawn from elevator
             spawnPosition = getNextSpawnPosition();
           } else if (isInArrivalQueue) {
             // Agent is in arrival queue (not arriving) - spawn at their queue position
