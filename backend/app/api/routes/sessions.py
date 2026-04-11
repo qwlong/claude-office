@@ -80,71 +80,71 @@ async def build_session_list(db: AsyncSession) -> list[SessionSummary]:
     Reusable by both the REST endpoint and WebSocket broadcast.
     Filters out empty sessions and auto-cleans completed ones with ≤2 events.
     """
-        # Single query: get all event counts grouped by session_id
-        count_stmt = (
-            select(EventRecord.session_id, func.count(EventRecord.id))
-            .group_by(EventRecord.session_id)
+    # Single query: get all event counts grouped by session_id
+    count_stmt = (
+        select(EventRecord.session_id, func.count(EventRecord.id))
+        .group_by(EventRecord.session_id)
+    )
+    count_result = await db.execute(count_stmt)
+    event_counts: dict[str, int] = {
+        row[0]: row[1] for row in count_result.all()
+    }
+
+    stmt = select(SessionRecord).order_by(SessionRecord.updated_at.desc())
+    result = await db.execute(stmt)
+    records = result.scalars().all()
+
+    sessions: list[SessionSummary] = []
+    empty_session_ids: list[str] = []
+    for rec in records:
+        count = event_counts.get(rec.id, 0)
+
+        # Skip sessions with no events at all (stale DB entries).
+        if count == 0 and not rec.id.startswith("sim_"):
+            continue
+
+        # Auto-clean completed sessions with only lifecycle events
+        # (session_start + session_end = 2 events or fewer, no real work).
+        if rec.status == "completed" and count <= 2 and not rec.id.startswith("sim_"):
+            empty_session_ids.append(rec.id)
+            continue
+
+        created_utc = (
+            rec.created_at.astimezone(UTC)
+            if rec.created_at.tzinfo
+            else rec.created_at.replace(tzinfo=UTC)
         )
-        count_result = await db.execute(count_stmt)
-        event_counts: dict[str, int] = {
-            row[0]: row[1] for row in count_result.all()
-        }
+        updated_utc = (
+            rec.updated_at.astimezone(UTC)
+            if rec.updated_at.tzinfo
+            else rec.updated_at.replace(tzinfo=UTC)
+        )
 
-        stmt = select(SessionRecord).order_by(SessionRecord.updated_at.desc())
-        result = await db.execute(stmt)
-        records = result.scalars().all()
+        project = event_processor.project_registry.get_project_for_session(rec.id)
+        sessions.append(
+            {
+                "id": rec.id,
+                "label": rec.label,
+                "projectName": rec.project_name,
+                "projectKey": project.key if project else None,
+                "projectRoot": rec.project_root,
+                "createdAt": created_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "updatedAt": updated_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "status": rec.status,
+                "eventCount": count,
+            }
+        )
 
-        sessions: list[SessionSummary] = []
-        empty_session_ids: list[str] = []
-        for rec in records:
-            count = event_counts.get(rec.id, 0)
+    # Purge empty sessions from DB
+    if empty_session_ids:
+        logger.info("Auto-cleaning %d empty sessions", len(empty_session_ids))
+        for sid in empty_session_ids:
+            await db.execute(delete(EventRecord).where(EventRecord.session_id == sid))
+            await db.execute(delete(SessionRecord).where(SessionRecord.id == sid))
+            await event_processor.remove_session(sid)
+        await db.commit()
 
-            # Skip sessions with no events at all (stale DB entries).
-            if count == 0 and not rec.id.startswith("sim_"):
-                continue
-
-            # Auto-clean completed sessions with only lifecycle events
-            # (session_start + session_end = 2 events or fewer, no real work).
-            if rec.status == "completed" and count <= 2 and not rec.id.startswith("sim_"):
-                empty_session_ids.append(rec.id)
-                continue
-
-            created_utc = (
-                rec.created_at.astimezone(UTC)
-                if rec.created_at.tzinfo
-                else rec.created_at.replace(tzinfo=UTC)
-            )
-            updated_utc = (
-                rec.updated_at.astimezone(UTC)
-                if rec.updated_at.tzinfo
-                else rec.updated_at.replace(tzinfo=UTC)
-            )
-
-            project = event_processor.project_registry.get_project_for_session(rec.id)
-            sessions.append(
-                {
-                    "id": rec.id,
-                    "label": rec.label,
-                    "projectName": rec.project_name,
-                    "projectKey": project.key if project else None,
-                    "projectRoot": rec.project_root,
-                    "createdAt": created_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                    "updatedAt": updated_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                    "status": rec.status,
-                    "eventCount": count,
-                }
-            )
-
-        # Purge empty sessions from DB
-        if empty_session_ids:
-            logger.info("Auto-cleaning %d empty sessions", len(empty_session_ids))
-            for sid in empty_session_ids:
-                await db.execute(delete(EventRecord).where(EventRecord.session_id == sid))
-                await db.execute(delete(SessionRecord).where(SessionRecord.id == sid))
-                await event_processor.remove_session(sid)
-            await db.commit()
-
-        return sessions
+    return sessions
 
 
 @router.get("")

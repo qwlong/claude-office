@@ -359,7 +359,9 @@ class EventProcessor:
             if latest_updated is None or state.last_updated > latest_updated:
                 latest_updated = state.last_updated
 
-            all_todos.extend(state.todos)
+            for todo in state.todos:
+                stamped = todo.model_copy(update={"session_id": session_id})
+                all_todos.append(stamped)
             all_conversation.extend(state.conversation)
 
         # Sort bosses by activity (non-idle first, then by agent count desc, then session_id)

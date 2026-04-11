@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useGameStore, selectGitStatus } from "@/stores/gameStore";
+import { useGameStore } from "@/stores/gameStore";
+import { useFilteredData } from "@/hooks/useFilteredData";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   GitBranch,
@@ -66,7 +67,8 @@ export function GitStatusPanel() {
     },
     [t],
   );
-  const gitStatus = useGameStore(selectGitStatus);
+  // Use filtered git status (scoped to current project/session)
+  const { gitStatus } = useFilteredData();
   const sessionId = useGameStore((state) => state.sessionId);
   const isConnected = useGameStore((state) => state.isConnected);
   const hasSession = isRealSession(sessionId);

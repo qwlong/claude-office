@@ -465,7 +465,8 @@ export function useWebSocketEvents({
 
           case "git_status":
             if (message.gitStatus) {
-              setGitStatus(message.gitStatus);
+              const gitSessionId = (message as unknown as Record<string, unknown>).session_id as string | undefined;
+              setGitStatus(message.gitStatus, gitSessionId);
             }
             break;
 
