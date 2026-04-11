@@ -113,6 +113,26 @@ async def broadcast_tasks_update(
     )
 
 
+async def broadcast_sessions_update() -> None:
+    """Push updated session list to all /ws/projects subscribers."""
+    if not manager.project_connections:
+        return
+    from app.api.routes.sessions import build_session_list
+    from app.db.database import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as db:
+            sessions = await build_session_list(db)
+        await manager.broadcast_to_project_subscribers(
+            {
+                "type": "sessions_update",
+                "data": sessions,
+            },
+        )
+    except Exception:
+        pass  # Non-critical — frontend will poll on next interval if this fails
+
+
 async def broadcast_error(session_id: str, message: str, timestamp: str) -> None:
     """Broadcast an error message to all clients connected to *session_id*.
 

@@ -92,12 +92,37 @@ export function useSessions(
     return null;
   }, []);
 
-  // Fetch sessions on mount and periodically
+  // Fetch sessions on mount (once). Updates come via WebSocket push.
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(fetchSessions, 5000);
-    return () => clearInterval(interval);
   }, [fetchSessions]);
+
+  // Receive session list updates pushed via /ws/projects WebSocket
+  useEffect(() => {
+    const handleSessionsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<Session[]>;
+      const data = customEvent.detail;
+      if (Array.isArray(data)) {
+        // Inject "All Sessions" virtual entry at the top
+        const allEntry: Session = {
+          id: "__all__",
+          label: "All Sessions",
+          projectName: "All Sessions",
+          projectKey: null,
+          projectRoot: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          status: "active",
+          eventCount: data.reduce((sum: number, s: Session) => sum + s.eventCount, 0),
+        };
+        setSessions([allEntry, ...data]);
+        setSessionsLoading(false);
+      }
+    };
+    window.addEventListener("sessions-updated", handleSessionsUpdated);
+    return () =>
+      window.removeEventListener("sessions-updated", handleSessionsUpdated);
+  }, []);
 
   // Listen for session deletion events from WebSocket
   useEffect(() => {

@@ -13,7 +13,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from app.core.broadcast_service import broadcast_state
+from app.core.broadcast_service import broadcast_sessions_update, broadcast_state
 from app.core.state_machine import StateMachine
 from app.core.task_file_poller import get_task_file_poller
 from app.core.transcript_poller import get_transcript_poller
@@ -64,6 +64,7 @@ async def handle_session_start(
         task_list_id = event.data.task_list_id if event.data else None
         await task_poller.start_polling(event.session_id, task_list_id=task_list_id)
     await broadcast_state(event.session_id, sm)
+    await broadcast_sessions_update()  # Push updated session list
 
 
 async def _cleanup_orphaned_agents(
@@ -121,6 +122,7 @@ async def handle_session_end(
     if task_poller:
         await task_poller.stop_polling(event.session_id)
     await broadcast_state(event.session_id, sm)
+    await broadcast_sessions_update()  # Push updated session list
 
 
 async def ensure_task_poller_running(
