@@ -31,6 +31,8 @@ import {
 } from "@/stores/gameStore";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useRoomContext } from "@/contexts/RoomContext";
+import { useFilteredData } from "@/hooks/useFilteredData";
+import { useProjectStore, selectViewMode } from "@/stores/projectStore";
 import { getCanvasHeight, CANVAS_WIDTH } from "@/constants/canvas";
 import {
   EMPLOYEE_OF_MONTH_POSITION,
@@ -116,6 +118,10 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const showPhaseLabels = useGameStore(selectShowPhaseLabels);
   const showObstacles = useGameStore(selectShowObstacles);
 
+  // View mode and filtered sessionIds for project-level filtering
+  const viewMode = useProjectStore(selectViewMode);
+  const { sessionIds } = useFilteredData();
+
   // Compaction animation — in room mode, use the room's key as sessionId
   // (In sessions view, project.key IS the session ID; in projects view, no match = no animation)
   const compactionSessionId = isRoom ? roomCtx.project.key : undefined;
@@ -123,6 +129,8 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // Multi-boss: merged view (whole office) or room with multiple main agents (project view)
   const isMergedView = !isRoom && storeSessionId === "__all__";
+  // Project view: single OfficeRoom filtered to one project's agents
+  const isProjectView = !isRoom && viewMode === "project";
 
   // Room bosses: extract main agents from room data for multi-boss display (top 3)
   const roomAgents = isRoom ? roomCtx.project.agents : [];
@@ -159,15 +167,32 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
     );
   }, [isMergedView, storeBosses]);
 
-  // In merged view, filter out main agents (bosses) from desk rendering
+  // Filter agents for desk rendering based on view mode
   const deskAgents = useMemo(() => {
-    if (!isMergedView) return storeAgents;
-    const filtered = new Map(storeAgents);
-    for (const [id, agent] of storeAgents) {
-      if (agent.agentType === "main") filtered.delete(id);
+    let agents = storeAgents;
+
+    // In project view, filter to only this project's agents by sessionIds
+    if (isProjectView && sessionIds) {
+      const filtered = new Map<string, typeof agents extends Map<string, infer V> ? V : never>();
+      for (const [id, agent] of agents) {
+        if (agent.sessionId && sessionIds.has(agent.sessionId)) {
+          filtered.set(id, agent);
+        }
+      }
+      agents = filtered;
     }
-    return filtered;
-  }, [isMergedView, storeAgents]);
+
+    // In merged/project view, filter out main agents (bosses use BossSprite)
+    if (isMergedView || isProjectView) {
+      const filtered = new Map(agents);
+      for (const [id, agent] of agents) {
+        if (agent.agentType === "main") filtered.delete(id);
+      }
+      return filtered;
+    }
+
+    return agents;
+  }, [isMergedView, isProjectView, storeAgents, sessionIds]);
 
   // Pick data source
   const todos: TodoItem[] = isRoom ? roomCtx.project.todos : storeTodos;
@@ -193,12 +218,12 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
     if (isRoom) {
       roomSubagents.forEach((a, i) => desks.add(a.desk ?? i + 1));
     } else {
-      for (const agent of storeAgents.values()) {
+      for (const agent of deskAgents.values()) {
         if (agent.desk && agent.phase === "idle") desks.add(agent.desk);
       }
     }
     return desks;
-  }, [isRoom, roomSubagents, storeAgents]);
+  }, [isRoom, roomSubagents, deskAgents]);
 
   const deskTasks = useMemo(() => {
     const tasks = new Map<number, string>();
@@ -209,7 +234,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
         if (label) tasks.set(desk, label);
       });
     } else {
-      for (const agent of storeAgents.values()) {
+      for (const agent of deskAgents.values()) {
         if (agent.desk && agent.phase === "idle") {
           const label = agent.currentTask ?? agent.name ?? "";
           if (label) tasks.set(agent.desk, label);
@@ -217,7 +242,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       }
     }
     return tasks;
-  }, [isRoom, roomSubagents, storeAgents]);
+  }, [isRoom, roomSubagents, deskAgents]);
 
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
 
