@@ -127,10 +127,10 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const compactionSessionId = isRoom ? roomCtx.project.key : undefined;
   const compactionAnimation = useCompactionAnimation(compactionSessionId);
 
-  // Multi-boss: merged view (whole office) or room with multiple main agents (project view)
-  const isMergedView = !isRoom && storeSessionId === "__all__";
   // Project view: single OfficeRoom filtered to one project's agents
   const isProjectView = !isRoom && viewMode === "project";
+  // Multi-boss: merged view (whole office) — but NOT project view
+  const isMergedView = !isRoom && storeSessionId === "__all__" && !isProjectView;
 
   // Room bosses: extract main agents from room data for multi-boss display (top 3)
   const roomAgents = isRoom ? roomCtx.project.agents : [];
@@ -247,22 +247,26 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
 
   // Boss data
+  // In project view, use the filtered boss (scoped to this project's sessions)
+  const { boss: filteredBoss } = useFilteredData();
+  const effectiveBoss = isProjectView ? filteredBoss : storeBoss;
+
   const rawBossPos = isRoom ? roomCtx.project.boss.position : null;
   const bossPosition =
     rawBossPos && "x" in rawBossPos && "y" in rawBossPos
       ? { x: rawBossPos.x, y: rawBossPos.y }
       : isRoom
         ? { x: 640, y: 830 }
-        : storeBoss.position;
+        : effectiveBoss.position;
   const bossState = isRoom
     ? roomCtx.project.boss.state
-    : storeBoss.backendState;
+    : effectiveBoss.backendState;
   const bossBubble = isRoom
     ? (roomCtx.project.boss.bubble ?? null)
-    : storeBoss.bubble.content;
+    : effectiveBoss.bubble.content;
   const bossCurrentTask = isRoom
     ? (roomCtx.project.boss.currentTask ?? null)
-    : storeBoss.currentTask;
+    : effectiveBoss.currentTask;
 
   return (
     <>
