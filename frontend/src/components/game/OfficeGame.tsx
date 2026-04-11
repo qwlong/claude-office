@@ -27,7 +27,10 @@ import {
 } from "react-zoom-pan-pinch";
 import { performFullCleanup, getHmrVersion } from "@/systems/hmrCleanup";
 
-import { useGameStore, selectDebugMode } from "@/stores/gameStore";
+import { useGameStore, selectDebugMode, selectAgents } from "@/stores/gameStore";
+import type { AgentAnimationState } from "@/stores/gameStore";
+import { useShallow } from "zustand/react/shallow";
+import type { Agent } from "@/types/generated";
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
 import {
@@ -37,7 +40,7 @@ import {
   selectProjects,
   selectSessions,
 } from "@/stores/projectStore";
-import { groupAgentsBySessionId } from "@/utils/agentFilter";
+
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -71,17 +74,39 @@ export function OfficeGame(): ReactNode {
   const projects = useProjectStore(selectProjects);
   const storeSessions = useProjectStore(selectSessions);
 
-  // Derive one room per session. Use the sessions list as the source of truth
-  // (not agents) so sessions with zero agents still get a room.
+  // Unified agent data from gameStore (__all__ WebSocket)
+  const gameAgents = useGameStore(useShallow(selectAgents));
+
+  // Derive one room per session using gameStore agents (unified data source).
+  // Sessions list is the source of truth for room count — even zero-agent sessions get a room.
   const sessionRooms = useMemo(() => {
     const projectByName = new Map(projects.map((p) => [p.name, p]));
-    const agentsBySession = groupAgentsBySessionId(projects);
+
+    // Group gameStore agents by sessionId
+    const agentsBySession = new Map<string, Agent[]>();
+    for (const agent of gameAgents.values()) {
+      const sid = agent.sessionId;
+      if (!sid) continue;
+      if (!agentsBySession.has(sid)) agentsBySession.set(sid, []);
+      const backendAgent: Agent = {
+        id: agent.id,
+        agentType: agent.agentType,
+        name: agent.name ?? undefined,
+        color: agent.color,
+        number: agent.number,
+        state: agent.backendState,
+        desk: agent.desk ?? undefined,
+        currentTask: agent.currentTask ?? undefined,
+        sessionId: agent.sessionId ?? undefined,
+        bubble: agent.bubble?.content ?? undefined,
+      };
+      agentsBySession.get(sid)!.push(backendAgent);
+    }
 
     return storeSessions.map((session) => {
       const project =
         projectByName.get(session.projectName ?? "") ?? projects[0];
       const agents = agentsBySession.get(session.id) ?? [];
-      // Build per-session boss from the main agent in this session's agents
       const mainAgent = agents.find((a) => a.agentType === "main");
       const sessionBoss = mainAgent
         ? {
@@ -104,14 +129,15 @@ export function OfficeGame(): ReactNode {
         agents,
         boss: sessionBoss,
         sessionCount: 1,
-        todos: [], // Session rooms don't have per-session todos (project-level would be misleading)
+        todos: [],
       };
     });
-  }, [projects, storeSessions]);
+  }, [projects, storeSessions, gameAgents]);
 
   // Multi-room vs single-office rendering
-  // All modes except "office" use multi-room canvas (with RoomProvider per-project data)
-  const isMultiRoom = viewMode !== "office";
+  // "office" and "project" render a single animated OfficeRoom.
+  // "projects", "sessions", "session" use MultiRoomCanvas grid.
+  const isMultiRoom = viewMode !== "office" && viewMode !== "project";
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
@@ -132,6 +158,44 @@ export function OfficeGame(): ReactNode {
   // Only subscribe to what OfficeGame needs for layout and keyboard shortcuts
   const debugMode = useGameStore(selectDebugMode);
 
+  // Enrich project rooms with live agent data from gameStore (__all__ WebSocket)
+  const enrichedProjects = useMemo(() => {
+    // Build sessionId → projectKey lookup
+    const sessionToProject = new Map<string, string>();
+    for (const s of storeSessions) {
+      const proj = projects.find((p) => p.name === s.projectName);
+      if (proj) sessionToProject.set(s.id, proj.key);
+    }
+
+    // Group gameStore agents by project
+    const agentsByProject = new Map<string, Agent[]>();
+    for (const agent of gameAgents.values()) {
+      if (!agent.sessionId) continue;
+      const projKey = sessionToProject.get(agent.sessionId);
+      if (!projKey) continue;
+      if (!agentsByProject.has(projKey)) agentsByProject.set(projKey, []);
+      // Convert AgentAnimationState to Agent shape for ProjectGroup compatibility
+      const backendAgent: Agent = {
+        id: agent.id,
+        agentType: agent.agentType,
+        name: agent.name ?? undefined,
+        color: agent.color,
+        number: agent.number,
+        state: agent.backendState,
+        desk: agent.desk ?? undefined,
+        currentTask: agent.currentTask ?? undefined,
+        sessionId: agent.sessionId ?? undefined,
+        bubble: agent.bubble?.content ?? undefined,
+      };
+      agentsByProject.get(projKey)!.push(backendAgent);
+    }
+
+    return projects.map((p) => ({
+      ...p,
+      agents: agentsByProject.get(p.key) ?? p.agents,
+    }));
+  }, [projects, gameAgents, storeSessions]);
+
   // Agent count drives canvas height for single-office mode
   const agentCount = useGameStore((s) => s.agents.size);
   const canvasHeight = useMemo(() => {
@@ -140,14 +204,13 @@ export function OfficeGame(): ReactNode {
   }, [agentCount]);
 
   // Canvas dimensions for multi-room view
+  // "project" mode now uses single OfficeRoom, not MultiRoomCanvas
   const multiRoomRooms = useMemo(() => {
     if (viewMode === "sessions") return sessionRooms;
     if (viewMode === "session")
       return sessionRooms.filter((r) => r.key === activeRoomKey);
-    if (viewMode === "project")
-      return projects.filter((p) => p.key === activeRoomKey);
-    return projects; // "projects" mode
-  }, [viewMode, sessionRooms, projects, activeRoomKey]);
+    return enrichedProjects; // "projects" mode — with live agent data
+  }, [viewMode, sessionRooms, enrichedProjects, activeRoomKey]);
   const multiRoomSize = useMemo(
     () => getMultiRoomCanvasSize(Math.max(1, multiRoomRooms.length)),
     [multiRoomRooms.length],

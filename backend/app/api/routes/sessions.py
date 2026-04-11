@@ -81,24 +81,34 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
     """
     logger.debug("API: list_sessions called")
     try:
-        # Find all session IDs that have at least one event.
-        sessions_with_events_stmt = select(EventRecord.session_id).distinct()
-        events_result = await db.execute(sessions_with_events_stmt)
-        sessions_with_events: set[str] = {row[0] for row in events_result.all()}
+        # Single query: get all event counts grouped by session_id
+        count_stmt = (
+            select(EventRecord.session_id, func.count(EventRecord.id))
+            .group_by(EventRecord.session_id)
+        )
+        count_result = await db.execute(count_stmt)
+        event_counts: dict[str, int] = {
+            row[0]: row[1] for row in count_result.all()
+        }
 
         stmt = select(SessionRecord).order_by(SessionRecord.updated_at.desc())
         result = await db.execute(stmt)
         records = result.scalars().all()
 
         sessions: list[SessionSummary] = []
+        empty_session_ids: list[str] = []
         for rec in records:
+            count = event_counts.get(rec.id, 0)
+
             # Skip sessions with no events at all (stale DB entries).
-            if rec.id not in sessions_with_events and not rec.id.startswith("sim_"):
+            if count == 0 and not rec.id.startswith("sim_"):
                 continue
 
-            count_stmt = select(func.count(EventRecord.id)).where(EventRecord.session_id == rec.id)
-            count_res = await db.execute(count_stmt)
-            count = count_res.scalar() or 0
+            # Auto-clean completed sessions with only lifecycle events
+            # (session_start + session_end = 2 events or fewer, no real work).
+            if rec.status == "completed" and count <= 2 and not rec.id.startswith("sim_"):
+                empty_session_ids.append(rec.id)
+                continue
 
             created_utc = (
                 rec.created_at.astimezone(UTC)
@@ -123,6 +133,16 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
                     "eventCount": count,
                 }
             )
+
+        # Purge empty sessions from DB
+        if empty_session_ids:
+            logger.info("Auto-cleaning %d empty sessions", len(empty_session_ids))
+            for sid in empty_session_ids:
+                await db.execute(delete(EventRecord).where(EventRecord.session_id == sid))
+                await db.execute(delete(SessionRecord).where(SessionRecord.id == sid))
+                await event_processor.remove_session(sid)
+            await db.commit()
+
         return sessions
     except Exception as e:
         logger.exception("Error in list_sessions: %s", e)

@@ -157,9 +157,10 @@ export default function V2TestPage(): React.ReactNode {
   const loadPreferences = usePreferencesStore((s) => s.loadPreferences);
 
   // ------------------------------------------------------------------
-  // WebSocket connection — reconnects when sessionId changes
+  // WebSocket connection — always connected to __all__ for unified data
+  // Session/project switching only affects UI filtering, not the connection
   // ------------------------------------------------------------------
-  useWebSocketEvents({ sessionId });
+  useWebSocketEvents({ sessionId: "__all__" });
 
   // ------------------------------------------------------------------
   // One-time initialization effects
