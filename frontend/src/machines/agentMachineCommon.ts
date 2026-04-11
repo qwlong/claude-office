@@ -284,13 +284,12 @@ export function buildSharedActions(actions: AgentMachineActions) {
 
     // Queue actions
     joinQueue: ({ context }: { context: AgentMachineContext }) => {
-      if (context.queueType) {
-        actions.onQueueJoined(
-          context.agentId,
-          context.queueType,
-          context.queueIndex,
-        );
-      }
+      const queueType = context.queueType ?? "arrival";
+      actions.onQueueJoined(
+        context.agentId,
+        queueType,
+        context.queueIndex,
+      );
     },
     leaveQueue: ({ context }: { context: AgentMachineContext }) => {
       actions.onQueueLeft(context.agentId);
