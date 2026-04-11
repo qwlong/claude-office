@@ -74,14 +74,12 @@ class ReplayEntry(TypedDict):
     state: dict[str, Any]
 
 
-@router.get("")
-async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[SessionSummary]:
-    """List all sessions with event counts.
+async def build_session_list(db: AsyncSession) -> list[SessionSummary]:
+    """Build the session list with event counts.
 
-    Returns sessions that have at least one event in the database.
+    Reusable by both the REST endpoint and WebSocket broadcast.
+    Filters out empty sessions and auto-cleans completed ones with ≤2 events.
     """
-    logger.debug("API: list_sessions called")
-    try:
         # Single query: get all event counts grouped by session_id
         count_stmt = (
             select(EventRecord.session_id, func.count(EventRecord.id))
@@ -147,6 +145,14 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
             await db.commit()
 
         return sessions
+
+
+@router.get("")
+async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[SessionSummary]:
+    """List all sessions with event counts."""
+    logger.debug("API: list_sessions called")
+    try:
+        return await build_session_list(db)
     except Exception as e:
         logger.exception("Error in list_sessions: %s", e)
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -341,6 +347,10 @@ async def delete_session(
                 "timestamp": "",
             }
         )
+
+        # Push updated session list
+        from app.core.broadcast_service import broadcast_sessions_update
+        await broadcast_sessions_update()
 
         return {"status": "success", "message": f"Session {session_id} deleted"}
     except HTTPException:

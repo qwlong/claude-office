@@ -151,6 +151,19 @@ async def websocket_projects(websocket: WebSocket) -> None:
             websocket,
         )
 
+    # Send initial session list
+    from app.api.routes.sessions import build_session_list
+    from app.db.database import AsyncSessionLocal
+    try:
+        async with AsyncSessionLocal() as db:
+            sessions = await build_session_list(db)
+        await manager.send_personal_message(
+            {"type": "sessions_update", "data": sessions},
+            websocket,
+        )
+    except Exception:
+        pass  # Non-critical
+
     try:
         while True:
             await websocket.receive_text()
