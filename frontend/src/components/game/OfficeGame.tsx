@@ -28,9 +28,9 @@ import {
 import { performFullCleanup, getHmrVersion } from "@/systems/hmrCleanup";
 
 import { useGameStore, selectDebugMode, selectAgents } from "@/stores/gameStore";
-import type { AgentAnimationState } from "@/stores/gameStore";
 import { useShallow } from "zustand/react/shallow";
 import type { Agent } from "@/types/generated";
+import { animationStateToAgent } from "@/utils/agentConvert";
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useOfficeTextures } from "@/hooks/useOfficeTextures";
 import {
@@ -88,19 +88,7 @@ export function OfficeGame(): ReactNode {
       const sid = agent.sessionId;
       if (!sid) continue;
       if (!agentsBySession.has(sid)) agentsBySession.set(sid, []);
-      const backendAgent: Agent = {
-        id: agent.id,
-        agentType: agent.agentType,
-        name: agent.name ?? undefined,
-        color: agent.color,
-        number: agent.number,
-        state: agent.backendState,
-        desk: agent.desk ?? undefined,
-        currentTask: agent.currentTask ?? undefined,
-        sessionId: agent.sessionId ?? undefined,
-        bubble: agent.bubble?.content ?? undefined,
-      };
-      agentsBySession.get(sid)!.push(backendAgent);
+      agentsBySession.get(sid)!.push(animationStateToAgent(agent));
     }
 
     return storeSessions.map((session) => {
@@ -173,20 +161,7 @@ export function OfficeGame(): ReactNode {
       const projKey = sessionToProject.get(agent.sessionId);
       if (!projKey) continue;
       if (!agentsByProject.has(projKey)) agentsByProject.set(projKey, []);
-      // Convert AgentAnimationState to Agent shape for ProjectGroup compatibility
-      const backendAgent: Agent = {
-        id: agent.id,
-        agentType: agent.agentType,
-        name: agent.name ?? undefined,
-        color: agent.color,
-        number: agent.number,
-        state: agent.backendState,
-        desk: agent.desk ?? undefined,
-        currentTask: agent.currentTask ?? undefined,
-        sessionId: agent.sessionId ?? undefined,
-        bubble: agent.bubble?.content ?? undefined,
-      };
-      agentsByProject.get(projKey)!.push(backendAgent);
+      agentsByProject.get(projKey)!.push(animationStateToAgent(agent));
     }
 
     return projects.map((p) => ({
