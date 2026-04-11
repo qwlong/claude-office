@@ -120,7 +120,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // View mode and filtered data for project-level filtering
   const viewMode = useProjectStore(selectViewMode);
-  const { sessionIds, boss: filteredBoss } = useFilteredData();
+  const { sessionIds, boss: filteredBoss, bosses: filteredBosses } = useFilteredData();
 
   // Compaction animation — in room mode, use the room's key as sessionId
   // (In sessions view, project.key IS the session ID; in projects view, no match = no animation)
@@ -148,12 +148,14 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   }, [roomAgents]);
   const isMultiBossRoom = isRoom && roomBossAgents.length > 1;
 
-  // Boss count for positioning: merged view uses storeBosses, room uses roomBossAgents
+  // Boss count for positioning: merged view uses storeBosses, project uses filteredBosses, room uses roomBossAgents
   const multiBossCount = isMergedView
     ? storeBosses.size
-    : isMultiBossRoom
-      ? roomBossAgents.length
-      : 0;
+    : isProjectView && filteredBosses.length > 1
+      ? filteredBosses.length
+      : isMultiBossRoom
+        ? roomBossAgents.length
+        : 0;
 
   const bossPositions = useMemo(() => {
     if (!multiBossCount) return [];
@@ -161,11 +163,16 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   }, [multiBossCount]);
 
   const sortedBosses = useMemo(() => {
-    if (!isMergedView) return [];
-    return Array.from(storeBosses.entries()).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
-  }, [isMergedView, storeBosses]);
+    if (isMergedView) {
+      return Array.from(storeBosses.entries()).sort(([a], [b]) =>
+        a.localeCompare(b),
+      );
+    }
+    if (isProjectView && filteredBosses.length > 1) {
+      return filteredBosses.map((b) => [b.sessionId ?? "unknown", b] as const);
+    }
+    return [];
+  }, [isMergedView, isProjectView, storeBosses, filteredBosses]);
 
   // Filter agents for desk rendering based on view mode
   const deskAgents = useMemo(() => {
@@ -246,6 +253,9 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
 
+  // Multi-boss rendering: merged view or project view with multiple sessions
+  const isMultiBoss = (isMergedView || isProjectView) && sortedBosses.length > 0;
+
   // Boss data
   // In project view, use the filtered boss (scoped to this project's sessions)
   const effectiveBoss = isProjectView ? filteredBoss : storeBoss;
@@ -276,7 +286,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       />
 
       {/* Boss area rug(s) */}
-      {(isMergedView && sortedBosses.length > 0) || isMultiBossRoom
+      {(isMultiBoss) || isMultiBossRoom
         ? bossPositions.map((pos, i) =>
             textures.bossRug ? (
               <pixiSprite
@@ -528,7 +538,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       />
 
       {/* Boss(es) */}
-      {isMergedView && sortedBosses.length > 0 ? (
+      {isMultiBoss ? (
         sortedBosses.map(([sid, boss], i) =>
           bossPositions[i] ? (
             <BossSprite
@@ -608,7 +618,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
       )}
 
       {/* Trash Can(s) */}
-      {(isMergedView && sortedBosses.length > 0) || isMultiBossRoom ? (
+      {(isMultiBoss) || isMultiBossRoom ? (
         bossPositions.map((pos, i) => (
           <TrashCanSprite
             key={`trash-${i}`}
@@ -718,7 +728,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
                 <AgentBubble content={agent.bubble.content!} yOffset={-80} />
               </pixiContainer>
             ))}
-      {isMergedView && sortedBosses.length > 0
+      {isMultiBoss
         ? sortedBosses.map(([sid, boss], i) =>
             boss.bubble.content && bossPositions[i] ? (
               <pixiContainer
