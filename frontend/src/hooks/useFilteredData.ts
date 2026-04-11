@@ -56,15 +56,60 @@ export function useFilteredData() {
       (a, b) => a.number - b.number,
     );
     if (!sessionIds) return all;
-    return all.filter((a) => a.sessionId && sessionIds.has(a.sessionId));
-  }, [gameAgents, sessionIds]);
+    const filtered = all.filter(
+      (a) => a.sessionId && sessionIds.has(a.sessionId),
+    );
+
+    // In project view, gameStore may not have agents for this project
+    // (WebSocket is connected to a single session). Fall back to the
+    // project's own agent list from the /ws/projects data.
+    if (
+      filtered.length === 0 &&
+      viewMode === "project" &&
+      activeProject?.agents?.length
+    ) {
+      return activeProject.agents
+        .filter((a) => a.agentType !== "main")
+        .map(
+          (a, i): AgentAnimationState => ({
+            id: a.id,
+            agentType: "subagent",
+            name: a.name ?? null,
+            color: a.color,
+            number: a.number ?? i + 1,
+            desk: a.desk ?? null,
+            backendState: a.state as AgentAnimationState["backendState"],
+            currentTask: a.currentTask ?? null,
+            phase: "idle",
+            currentPosition: { x: a.position?.x ?? 0, y: a.position?.y ?? 0 },
+            targetPosition: { x: a.position?.x ?? 0, y: a.position?.y ?? 0 },
+            path: null,
+            bubble: a.bubble
+              ? {
+                  content: a.bubble,
+                  displayStartTime: Date.now(),
+                  queue: [],
+                }
+              : { content: null, displayStartTime: null, queue: [] },
+            queueType: null,
+            queueIndex: -1,
+            sessionId: a.sessionId ?? null,
+            isTyping: false,
+          }),
+        );
+    }
+
+    return filtered;
+  }, [gameAgents, sessionIds, viewMode, activeProject]);
 
   const boss = useMemo((): BossAnimationState => {
     if (viewMode === "project" && activeProject?.boss) {
       const projectBoss = activeProject.boss;
+      // Build boss entirely from project data — don't spread gameBoss
+      // which belongs to whatever session the WebSocket is connected to.
       return {
-        ...gameBoss,
         backendState: projectBoss.state,
+        position: gameBoss.position,
         currentTask: projectBoss.currentTask ?? null,
         bubble: projectBoss.bubble
           ? {
@@ -72,7 +117,12 @@ export function useFilteredData() {
               displayStartTime: Date.now(),
               queue: [],
             }
-          : gameBoss.bubble,
+          : { content: null, displayStartTime: null, queue: [] },
+        inUseBy: null,
+        isTyping: false,
+        sessionId: gameBoss.sessionId,
+        projectKey: gameBoss.projectKey,
+        projectColor: gameBoss.projectColor,
       };
     }
     return gameBoss;

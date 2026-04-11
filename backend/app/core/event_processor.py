@@ -126,6 +126,7 @@ class EventProcessor:
         self.sessions: dict[str, StateMachine] = {}
         self.project_registry = ProjectRegistry()
         self._db_sessions_restored = False
+        self._db_projects_synced = False
         self._sessions_lock = asyncio.Lock()
         self._transcript_poller_initialized = False
         self._task_poller_initialized = False
@@ -425,37 +426,36 @@ class EventProcessor:
         if not self.sessions:
             return None
 
-        # Register all DB sessions (with any events) into project registry
-        # so project counts match the sessions sidebar total
-        try:
-            async with AsyncSessionLocal() as db:
-                # Register all DB sessions that have any events into project registry
-                sessions_with_events_result = await db.execute(
-                    select(EventRecord.session_id).distinct()
-                )
-                sessions_with_events: set[str] = {
-                    row[0] for row in sessions_with_events_result.all()
-                }
+        # Register all DB sessions into project registry (once per startup)
+        if not self._db_projects_synced:
+            self._db_projects_synced = True
+            try:
+                async with AsyncSessionLocal() as db:
+                    sessions_with_events_result = await db.execute(
+                        select(EventRecord.session_id).distinct()
+                    )
+                    sessions_with_events: set[str] = {
+                        row[0] for row in sessions_with_events_result.all()
+                    }
 
-                all_result = await db.execute(select(SessionRecord))
-                all_records = all_result.scalars().all()
-                needs_commit = False
-                for rec in all_records:
-                    if rec.id not in sessions_with_events:
-                        continue
-                    if self.project_registry.get_project_for_session(rec.id):
-                        continue
-                    pname = rec.project_name or derive_project_name_from_path(rec.project_root)
-                    if pname:
-                        self.project_registry.register_session_sync(rec.id, pname, rec.project_root)
-                        # Backfill project_name in DB if it was derived
-                        if not rec.project_name:
-                            rec.project_name = pname
-                            needs_commit = True
-                if needs_commit:
-                    await db.commit()
-        except Exception:
-            logger.debug("Could not register DB sessions for project view")
+                    all_result = await db.execute(select(SessionRecord))
+                    all_records = all_result.scalars().all()
+                    needs_commit = False
+                    for rec in all_records:
+                        if rec.id not in sessions_with_events:
+                            continue
+                        if self.project_registry.get_project_for_session(rec.id):
+                            continue
+                        pname = rec.project_name or derive_project_name_from_path(rec.project_root)
+                        if pname:
+                            self.project_registry.register_session_sync(rec.id, pname, rec.project_root)
+                            if not rec.project_name:
+                                rec.project_name = pname
+                                needs_commit = True
+                    if needs_commit:
+                        await db.commit()
+            except Exception:
+                logger.debug("Could not register DB sessions for project view")
 
         # Group sessions by project
         project_sessions: dict[str, list[tuple[str, StateMachine]]] = {}

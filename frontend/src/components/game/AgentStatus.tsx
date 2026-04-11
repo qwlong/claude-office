@@ -86,7 +86,10 @@ export function AgentStatus() {
   const { t } = useTranslation();
   const { agents: agentArray, boss } = useFilteredData();
 
-  const totalCount = agentArray.length + 1; // +1 for boss
+  const hasMainInArray = agentArray.some((a) => a.agentType === "main");
+  const totalCount = hasMainInArray
+    ? agentArray.length // main agent already counted
+    : agentArray.length + 1; // +1 for boss (separate from agents list)
 
   return (
     <div className="flex flex-col bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden font-mono text-xs h-full">
