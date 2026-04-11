@@ -161,14 +161,35 @@ class AgentMachineService {
     if (managed) {
       managed.actor.stop();
       this.agents.delete(agentId);
-
-      // If this agent had claimed the boss, release it so the queue can advance
-      const store = useGameStore.getState();
-      if (store.boss.inUseBy !== null) {
-        store.setBossInUse(null);
-        setTimeout(() => this.notifyBossAvailable(), 0);
-      }
     }
+
+    // Clean up ALL queue/boss state for this agent
+    this.queue.releaseReadyPositionForAgent(agentId);
+
+    const store = useGameStore.getState();
+
+    // Remove from arrival queue if present
+    if (store.arrivalQueue.includes(agentId)) {
+      useGameStore.setState({
+        arrivalQueue: store.arrivalQueue.filter((id) => id !== agentId),
+      });
+      this.updateQueueIndices("arrival");
+    }
+    // Remove from departure queue if present
+    if (store.departureQueue.includes(agentId)) {
+      useGameStore.setState({
+        departureQueue: store.departureQueue.filter((id) => id !== agentId),
+      });
+      this.updateQueueIndices("departure");
+    }
+
+    // Release boss if this agent had claimed it
+    if (store.boss.inUseBy !== null) {
+      store.setBossInUse(null);
+    }
+
+    // Trigger next agent in queue
+    setTimeout(() => this.notifyBossAvailable(), 50);
   }
 
   /**
