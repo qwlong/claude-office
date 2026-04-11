@@ -125,7 +125,9 @@ export function OfficeGame(): ReactNode {
   // Multi-room vs single-office rendering
   // "office" and "project" render a single animated OfficeRoom.
   // "projects", "sessions", "session" use MultiRoomCanvas grid.
-  const isMultiRoom = viewMode !== "office" && viewMode !== "project";
+  // "office", "project", and "session" render a single animated OfficeRoom.
+  // "projects" and "sessions" use MultiRoomCanvas grid.
+  const isMultiRoom = viewMode !== "office" && viewMode !== "project" && viewMode !== "session";
 
   // Load all office textures
   const { textures, loaded: spritesLoaded } = useOfficeTextures();
@@ -360,7 +362,7 @@ export function OfficeGame(): ReactNode {
                   textures={textures}
                   rooms={multiRoomRooms}
                   onRoomClick={
-                    viewMode === "sessions" || viewMode === "session"
+                    viewMode === "sessions"
                       ? handleSessionRoomClick
                       : handleProjectRoomClick
                   }

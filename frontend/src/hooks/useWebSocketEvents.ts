@@ -185,9 +185,10 @@ export function useWebSocketEvents({
 
           // If backend says agent is leaving/completed and agent is idle at desk,
           // trigger departure immediately (don't wait for backend to remove it)
-          const agent = store.agents.get(backendAgent.id);
+          // Re-read agent from store AFTER updateAgentMeta to get fresh state
+          const updatedAgent = useGameStore.getState().agents.get(backendAgent.id);
           if (
-            agent?.phase === "idle" &&
+            updatedAgent?.phase === "idle" &&
             (backendAgent.state === "leaving" ||
               backendAgent.state === "completed")
           ) {
@@ -197,7 +198,7 @@ export function useWebSocketEvents({
           // Enqueue bubbles for agents who are at their desk working
           // Only show bubbles when agent is at desk (phase === "idle")
           // This prevents showing tool calls during arrival/departure animations
-          const isAtDesk = agent?.phase === "idle";
+          const isAtDesk = updatedAgent?.phase === "idle";
 
           if (backendAgent.bubble && isAtDesk) {
             const bubbleText = backendAgent.bubble.text;

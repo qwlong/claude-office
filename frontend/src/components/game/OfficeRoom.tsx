@@ -127,9 +127,9 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const compactionSessionId = isRoom ? roomCtx.project.key : undefined;
   const compactionAnimation = useCompactionAnimation(compactionSessionId);
 
-  // Project view: single OfficeRoom filtered to one project's agents
-  const isProjectView = !isRoom && viewMode === "project";
-  // Multi-boss: merged view (whole office) — but NOT project view
+  // Project or session view: single OfficeRoom filtered to specific agents
+  const isProjectView = !isRoom && (viewMode === "project" || viewMode === "session");
+  // Multi-boss: merged view (whole office) — but NOT project/session view
   const isMergedView = !isRoom && storeSessionId === "__all__" && !isProjectView;
 
   // Room bosses: extract main agents from room data for multi-boss display (top 3)
