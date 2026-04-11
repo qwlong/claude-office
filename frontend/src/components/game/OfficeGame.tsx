@@ -40,7 +40,7 @@ import {
   selectProjects,
   selectSessions,
 } from "@/stores/projectStore";
-import { groupAgentsBySessionId } from "@/utils/agentFilter";
+
 import { getMultiRoomCanvasSize } from "@/constants/rooms";
 import { MultiRoomCanvas } from "./MultiRoomCanvas";
 import { OfficeRoom } from "./OfficeRoom";
@@ -74,17 +74,39 @@ export function OfficeGame(): ReactNode {
   const projects = useProjectStore(selectProjects);
   const storeSessions = useProjectStore(selectSessions);
 
-  // Derive one room per session. Use the sessions list as the source of truth
-  // (not agents) so sessions with zero agents still get a room.
+  // Unified agent data from gameStore (__all__ WebSocket)
+  const gameAgents = useGameStore(useShallow(selectAgents));
+
+  // Derive one room per session using gameStore agents (unified data source).
+  // Sessions list is the source of truth for room count — even zero-agent sessions get a room.
   const sessionRooms = useMemo(() => {
     const projectByName = new Map(projects.map((p) => [p.name, p]));
-    const agentsBySession = groupAgentsBySessionId(projects);
+
+    // Group gameStore agents by sessionId
+    const agentsBySession = new Map<string, Agent[]>();
+    for (const agent of gameAgents.values()) {
+      const sid = agent.sessionId;
+      if (!sid) continue;
+      if (!agentsBySession.has(sid)) agentsBySession.set(sid, []);
+      const backendAgent: Agent = {
+        id: agent.id,
+        agentType: agent.agentType,
+        name: agent.name ?? undefined,
+        color: agent.color,
+        number: agent.number,
+        state: agent.backendState,
+        desk: agent.desk ?? undefined,
+        currentTask: agent.currentTask ?? undefined,
+        sessionId: agent.sessionId ?? undefined,
+        bubble: agent.bubble?.content ?? undefined,
+      };
+      agentsBySession.get(sid)!.push(backendAgent);
+    }
 
     return storeSessions.map((session) => {
       const project =
         projectByName.get(session.projectName ?? "") ?? projects[0];
       const agents = agentsBySession.get(session.id) ?? [];
-      // Build per-session boss from the main agent in this session's agents
       const mainAgent = agents.find((a) => a.agentType === "main");
       const sessionBoss = mainAgent
         ? {
@@ -107,10 +129,10 @@ export function OfficeGame(): ReactNode {
         agents,
         boss: sessionBoss,
         sessionCount: 1,
-        todos: [], // Session rooms don't have per-session todos (project-level would be misleading)
+        todos: [],
       };
     });
-  }, [projects, storeSessions]);
+  }, [projects, storeSessions, gameAgents]);
 
   // Multi-room vs single-office rendering
   // "office" and "project" render a single animated OfficeRoom.
@@ -135,7 +157,6 @@ export function OfficeGame(): ReactNode {
 
   // Only subscribe to what OfficeGame needs for layout and keyboard shortcuts
   const debugMode = useGameStore(selectDebugMode);
-  const gameAgents = useGameStore(useShallow(selectAgents));
 
   // Enrich project rooms with live agent data from gameStore (__all__ WebSocket)
   const enrichedProjects = useMemo(() => {

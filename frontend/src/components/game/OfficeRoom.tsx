@@ -118,9 +118,9 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const showPhaseLabels = useGameStore(selectShowPhaseLabels);
   const showObstacles = useGameStore(selectShowObstacles);
 
-  // View mode and filtered sessionIds for project-level filtering
+  // View mode and filtered data for project-level filtering
   const viewMode = useProjectStore(selectViewMode);
-  const { sessionIds } = useFilteredData();
+  const { sessionIds, boss: filteredBoss } = useFilteredData();
 
   // Compaction animation — in room mode, use the room's key as sessionId
   // (In sessions view, project.key IS the session ID; in projects view, no match = no animation)
@@ -248,7 +248,6 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // Boss data
   // In project view, use the filtered boss (scoped to this project's sessions)
-  const { boss: filteredBoss } = useFilteredData();
   const effectiveBoss = isProjectView ? filteredBoss : storeBoss;
 
   const rawBossPos = isRoom ? roomCtx.project.boss.position : null;
