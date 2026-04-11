@@ -466,13 +466,23 @@ export const useGameStore = create<GameStore>()(
         const newAgents = new Map(state.agents);
         newAgents.delete(agentId);
 
-        // Also remove from queues
+        // Remove from queues and re-index remaining agents
         const newArrivalQueue = state.arrivalQueue.filter(
           (id) => id !== agentId,
         );
         const newDepartureQueue = state.departureQueue.filter(
           (id) => id !== agentId,
         );
+
+        // Re-index remaining agents' queueIndex (same pattern as dequeueArrival)
+        newArrivalQueue.forEach((id, idx) => {
+          const agent = newAgents.get(id);
+          if (agent) newAgents.set(id, { ...agent, queueIndex: idx });
+        });
+        newDepartureQueue.forEach((id, idx) => {
+          const agent = newAgents.get(id);
+          if (agent) newAgents.set(id, { ...agent, queueIndex: idx });
+        });
 
         return {
           agents: newAgents,
