@@ -15,7 +15,6 @@ import {
   useProjectStore,
   selectViewMode,
   selectActiveRoomKey,
-  selectActiveProject,
   selectSessions,
 } from "@/stores/projectStore";
 import { useShallow } from "zustand/react/shallow";
@@ -25,18 +24,17 @@ import { filterEvents, filterConversation } from "@/utils/filterHelpers";
 /**
  * Hook: returns filtered agents, events, conversation, and boss for the current viewMode.
  *
- * All filtering is based on sessionIds:
+ * With unified data source (__all__ WebSocket), gameStore contains agents from
+ * ALL sessions. Filtering by sessionIds is sufficient — no fallback needed.
+ *
+ * Filtering rules:
  * - office/projects/sessions: returns all data (no filtering)
  * - project: sessionIds = all sessions in that project
  * - session: sessionIds = that single session
- *
- * Agents, events, and conversation are all filtered by sessionId.
- * Boss is overridden with the project-specific boss when viewing a project.
  */
 export function useFilteredData() {
   const viewMode = useProjectStore(selectViewMode);
   const activeRoomKey = useProjectStore(selectActiveRoomKey);
-  const activeProject = useProjectStore(selectActiveProject);
   const projects = useProjectStore((s) => s.projects);
   const storeSessions = useProjectStore(selectSessions);
   const gameAgents = useGameStore(useShallow(selectAgents));
@@ -56,77 +54,23 @@ export function useFilteredData() {
       (a, b) => a.number - b.number,
     );
     if (!sessionIds) return all;
-    const filtered = all.filter(
-      (a) => a.sessionId && sessionIds.has(a.sessionId),
-    );
-
-    // In project view, gameStore may not have agents for this project
-    // (WebSocket is connected to a single session). Fall back to the
-    // project's own agent list from the /ws/projects data.
-    if (
-      filtered.length === 0 &&
-      viewMode === "project" &&
-      activeProject?.agents?.length
-    ) {
-      return activeProject.agents
-        .filter((a) => a.agentType !== "main")
-        .map(
-          (a, i): AgentAnimationState => ({
-            id: a.id,
-            agentType: "subagent",
-            name: a.name ?? null,
-            color: a.color,
-            number: a.number ?? i + 1,
-            desk: a.desk ?? null,
-            backendState: a.state as AgentAnimationState["backendState"],
-            currentTask: a.currentTask ?? null,
-            phase: "idle",
-            currentPosition: { x: a.position?.x ?? 0, y: a.position?.y ?? 0 },
-            targetPosition: { x: a.position?.x ?? 0, y: a.position?.y ?? 0 },
-            path: null,
-            bubble: a.bubble
-              ? {
-                  content: a.bubble,
-                  displayStartTime: Date.now(),
-                  queue: [],
-                }
-              : { content: null, displayStartTime: null, queue: [] },
-            queueType: null,
-            queueIndex: -1,
-            sessionId: a.sessionId ?? null,
-            isTyping: false,
-          }),
-        );
-    }
-
-    return filtered;
-  }, [gameAgents, sessionIds, viewMode, activeProject]);
+    return all.filter((a) => a.sessionId && sessionIds.has(a.sessionId));
+  }, [gameAgents, sessionIds]);
 
   const boss = useMemo((): BossAnimationState => {
-    if (viewMode === "project" && activeProject?.boss) {
-      const projectBoss = activeProject.boss;
-      // Build boss entirely from project data — don't spread gameBoss
-      // which belongs to whatever session the WebSocket is connected to.
-      return {
-        backendState: projectBoss.state,
-        position: gameBoss.position,
-        currentTask: projectBoss.currentTask ?? null,
-        bubble: projectBoss.bubble
-          ? {
-              content: projectBoss.bubble,
-              displayStartTime: Date.now(),
-              queue: [],
-            }
-          : { content: null, displayStartTime: null, queue: [] },
-        inUseBy: null,
-        isTyping: false,
-        sessionId: gameBoss.sessionId,
-        projectKey: gameBoss.projectKey,
-        projectColor: gameBoss.projectColor,
-      };
+    // In project/session view, find the boss from filtered bosses
+    if (sessionIds && sessionIds.size > 0) {
+      const filteredBosses = Array.from(gameBosses.values()).filter(
+        (b) => b.sessionId && sessionIds.has(b.sessionId),
+      );
+      if (filteredBosses.length > 0) {
+        // Return the most active boss (non-idle first)
+        const active = filteredBosses.find((b) => b.backendState !== "idle");
+        return active ?? filteredBosses[0];
+      }
     }
     return gameBoss;
-  }, [viewMode, activeProject, gameBoss]);
+  }, [sessionIds, gameBoss, gameBosses]);
 
   const bosses = useMemo((): BossAnimationState[] => {
     const all = Array.from(gameBosses.values());
