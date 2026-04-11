@@ -75,6 +75,14 @@ export function useFilteredData() {
         const active = filteredBosses.find((b) => b.backendState !== "idle");
         return active ?? filteredBosses[0];
       }
+      // No matching boss in gameBosses — return idle boss, not a random session's boss
+      return {
+        ...gameBoss,
+        backendState: "idle",
+        currentTask: null,
+        bubble: { content: null, displayStartTime: null, queue: [] },
+        isTyping: false,
+      };
     }
     return gameBoss;
   }, [sessionIds, gameBoss, gameBosses]);
