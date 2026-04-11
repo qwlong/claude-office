@@ -461,10 +461,11 @@ class EventProcessor:
         project_sessions: dict[str, list[tuple[str, StateMachine]]] = {}
         for session_id, sm in self.sessions.items():
             project = self.project_registry.get_project_for_session(session_id)
-            key = project.key if project else "unknown"
-            if key not in project_sessions:
-                project_sessions[key] = []
-            project_sessions[key].append((session_id, sm))
+            if not project:
+                continue  # Skip sessions without a registered project
+            if project.key not in project_sessions:
+                project_sessions[project.key] = []
+            project_sessions[project.key].append((session_id, sm))
 
         groups: list[ProjectGroup] = []
         latest_updated: datetime | None = None
