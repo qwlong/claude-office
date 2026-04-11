@@ -819,3 +819,113 @@ class StateMachine:
                 new_todos.append(TodoItem(content=content, status=status, active_form=active_form))
 
         self.todos = new_todos
+
+    # =========================================================================
+    # SNAPSHOT SERIALIZATION
+    # =========================================================================
+
+    def to_snapshot_dict(self) -> dict[str, Any]:
+        """Serialize state to a JSON-compatible dict for DB persistence."""
+        return {
+            "version": 1,
+            "phase": self.phase.value if hasattr(self.phase, "value") else str(self.phase),
+            "boss_state": self.boss_state.value if hasattr(self.boss_state, "value") else str(self.boss_state),
+            "boss_bubble": self.boss_bubble.model_dump(mode="json") if self.boss_bubble else None,
+            "boss_current_task": self.boss_current_task,
+            "elevator_state": self.elevator_state.value if hasattr(self.elevator_state, "value") else str(self.elevator_state),
+            "agents": {
+                aid: agent.model_dump(mode="json") for aid, agent in self.agents.items()
+            },
+            "arrival_queue": list(self.arrival_queue),
+            "handin_queue": list(self.handin_queue),
+            "total_input_tokens": self.total_input_tokens,
+            "total_output_tokens": self.total_output_tokens,
+            "tool_uses_since_compaction": self.tool_uses_since_compaction,
+            "session_label": self.session_label,
+            "todos": [t.model_dump(mode="json") for t in self.todos],
+            "whiteboard": {
+                "tool_usage": dict(self.whiteboard.tool_usage),
+                "task_completed_count": self.whiteboard.task_completed_count,
+                "bug_fixed_count": self.whiteboard.bug_fixed_count,
+                "coffee_break_count": self.whiteboard.coffee_break_count,
+                "code_written_count": self.whiteboard.code_written_count,
+                "recent_error_count": self.whiteboard.recent_error_count,
+                "recent_success_count": self.whiteboard.recent_success_count,
+                "consecutive_successes": self.whiteboard.consecutive_successes,
+                "last_incident_time": self.whiteboard.last_incident_time,
+                "agent_lifespans": [al.model_dump(mode="json") for al in self.whiteboard.agent_lifespans],
+                "news_items": [ni.model_dump(mode="json") for ni in self.whiteboard.news_items],
+                "coffee_cups": self.whiteboard.coffee_cups,
+                "file_edits": dict(self.whiteboard.file_edits),
+            },
+            "history": self.history[-100:],
+            "conversation": [c.model_dump(mode="json") if hasattr(c, "model_dump") else c for c in self.conversation[-100:]],
+        }
+
+    @staticmethod
+    def from_snapshot_dict(data: dict[str, Any]) -> "StateMachine":
+        """Reconstruct a StateMachine from a snapshot dict."""
+        sm = StateMachine()
+
+        version = data.get("version", 1)
+        if version != 1:
+            raise ValueError(f"Unknown snapshot version: {version}")
+
+        sm.phase = OfficePhase(data.get("phase", "empty"))
+        sm.boss_state = BossState(data.get("boss_state", "idle"))
+        sm.boss_bubble = BubbleContent.model_validate(data["boss_bubble"]) if data.get("boss_bubble") else None
+        sm.boss_current_task = data.get("boss_current_task")
+        sm.elevator_state = ElevatorState(data.get("elevator_state", "closed"))
+
+        # Restore agents
+        for aid, agent_data in data.get("agents", {}).items():
+            sm.agents[aid] = Agent.model_validate(agent_data)
+
+        sm.arrival_queue = data.get("arrival_queue", [])
+        sm.handin_queue = data.get("handin_queue", [])
+        sm.total_input_tokens = data.get("total_input_tokens", 0)
+        sm.total_output_tokens = data.get("total_output_tokens", 0)
+        sm.tool_uses_since_compaction = data.get("tool_uses_since_compaction", 0)
+        sm.session_label = data.get("session_label")
+
+        # Restore todos
+        for todo_data in data.get("todos", []):
+            sm.todos.append(TodoItem.model_validate(todo_data))
+
+        # Restore whiteboard
+        wb = data.get("whiteboard", {})
+        sm.whiteboard.tool_usage = wb.get("tool_usage", {})
+        sm.whiteboard.task_completed_count = wb.get("task_completed_count", 0)
+        sm.whiteboard.bug_fixed_count = wb.get("bug_fixed_count", 0)
+        sm.whiteboard.coffee_break_count = wb.get("coffee_break_count", 0)
+        sm.whiteboard.code_written_count = wb.get("code_written_count", 0)
+        sm.whiteboard.recent_error_count = wb.get("recent_error_count", 0)
+        sm.whiteboard.recent_success_count = wb.get("recent_success_count", 0)
+        sm.whiteboard.consecutive_successes = wb.get("consecutive_successes", 0)
+        sm.whiteboard.last_incident_time = wb.get("last_incident_time")
+        sm.whiteboard.coffee_cups = wb.get("coffee_cups", 0)
+        sm.whiteboard.file_edits = wb.get("file_edits", {})
+
+        # Restore agent lifespans and news items
+        from app.models.sessions import AgentLifespan, NewsItem
+        for al_data in wb.get("agent_lifespans", []):
+            try:
+                sm.whiteboard.agent_lifespans.append(AgentLifespan.model_validate(al_data))
+            except Exception:
+                pass
+        for ni_data in wb.get("news_items", []):
+            try:
+                sm.whiteboard.news_items.append(NewsItem.model_validate(ni_data))
+            except Exception:
+                pass
+
+        # Restore history and conversation
+        sm.history = data.get("history", [])
+        for conv_data in data.get("conversation", []):
+            try:
+                sm.conversation.append(ConversationEntry.model_validate(conv_data))
+            except Exception:
+                if isinstance(conv_data, dict):
+                    sm.conversation.append(conv_data)  # type: ignore
+
+        return sm

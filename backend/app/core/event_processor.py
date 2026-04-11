@@ -133,6 +133,10 @@ class EventProcessor:
         self._beads_poller_initialized = False
         self._beads_sessions: set[str] = set()  # Sessions with active beads polling
         self._stale_checker_task: asyncio.Task[None] | None = None
+        # Snapshot persistence
+        self._snapshot_seqs: dict[str, int] = {}
+        self._last_snapshotted: dict[str, int] = {}
+        self._snapshot_task: asyncio.Task[None] | None = None
 
     # ------------------------------------------------------------------
     # Poller lifecycle helpers
@@ -557,6 +561,7 @@ class EventProcessor:
                 sm.session_label = self._make_session_label(project.name)
 
         sm.transition(event)
+        self._snapshot_seqs[event.session_id] = self._snapshot_seqs.get(event.session_id, 0) + 1
 
         agent_id = event.data.agent_id if event.data and event.data.agent_id else "main"
 
@@ -646,6 +651,8 @@ class EventProcessor:
         # ------------------------------------------------------------------
         if event.event_type == EventType.SESSION_END:
             await handle_session_end(sm, event)
+            # Write final snapshot before unregistering
+            await self._write_snapshot(event.session_id, sm)
             self.project_registry.unregister_session(event.session_id)
             # Mark main agent as ended in DB
             try:
@@ -1144,6 +1151,144 @@ class EventProcessor:
                 return f"Background task {task_id_short} {status}: {summary_short}"
             case _:
                 return f"Event: {event.event_type}"
+
+    # ------------------------------------------------------------------
+    # Snapshot persistence
+    # ------------------------------------------------------------------
+
+    async def _write_snapshot(self, session_id: str, sm: StateMachine) -> None:
+        """Upsert a state snapshot for the given session."""
+        import json
+        from app.db.models import StateSnapshot
+
+        try:
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(
+                    select(func.max(EventRecord.id)).where(EventRecord.session_id == session_id)
+                )
+                max_event_id = result.scalar() or 0
+
+                snapshot_json = json.dumps(sm.to_snapshot_dict())
+
+                existing = await db.execute(
+                    select(StateSnapshot).where(StateSnapshot.session_id == session_id)
+                )
+                row = existing.scalar_one_or_none()
+                if row:
+                    row.event_id = max_event_id
+                    row.snapshot_data = snapshot_json
+                    row.created_at = datetime.now(UTC)
+                else:
+                    db.add(StateSnapshot(
+                        session_id=session_id,
+                        event_id=max_event_id,
+                        snapshot_data=snapshot_json,
+                    ))
+                await db.commit()
+        except Exception as e:
+            logger.debug(f"Failed to write snapshot for {session_id}: {e}")
+
+    async def _snapshot_loop(self) -> None:
+        """Background task: write snapshots for dirty sessions every 30s."""
+        while True:
+            await asyncio.sleep(30)
+            try:
+                for sid, sm in list(self.sessions.items()):
+                    current_seq = self._snapshot_seqs.get(sid, 0)
+                    last_written = self._last_snapshotted.get(sid, -1)
+                    if current_seq > last_written:
+                        await self._write_snapshot(sid, sm)
+                        self._last_snapshotted[sid] = current_seq
+            except Exception as e:
+                logger.debug(f"Snapshot loop error: {e}")
+
+    def start_snapshot_task(self) -> None:
+        """Start the background snapshot loop."""
+        if self._snapshot_task is None:
+            self._snapshot_task = asyncio.create_task(self._snapshot_loop())
+            logger.info("Started snapshot background task (30s interval)")
+
+    async def flush_snapshots(self) -> None:
+        """Write snapshots for all dirty sessions (called on shutdown)."""
+        if self._snapshot_task:
+            self._snapshot_task.cancel()
+            self._snapshot_task = None
+
+        for sid, sm in self.sessions.items():
+            current_seq = self._snapshot_seqs.get(sid, 0)
+            last_written = self._last_snapshotted.get(sid, -1)
+            if current_seq > last_written:
+                await self._write_snapshot(sid, sm)
+                self._last_snapshotted[sid] = current_seq
+        logger.info(f"Flushed snapshots for {len(self.sessions)} sessions")
+
+    async def restore_all_active_sessions(self) -> None:
+        """Restore state for all active sessions from snapshots + trailing events."""
+        import json
+        from app.db.models import StateSnapshot
+
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(SessionRecord.id).where(SessionRecord.status == "active")
+            )
+            active_ids = [row[0] for row in result.all()]
+
+            if not active_ids:
+                self._db_sessions_restored = True
+                return
+
+            snap_result = await db.execute(
+                select(StateSnapshot).where(StateSnapshot.session_id.in_(active_ids))
+            )
+            snapshots = {s.session_id: s for s in snap_result.scalars().all()}
+
+            restored_from_snap = 0
+            restored_from_replay = 0
+
+            for sid in active_ids:
+                if sid in self.sessions:
+                    continue  # Already restored
+                snap = snapshots.get(sid)
+                if snap:
+                    try:
+                        data = json.loads(snap.snapshot_data)
+                        sm = StateMachine.from_snapshot_dict(data)
+
+                        # Replay trailing events after snapshot
+                        trailing = await db.execute(
+                            select(EventRecord)
+                            .where(EventRecord.session_id == sid, EventRecord.id > snap.event_id)
+                            .order_by(EventRecord.timestamp.asc())
+                        )
+                        trailing_events = trailing.scalars().all()
+                        for rec in trailing_events:
+                            try:
+                                evt = Event(
+                                    event_type=EventType(rec.event_type),
+                                    session_id=rec.session_id,
+                                    timestamp=rec.timestamp,
+                                    data=EventData.model_validate(rec.data) if rec.data else EventData(),
+                                )
+                                sm.transition(evt)
+                            except Exception:
+                                pass
+
+                        self.sessions[sid] = sm
+                        restored_from_snap += 1
+                        logger.info(f"Restored {sid[:8]} from snapshot (+{len(trailing_events)} trailing)")
+                    except Exception as e:
+                        logger.warning(f"Snapshot restore failed for {sid[:8]}: {e}, falling back to replay")
+                        await self._restore_session(sid)
+                        restored_from_replay += 1
+                else:
+                    await self._restore_session(sid)
+                    restored_from_replay += 1
+
+        self._db_sessions_restored = True
+        logger.info(
+            f"Restored {len(self.sessions)} sessions "
+            f"({restored_from_snap} from snapshots, {restored_from_replay} from replay)"
+        )
 
 
 event_processor = EventProcessor()
