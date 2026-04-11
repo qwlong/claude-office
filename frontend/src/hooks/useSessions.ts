@@ -18,6 +18,7 @@ export interface Session {
   id: string;
   label: string | null;
   projectName: string | null;
+  projectKey: string | null;
   projectRoot: string | null;
   createdAt: string;
   updatedAt: string;
@@ -72,6 +73,7 @@ export function useSessions(
           id: "__all__",
           label: "All Sessions",
           projectName: "All Sessions",
+          projectKey: null,
           projectRoot: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),

@@ -37,9 +37,9 @@ describe("getFilteredSessionIds", () => {
   ];
 
   const sessions = [
-    { id: "sess-1", projectName: "My Project" },
-    { id: "sess-2", projectName: "My Project" },
-    { id: "sess-3", projectName: "Other Project" },
+    { id: "sess-1", projectName: "My Project", projectKey: "proj-1" },
+    { id: "sess-2", projectName: "My Project", projectKey: "proj-1" },
+    { id: "sess-3", projectName: "Other Project", projectKey: "proj-2" },
   ];
 
   it("returns null for office view", () => {

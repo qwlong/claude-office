@@ -32,14 +32,12 @@ export function getFilteredSessionIds(
   viewMode: ViewMode,
   activeRoomKey: string | null,
   projects: ProjectGroup[],
-  sessions: { id: string; projectName: string | null }[],
+  sessions: { id: string; projectName: string | null; projectKey: string | null }[],
 ): Set<string> | null {
   if (viewMode === "project" && activeRoomKey) {
-    const project = projects.find((p) => p.key === activeRoomKey);
-    if (!project) return new Set();
     const ids = new Set<string>();
     for (const s of sessions) {
-      if (s.projectName === project.name) ids.add(s.id);
+      if (s.projectKey === activeRoomKey) ids.add(s.id);
     }
     return ids;
   }

@@ -135,7 +135,7 @@ export default function V2TestPage(): React.ReactNode {
   useEffect(() => {
     const filtered = sessions
       .filter((s) => s.id !== "__all__")
-      .map((s) => ({ id: s.id, projectName: s.projectName }));
+      .map((s) => ({ id: s.id, projectName: s.projectName, projectKey: s.projectKey }));
     setSessions(filtered);
   }, [sessions, setSessions]);
 
