@@ -45,12 +45,8 @@ export function useSessionSwitch({
   const handleSessionSelect = async (id: string): Promise<void> => {
     if (id === sessionId) return;
 
-    // Reset state machines and store for session switch.
-    // Use resetForSessionSwitch (not resetForReplay) to keep isReplaying=false
-    // so WebSocket will reconnect to the new session.
-    agentMachineService.reset();
-    useGameStore.getState().resetForSessionSwitch();
-
+    // No reset — WebSocket stays on __all__, agents persist in gameStore.
+    // Session switch only affects UI filtering via projectStore.
     setSessionId(id);
     showStatus(
       t("status.switchedToSession", { sessionId: id.slice(0, 8) }),
