@@ -17,6 +17,7 @@ import {
   getQueuePosition,
   resetSpawnIndex,
 } from "@/systems/queuePositions";
+import { animationSystem } from "@/systems/animationSystem";
 import type {
   GameState,
   WebSocketMessage,
@@ -118,18 +119,13 @@ export function useWebSocketEvents({
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.state === "arriving") {
-            // Agent arriving — spawn from elevator, skip queue if desk assigned
+          if (backendAgent.desk) {
+            // Agent has desk — spawn at elevator, walk to desk (skip queue/boss)
             spawnPosition = getNextSpawnPosition();
-            if (backendAgent.desk) {
-              // Has desk: skip queue/boss, go directly to idle at desk
-              // Agent will be spawned at elevator then walked to desk
-              skipArrival = true;
-            }
-          } else if (backendAgent.desk) {
-            // Agent past arriving with desk — go straight to desk
-            spawnPosition = getDeskPosition(backendAgent.desk);
             skipArrival = true;
+          } else if (backendAgent.state === "arriving") {
+            // Agent arriving with no desk yet - spawn from elevator
+            spawnPosition = getNextSpawnPosition();
           } else if (isInArrivalQueue) {
             // Agent is in arrival queue (not arriving) - spawn at their queue position
             // Queue position 0 = ready spot (A0), position 1+ = waiting spots
@@ -179,21 +175,22 @@ export function useWebSocketEvents({
             },
           );
 
-          // If agent was spawned at elevator but should walk to desk (arriving + has desk),
-          // animate walking from elevator to desk position
-          if (
-            skipArrival &&
-            backendAgent.state === "arriving" &&
-            backendAgent.desk &&
-            spawnPosition !== getDeskPosition(backendAgent.desk)
-          ) {
+          // If agent was spawned at elevator but has desk, animate walking to desk
+          if (skipArrival && backendAgent.desk) {
             const deskPos = getDeskPosition(backendAgent.desk);
-            // Import and use animation system to set path
-            import("@/systems/animationSystem").then(({ animationSystem }) => {
-              // Update target and set path
-              store.updateAgentTarget(backendAgent.id, deskPos);
-              animationSystem.setAgentPath(backendAgent.id, deskPos);
-            });
+            const isAtElevator =
+              Math.abs(spawnPosition.x - deskPos.x) > 20 ||
+              Math.abs(spawnPosition.y - deskPos.y) > 20;
+            if (isAtElevator) {
+              // Delay slightly so the store and machine are ready
+              setTimeout(() => {
+                const s = useGameStore.getState();
+                if (s.agents.has(backendAgent.id)) {
+                  s.updateAgentTarget(backendAgent.id, deskPos);
+                  animationSystem.setAgentPath(backendAgent.id, deskPos);
+                }
+              }, 100);
+            }
           }
 
           // If agent has a bubble and is at desk/queue, enqueue it immediately
