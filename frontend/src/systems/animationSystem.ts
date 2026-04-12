@@ -385,53 +385,17 @@ class AnimationSystem {
   private checkQueueAdvancement(): void {
     const store = useGameStore.getState();
 
-    // If boss is in use, check for deadlock
-    if (store.boss.inUseBy !== null) {
-      if (this.bossClaimedAt === null) {
-        this.bossClaimedAt = performance.now();
-      } else if (performance.now() - this.bossClaimedAt > BOSS_CLAIM_TIMEOUT_MS) {
-        // Boss has been claimed for too long — force release (deadlock recovery)
-        console.warn(
-          `[AnimationSystem] Boss claimed by "${store.boss.inUseBy}" for >${BOSS_CLAIM_TIMEOUT_MS}ms, force-releasing`,
-        );
-        store.setBossInUse(null);
-        this.bossClaimedAt = null;
-      }
-      return;
-    }
-    this.bossClaimedAt = null; // Reset when boss is free
+    // Boss handles multiple agents simultaneously — check if any are waiting
+    const hasWaiting = store.arrivalQueue.some((id) => {
+      const a = store.agents.get(id);
+      return a?.phase === "in_arrival_queue" && a.path === null;
+    }) || store.departureQueue.some((id) => {
+      const a = store.agents.get(id);
+      return a?.phase === "in_departure_queue" && a.path === null;
+    });
 
-    // Priority: arrival queue first
-    if (store.arrivalQueue.length > 0) {
-      const frontId = store.arrivalQueue[0];
-      const frontAgent = store.agents.get(frontId);
-
-      // Only advance if agent is:
-      // 1. In queue phase
-      // 2. At front of queue (index 0)
-      // 3. NOT currently walking (no active path)
-      if (
-        frontAgent?.phase === "in_arrival_queue" &&
-        frontAgent.queueIndex === 0 &&
-        frontAgent.path === null
-      ) {
-        agentMachineService.notifyBossAvailable();
-        return;
-      }
-    }
-
-    // Then departure queue
-    if (store.departureQueue.length > 0) {
-      const frontId = store.departureQueue[0];
-      const frontAgent = store.agents.get(frontId);
-
-      if (
-        frontAgent?.phase === "in_departure_queue" &&
-        frontAgent.queueIndex === 0 &&
-        frontAgent.path === null
-      ) {
-        agentMachineService.notifyBossAvailable();
-      }
+    if (hasWaiting) {
+      agentMachineService.notifyBossAvailable();
     }
   }
 }

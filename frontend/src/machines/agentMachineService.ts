@@ -256,15 +256,19 @@ class AgentMachineService {
 
     if ((store.compactionPhases.get(store.sessionId) ?? "idle") !== "idle") return;
 
-    if (store.arrivalQueue.length > 0) {
-      if (this.queue.getReadyOccupant("arrival")) return;
-      this.sendEvent(store.arrivalQueue[0], { type: "BOSS_AVAILABLE" });
-      return;
+    // Boss handles multiple agents simultaneously — notify ALL waiting agents
+    for (const agentId of store.arrivalQueue) {
+      const agent = store.agents.get(agentId);
+      if (agent?.phase === "in_arrival_queue") {
+        this.sendEvent(agentId, { type: "BOSS_AVAILABLE" });
+      }
     }
 
-    if (store.departureQueue.length > 0) {
-      if (this.queue.getReadyOccupant("departure")) return;
-      this.sendEvent(store.departureQueue[0], { type: "BOSS_AVAILABLE" });
+    for (const agentId of store.departureQueue) {
+      const agent = store.agents.get(agentId);
+      if (agent?.phase === "in_departure_queue") {
+        this.sendEvent(agentId, { type: "BOSS_AVAILABLE" });
+      }
     }
   }
 

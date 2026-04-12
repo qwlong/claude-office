@@ -63,6 +63,32 @@ describe("SPAWN_WALK_TO_DESK", () => {
     expect(actions.onPhaseChanged).toHaveBeenCalledWith("a1", "idle");
   });
 
+  it("agent at any queueIndex can advance on BOSS_AVAILABLE (parallel boss)", () => {
+    const actions = makeMockActions();
+    const machine = createAgentMachine(actions);
+    const actor = createActor(machine);
+    actor.start();
+
+    // Spawn agent via normal arrival
+    actor.send({
+      type: "SPAWN",
+      agentId: "a2",
+      name: "Agent 2",
+      desk: 2,
+      position: { x: 56, y: 190 },
+    });
+    // Simulate being in queue at index 1 (not front)
+    actor.send({ type: "ARRIVED_AT_QUEUE" });
+    expect(actor.getSnapshot().value).toEqual({ arrival: "in_queue" });
+
+    // Update queue index to 1 (second in line)
+    actor.send({ type: "QUEUE_POSITION_CHANGED", newIndex: 1 });
+
+    // BOSS_AVAILABLE should still advance — no guard blocking
+    actor.send({ type: "BOSS_AVAILABLE" });
+    expect(actor.getSnapshot().value).toEqual({ arrival: "walking_to_ready" });
+  });
+
   it("can depart after arriving via SPAWN_WALK_TO_DESK", () => {
     const actions = makeMockActions();
     const machine = createAgentMachine(actions);

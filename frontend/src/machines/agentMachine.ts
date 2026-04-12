@@ -150,8 +150,7 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
               },
               BOSS_AVAILABLE: {
                 target: "walking_to_ready",
-                guard: "isAtFrontOfQueue",
-                actions: ["claimBoss", "leaveQueue"],
+                actions: ["leaveQueue"],
               },
             },
           },
@@ -273,8 +272,7 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
               },
               BOSS_AVAILABLE: {
                 target: "walking_to_ready",
-                guard: "isAtFrontOfQueue",
-                actions: ["claimBoss", "leaveQueue"],
+                actions: ["leaveQueue"],
               },
             },
           },
