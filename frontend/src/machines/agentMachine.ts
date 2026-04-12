@@ -99,6 +99,20 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
       },
 
       // ======================================================================
+      // DIRECT WALK — Skip queue/boss, walk straight from elevator to desk
+      // ======================================================================
+      walking_to_desk_direct: {
+        entry: [
+          { type: "notifyPhaseChange", params: { phase: "walking_to_desk" } },
+          "openElevator",
+          "startWalkingToDesk",
+        ],
+        on: {
+          ARRIVED_AT_DESK: "idle",
+        },
+      },
+
+      // ======================================================================
       // ARRIVAL FLOW — New agent joining the office
       // ======================================================================
       arrival: {
@@ -168,13 +182,13 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
                   BUBBLE_DISPLAYED: "agent_responds",
                 },
                 after: {
-                  5000: "agent_responds", // Safety timeout if bubble event never fires
+                  1500: "agent_responds", // Safety timeout if bubble event never fires
                 },
               },
               agent_responds: {
                 entry: ["incrementConversationStep", "showArrivalAgentBubble"],
                 after: {
-                  800: "done",
+                  400: "done",
                 },
               },
               done: {
@@ -291,7 +305,7 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
                   BUBBLE_DISPLAYED: "boss_responds",
                 },
                 after: {
-                  5000: "boss_responds", // Safety timeout
+                  1500: "boss_responds", // Safety timeout
                 },
               },
               boss_responds: {
@@ -383,6 +397,17 @@ export const createAgentMachine = (actions: AgentMachineActions) =>
       // Normal spawn — start arrival flow from elevator
       SPAWN: {
         target: ".arrival.arriving",
+        actions: assign({
+          agentId: ({ event }) => event.agentId,
+          agentName: ({ event }) => event.name,
+          desk: ({ event }) => event.desk,
+          currentPosition: ({ event }) => event.position,
+          targetPosition: ({ event }) => event.position,
+        }),
+      },
+      // Direct walk — skip queue/boss, walk from elevator to desk
+      SPAWN_WALK_TO_DESK: {
+        target: ".walking_to_desk_direct",
         actions: assign({
           agentId: ({ event }) => event.agentId,
           agentName: ({ event }) => event.name,
