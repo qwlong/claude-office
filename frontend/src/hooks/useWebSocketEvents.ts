@@ -120,11 +120,20 @@ export function useWebSocketEvents({
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.state === "arriving") {
-            // Agent arriving — spawn from elevator with full arrival animation
+          if (backendAgent.state === "arriving" && backendAgent.desk) {
+            // Agent arriving with desk — spawn from elevator
+            spawnPosition = getNextSpawnPosition();
+            // First agent: full arrival flow. Others: walk directly to desk.
+            const bossIsBusy = store.boss.inUseBy !== null;
+            const queueHasAgents = store.arrivalQueue.length > 0;
+            if (bossIsBusy || queueHasAgents) {
+              walkToDeskDirect = true;
+            }
+          } else if (backendAgent.state === "arriving") {
+            // Agent arriving without desk — normal elevator spawn
             spawnPosition = getNextSpawnPosition();
           } else if (backendAgent.desk) {
-            // Agent already past arriving with desk — spawn at desk
+            // Agent past arriving with desk — spawn at desk
             spawnPosition = getDeskPosition(backendAgent.desk);
             skipArrival = true;
           } else if (isInArrivalQueue) {
