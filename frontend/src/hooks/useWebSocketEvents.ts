@@ -114,18 +114,27 @@ export function useWebSocketEvents({
 
           let spawnPosition: Position;
           let skipArrival = false;
+          let walkToDeskDirect = false;
 
           // Determine spawn options based on queue/desk state
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.state === "arriving") {
-            // Agent arriving — spawn from elevator with normal arrival animation
+          if (backendAgent.state === "arriving" && backendAgent.desk) {
+            // Agent arriving with desk — spawn from elevator
+            // First agent gets full arrival flow, others walk directly to desk
+            spawnPosition = getNextSpawnPosition();
+            const bossIsBusy = store.boss.inUseBy !== null;
+            if (bossIsBusy) {
+              walkToDeskDirect = true; // Skip queue/boss, walk straight to desk
+            }
+          } else if (backendAgent.state === "arriving") {
+            // Agent arriving without desk — normal elevator spawn
             spawnPosition = getNextSpawnPosition();
           } else if (backendAgent.desk) {
-            // Agent already working (not arriving) — spawn at desk
-            spawnPosition = getDeskPosition(backendAgent.desk);
-            skipArrival = true;
+            // Agent past arriving with desk — walk from elevator to desk
+            spawnPosition = getNextSpawnPosition();
+            walkToDeskDirect = true;
           } else if (isInArrivalQueue) {
             // Agent is in arrival queue (not arriving) - spawn at their queue position
             // Queue position 0 = ready spot (A0), position 1+ = waiting spots
@@ -170,6 +179,7 @@ export function useWebSocketEvents({
             {
               backendState: backendAgent.state,
               skipArrival,
+              walkToDeskDirect,
               queueType,
               queueIndex,
             },
@@ -227,9 +237,20 @@ export function useWebSocketEvents({
           if (agent && agent.phase === "idle") {
             // Agent at desk — trigger departure animation
             agentMachineService.triggerDeparture(agentId);
+          } else if (
+            agent &&
+            (agent.phase === "arriving" ||
+              agent.phase === "in_arrival_queue" ||
+              agent.phase === "walking_to_ready" ||
+              agent.phase === "conversing" ||
+              agent.phase === "walking_to_boss" ||
+              agent.phase === "at_boss" ||
+              agent.phase === "walking_to_desk")
+          ) {
+            // Agent still in arrival flow — mark for departure after arrival completes
+            store.addPendingDeparture(agentId);
           } else {
-            // Agent in non-idle phase (arriving, departing, etc.) but gone from backend.
-            // Force-remove to prevent ghost agents accumulating.
+            // Agent in departure or unknown phase — force-remove
             agentMachineService.forceRemove(agentId);
             store.removeAgent(agentId);
             processedAgentsRef.current.delete(agentId);

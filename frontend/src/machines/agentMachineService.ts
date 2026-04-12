@@ -91,6 +91,7 @@ class AgentMachineService {
     options?: {
       backendState?: string;
       skipArrival?: boolean;
+      walkToDeskDirect?: boolean;
       queueType?: "arrival" | "departure";
       queueIndex?: number;
     },
@@ -131,6 +132,15 @@ class AgentMachineService {
         options.queueIndex,
         store,
       );
+    } else if (options?.walkToDeskDirect && desk) {
+      // Skip queue/boss, walk from elevator directly to desk
+      actor.send({
+        type: "SPAWN_WALK_TO_DESK" as const,
+        agentId,
+        name,
+        desk,
+        position: initialPosition,
+      });
     } else if (options?.skipArrival && desk) {
       this.spawnAtDesk(actor, agentId, name, desk, store);
     } else {
@@ -532,6 +542,18 @@ class AgentMachineService {
     // Snap agent to departure position when entering elevator
     if (phase === "in_elevator") {
       store.updateAgentPosition(agentId, ELEVATOR_DEPARTURE_POSITION);
+    }
+
+    // Check pending departures — agent finished arrival, now trigger departure
+    if (phase === "idle" && store.pendingDepartures.has(agentId)) {
+      store.removePendingDeparture(agentId);
+      // Minimum 2 second stay at desk before departing
+      setTimeout(() => {
+        const freshStore = useGameStore.getState();
+        if (freshStore.agents.has(agentId) && freshStore.agents.get(agentId)?.phase === "idle") {
+          this.triggerDeparture(agentId);
+        }
+      }, 2000);
     }
   }
 

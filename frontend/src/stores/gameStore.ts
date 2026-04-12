@@ -218,6 +218,7 @@ interface GameStore {
   contextUtilizations: Map<string, number>;
   toolUsesSinceCompaction: number; // Counter for safety sign - resets on compaction
   printReport: boolean; // True when user requested a report and session ended
+  pendingDepartures: Set<string>; // Agents awaiting departure after arrival completes
   todos: TodoItem[];
   gitStatus: GitStatus | null;
   gitStatusMap: Map<string, GitStatus>;
@@ -235,6 +236,8 @@ interface GameStore {
   setIsCompacting: (sessionId: string, isCompacting: boolean) => void;
   setTodos: (todos: TodoItem[]) => void;
   setPrintReport: (printReport: boolean) => void;
+  addPendingDeparture: (agentId: string) => void;
+  removePendingDeparture: (agentId: string) => void;
   setGitStatus: (status: GitStatus | null, sessionId?: string) => void;
   addEventLog: (
     event: NonNullable<WebSocketMessage["event"]>,
@@ -390,6 +393,7 @@ const initialState = {
   contextUtilizations: new Map<string, number>(),
   toolUsesSinceCompaction: 0,
   printReport: false,
+  pendingDepartures: new Set<string>(),
   todos: [] as TodoItem[],
   gitStatus: null as GitStatus | null,
   gitStatusMap: new Map<string, GitStatus>(),
@@ -981,6 +985,18 @@ export const useGameStore = create<GameStore>()(
       }),
     setTodos: (todos) => set({ todos }),
     setPrintReport: (printReport) => set({ printReport }),
+    addPendingDeparture: (agentId) =>
+      set((state) => {
+        const next = new Set(state.pendingDepartures);
+        next.add(agentId);
+        return { pendingDepartures: next };
+      }),
+    removePendingDeparture: (agentId) =>
+      set((state) => {
+        const next = new Set(state.pendingDepartures);
+        next.delete(agentId);
+        return { pendingDepartures: next };
+      }),
     setGitStatus: (gitStatus, sessionId) =>
       set((state) => {
         if (sessionId) {
