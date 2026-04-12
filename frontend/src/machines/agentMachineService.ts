@@ -545,15 +545,23 @@ class AgentMachineService {
     }
 
     // Check pending departures — agent finished arrival, now trigger departure
-    if (phase === "idle" && store.pendingDepartures.has(agentId)) {
-      store.removePendingDeparture(agentId);
-      // Minimum 2 second stay at desk before departing
-      setTimeout(() => {
-        const freshStore = useGameStore.getState();
-        if (freshStore.agents.has(agentId) && freshStore.agents.get(agentId)?.phase === "idle") {
-          this.triggerDeparture(agentId);
-        }
-      }, 2000);
+    if (phase === "idle") {
+      const agent = store.agents.get(agentId);
+      const shouldDepart =
+        store.pendingDepartures.has(agentId) ||
+        agent?.backendState === "leaving" ||
+        agent?.backendState === "completed";
+
+      if (shouldDepart) {
+        store.removePendingDeparture(agentId);
+        // Minimum 2 second stay at desk before departing
+        setTimeout(() => {
+          const freshStore = useGameStore.getState();
+          if (freshStore.agents.has(agentId) && freshStore.agents.get(agentId)?.phase === "idle") {
+            this.triggerDeparture(agentId);
+          }
+        }, 2000);
+      }
     }
   }
 
