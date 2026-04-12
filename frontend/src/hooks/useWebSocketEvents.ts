@@ -119,13 +119,13 @@ export function useWebSocketEvents({
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.desk) {
-            // Agent has desk — spawn at elevator, walk to desk (skip queue/boss)
+          if (backendAgent.state === "arriving") {
+            // Agent arriving — spawn from elevator with normal arrival animation
             spawnPosition = getNextSpawnPosition();
+          } else if (backendAgent.desk) {
+            // Agent already working (not arriving) — spawn at desk
+            spawnPosition = getDeskPosition(backendAgent.desk);
             skipArrival = true;
-          } else if (backendAgent.state === "arriving") {
-            // Agent arriving with no desk yet - spawn from elevator
-            spawnPosition = getNextSpawnPosition();
           } else if (isInArrivalQueue) {
             // Agent is in arrival queue (not arriving) - spawn at their queue position
             // Queue position 0 = ready spot (A0), position 1+ = waiting spots
@@ -174,24 +174,6 @@ export function useWebSocketEvents({
               queueIndex,
             },
           );
-
-          // If agent was spawned at elevator but has desk, animate walking to desk
-          if (skipArrival && backendAgent.desk) {
-            const deskPos = getDeskPosition(backendAgent.desk);
-            const isAtElevator =
-              Math.abs(spawnPosition.x - deskPos.x) > 20 ||
-              Math.abs(spawnPosition.y - deskPos.y) > 20;
-            if (isAtElevator) {
-              // Delay slightly so the store and machine are ready
-              setTimeout(() => {
-                const s = useGameStore.getState();
-                if (s.agents.has(backendAgent.id)) {
-                  s.updateAgentTarget(backendAgent.id, deskPos);
-                  animationSystem.setAgentPath(backendAgent.id, deskPos);
-                }
-              }, 100);
-            }
-          }
 
           // If agent has a bubble and is at desk/queue, enqueue it immediately
           if (skipArrival && backendAgent.bubble) {
