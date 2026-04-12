@@ -120,21 +120,13 @@ export function useWebSocketEvents({
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.state === "arriving" && backendAgent.desk) {
-            // Agent arriving with desk — spawn from elevator
-            // First agent gets full arrival flow, others walk directly to desk
-            spawnPosition = getNextSpawnPosition();
-            const bossIsBusy = store.boss.inUseBy !== null;
-            if (bossIsBusy) {
-              walkToDeskDirect = true; // Skip queue/boss, walk straight to desk
-            }
-          } else if (backendAgent.state === "arriving") {
-            // Agent arriving without desk — normal elevator spawn
+          if (backendAgent.state === "arriving") {
+            // Agent arriving — spawn from elevator with full arrival animation
             spawnPosition = getNextSpawnPosition();
           } else if (backendAgent.desk) {
-            // Agent past arriving with desk — walk from elevator to desk
-            spawnPosition = getNextSpawnPosition();
-            walkToDeskDirect = true;
+            // Agent already past arriving with desk — spawn at desk
+            spawnPosition = getDeskPosition(backendAgent.desk);
+            skipArrival = true;
           } else if (isInArrivalQueue) {
             // Agent is in arrival queue (not arriving) - spawn at their queue position
             // Queue position 0 = ready spot (A0), position 1+ = waiting spots

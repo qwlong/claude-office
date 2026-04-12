@@ -409,11 +409,9 @@ class AnimationSystem {
       // Only advance if agent is:
       // 1. In queue phase
       // 2. At front of queue (index 0)
-      // 3. NOT currently walking (no active path)
       if (
         frontAgent?.phase === "in_arrival_queue" &&
-        frontAgent.queueIndex === 0 &&
-        frontAgent.path === null
+        frontAgent.queueIndex === 0
       ) {
         agentMachineService.notifyBossAvailable();
         return;
@@ -427,8 +425,7 @@ class AnimationSystem {
 
       if (
         frontAgent?.phase === "in_departure_queue" &&
-        frontAgent.queueIndex === 0 &&
-        frontAgent.path === null
+        frontAgent.queueIndex === 0
       ) {
         agentMachineService.notifyBossAvailable();
       }
