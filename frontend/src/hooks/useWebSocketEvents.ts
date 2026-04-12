@@ -118,15 +118,18 @@ export function useWebSocketEvents({
           let queueType: "arrival" | "departure" | undefined;
           let queueIndex: number | undefined;
 
-          if (backendAgent.desk) {
-            // Agent has desk assigned — spawn at desk, skip arrival queue
-            // This matches refresh behavior and avoids queue stuck issues
-            // when agents complete faster than the arrival animation
+          if (backendAgent.state === "arriving") {
+            // Agent arriving — spawn from elevator, skip queue if desk assigned
+            spawnPosition = getNextSpawnPosition();
+            if (backendAgent.desk) {
+              // Has desk: skip queue/boss, go directly to idle at desk
+              // Agent will be spawned at elevator then walked to desk
+              skipArrival = true;
+            }
+          } else if (backendAgent.desk) {
+            // Agent past arriving with desk — go straight to desk
             spawnPosition = getDeskPosition(backendAgent.desk);
             skipArrival = true;
-          } else if (backendAgent.state === "arriving") {
-            // Agent arriving with no desk yet - spawn from elevator
-            spawnPosition = getNextSpawnPosition();
           } else if (isInArrivalQueue) {
             // Agent is in arrival queue (not arriving) - spawn at their queue position
             // Queue position 0 = ready spot (A0), position 1+ = waiting spots
@@ -175,6 +178,23 @@ export function useWebSocketEvents({
               queueIndex,
             },
           );
+
+          // If agent was spawned at elevator but should walk to desk (arriving + has desk),
+          // animate walking from elevator to desk position
+          if (
+            skipArrival &&
+            backendAgent.state === "arriving" &&
+            backendAgent.desk &&
+            spawnPosition !== getDeskPosition(backendAgent.desk)
+          ) {
+            const deskPos = getDeskPosition(backendAgent.desk);
+            // Import and use animation system to set path
+            import("@/systems/animationSystem").then(({ animationSystem }) => {
+              // Update target and set path
+              store.updateAgentTarget(backendAgent.id, deskPos);
+              animationSystem.setAgentPath(backendAgent.id, deskPos);
+            });
+          }
 
           // If agent has a bubble and is at desk/queue, enqueue it immediately
           if (skipArrival && backendAgent.bubble) {
