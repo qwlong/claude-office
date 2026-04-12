@@ -79,10 +79,22 @@ export function getDeskPosition(deskNum: number): Position {
  *
  * @param queueType - Which queue the agent belongs to
  */
-export function getReadyPosition(queueType: "arrival" | "departure"): Position {
-  return queueType === "arrival"
-    ? ARRIVAL_QUEUE_POSITIONS[0]
-    : DEPARTURE_QUEUE_POSITIONS[0];
+const READY_OFFSET = 60; // pixels between agents at ready position
+
+export function getReadyPosition(
+  queueType: "arrival" | "departure",
+  index: number = 0,
+): Position {
+  const base =
+    queueType === "arrival"
+      ? ARRIVAL_QUEUE_POSITIONS[0]
+      : DEPARTURE_QUEUE_POSITIONS[0];
+  // Arrival: offset left (negative x). Departure: offset right (positive x).
+  const direction = queueType === "arrival" ? -1 : 1;
+  return {
+    x: base.x + index * READY_OFFSET * direction,
+    y: base.y,
+  };
 }
 
 // ============================================================================

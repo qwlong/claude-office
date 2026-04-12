@@ -425,7 +425,13 @@ class AgentMachineService {
     } else if (movementType === "to_ready" || movementType === "to_boss") {
       const agent = store.agents.get(agentId);
       const queueType = agent?.queueType ?? "arrival";
-      targetPosition = getReadyPosition(queueType);
+      // Count agents already at boss area to offset position
+      const atBossPhases = new Set(["walking_to_ready", "conversing", "walking_to_boss", "at_boss"]);
+      let bossAreaCount = 0;
+      for (const a of store.agents.values()) {
+        if (a.id !== agentId && atBossPhases.has(a.phase)) bossAreaCount++;
+      }
+      targetPosition = getReadyPosition(queueType, bossAreaCount);
 
       if (movementType === "to_ready") {
         this.queue.claimReadyPosition(agentId, queueType);
