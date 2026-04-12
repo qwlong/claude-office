@@ -625,6 +625,17 @@ class AgentMachineService {
     if (this.elevatorUsageCount === 0) {
       useGameStore.getState().setElevatorState("closed");
       this.notifyElevatorDoorClosing();
+    } else {
+      // Safety: if no agents are actually in elevator phases, force close
+      const store = useGameStore.getState();
+      const anyInElevator = Array.from(store.agents.values()).some(
+        (a) => a.phase === "arriving" || a.phase === "in_elevator" || a.phase === "walking_to_elevator",
+      );
+      if (!anyInElevator) {
+        this.elevatorUsageCount = 0;
+        store.setElevatorState("closed");
+        this.notifyElevatorDoorClosing();
+      }
     }
   }
 
