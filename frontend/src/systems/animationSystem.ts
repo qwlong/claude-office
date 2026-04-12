@@ -24,7 +24,7 @@ import type { Position } from "@/types";
 // ============================================================================
 
 const MOVEMENT_SPEED = 200; // pixels per second
-const BUBBLE_DURATION_MS = 3000; // 3 seconds per bubble
+const BUBBLE_DURATION_MS = 1000; // 1 second per bubble (accelerated for fast agents)
 const BOSS_CLAIM_TIMEOUT_MS = 10000; // Force-release boss if claimed >10s
 
 // ============================================================================

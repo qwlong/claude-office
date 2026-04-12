@@ -70,7 +70,14 @@ export type AgentMachineEvent =
   | { type: "ARRIVED_AT_DESK" }
   | { type: "ARRIVED_AT_ELEVATOR" }
   | { type: "ELEVATOR_TIMEOUT" }
-  | { type: "ELEVATOR_DOOR_CLOSING" };
+  | { type: "ELEVATOR_DOOR_CLOSING" }
+  | {
+      type: "SPAWN_WALK_TO_DESK";
+      agentId: string;
+      name: string | null;
+      desk: number | null;
+      position: Position;
+    };
 
 // ============================================================================
 // EXTERNAL ACTION INTERFACE
