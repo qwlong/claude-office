@@ -490,6 +490,12 @@ class AgentMachineService {
       newIndex: actualIndex,
     });
 
+    // If this is the first agent and boss is free, notify BEFORE setting path
+    // (path !== null blocks checkQueueAdvancement from re-triggering)
+    if (actualIndex === 0 && !freshStore.boss.inUseBy) {
+      this.notifyBossAvailable();
+    }
+
     // Move agent to correct slot if they are not already there
     const correctSlot = actualIndex + 1;
     const correctPosition = getQueuePosition(queueType, correctSlot);
@@ -501,11 +507,6 @@ class AgentMachineService {
         freshStore.updateAgentTarget(agentId, correctPosition);
         animationSystem.setAgentPath(agentId, correctPosition);
       }
-    }
-
-    // If this is the first agent and boss is free, trigger boss available
-    if (actualIndex === 0 && !freshStore.boss.inUseBy) {
-      setTimeout(() => this.notifyBossAvailable(), 0);
     }
   }
 
