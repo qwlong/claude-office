@@ -120,6 +120,7 @@ class HistoryEntry(TypedDict):
     summary: str
     timestamp: str
     detail: dict[str, object]
+    sessionId: NotRequired[str]
 
 
 class GameState(BaseModel):

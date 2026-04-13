@@ -1031,7 +1031,7 @@ export const useGameStore = create<GameStore>()(
         const entries: EventLogEntry[] = history.map((event) => ({
           ...event,
           timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
-          sessionId,
+          sessionId: (event as Record<string, unknown>).sessionId as string ?? sessionId,
         }));
         // History is ordered oldest-first from backend; reverse for newest-first display
         return { eventLog: entries.reverse().slice(0, MAX_EVENT_LOG) };

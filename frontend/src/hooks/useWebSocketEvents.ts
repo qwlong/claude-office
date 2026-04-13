@@ -387,6 +387,7 @@ export function useWebSocketEvents({
             summary: h.summary,
             timestamp: h.timestamp,
             detail: h.detail,
+            sessionId: (h as Record<string, unknown>).sessionId as string | undefined,
           })),
           state.sessionId,
         );

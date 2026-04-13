@@ -159,10 +159,11 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
   const isMultiBossRoom = isRoom && roomBossAgents.length > 1;
 
   // Boss count for positioning: merged view uses storeBosses, project uses filteredBosses, room uses roomBossAgents
+  // Cap at 3 to avoid overcrowding the boss area
   const multiBossCount = isMergedView
-    ? storeBosses.size
+    ? Math.min(storeBosses.size, 3)
     : isProjectView && filteredBosses.length > 1
-      ? filteredBosses.length
+      ? Math.min(filteredBosses.length, 3)
       : isMultiBossRoom
         ? roomBossAgents.length
         : 0;
@@ -174,12 +175,15 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   const sortedBosses = useMemo(() => {
     if (isMergedView) {
-      return Array.from(storeBosses.entries()).sort(([a], [b]) =>
-        a.localeCompare(b),
-      );
+      // Whole Office: limit to top 3 bosses to avoid overcrowding
+      return Array.from(storeBosses.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(0, 3);
     }
     if (isProjectView && filteredBosses.length > 1) {
-      return filteredBosses.map((b) => [b.sessionId ?? "unknown", b] as const);
+      return filteredBosses
+        .map((b) => [b.sessionId ?? "unknown", b] as const)
+        .slice(0, 3);
     }
     return [];
   }, [isMergedView, isProjectView, storeBosses, filteredBosses]);

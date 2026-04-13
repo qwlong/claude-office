@@ -279,6 +279,7 @@ class EventProcessor:
         all_bosses: list[Boss] = []
         all_arrival_queue: list[str] = []
         all_departure_queue: list[str] = []
+        all_history: list[HistoryEntry] = []
         next_desk = 1  # Global compact desk counter
         latest_updated: datetime | None = None
         all_todos: list[TodoItem] = []
@@ -366,6 +367,9 @@ class EventProcessor:
             for todo in state.todos:
                 stamped = todo.model_copy(update={"session_id": session_id})
                 all_todos.append(stamped)
+            for entry in state.history:
+                stamped_entry = {**entry, "sessionId": session_id}
+                all_history.append(stamped_entry)
             all_conversation.extend(state.conversation)
 
         # Sort bosses by activity (non-idle first, then by agent count desc, then session_id)
@@ -386,7 +390,9 @@ class EventProcessor:
                 b.session_id or "",  # stable tiebreak
             )
         )
-        all_bosses = all_bosses[:3]  # Show at most 3 bosses
+        # Frontend limits display to top 3 in Whole Office view;
+        # send all so project views can show their own bosses.
+        all_bosses = all_bosses[:10]  # Safety cap
 
         merged_office = OfficeState(
             desk_count=max(8, ((next_desk - 1 + 3) // 4) * 4),
@@ -397,6 +403,10 @@ class EventProcessor:
             print_report=False,
         )
 
+        # Sort history by timestamp (newest first) and limit
+        all_history.sort(key=lambda e: e.get("id", ""), reverse=True)
+        all_history = all_history[:200]
+
         return GameState(
             session_id="__all__",
             boss=all_bosses[0] if all_bosses else Boss(state=BossState.IDLE),
@@ -404,6 +414,7 @@ class EventProcessor:
             agents=all_agents,
             office=merged_office,
             last_updated=latest_updated or datetime.now(UTC),
+            history=all_history,
             todos=all_todos,
             arrival_queue=all_arrival_queue,
             departure_queue=all_departure_queue,
