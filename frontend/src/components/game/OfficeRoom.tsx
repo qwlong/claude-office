@@ -32,7 +32,7 @@ import {
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
 import { useRoomContext } from "@/contexts/RoomContext";
 import { useFilteredData } from "@/hooks/useFilteredData";
-import { useProjectStore, selectViewMode } from "@/stores/projectStore";
+import { useProjectStore, selectViewMode, selectProjects } from "@/stores/projectStore";
 import { getCanvasHeight, CANVAS_WIDTH } from "@/constants/canvas";
 import {
   EMPLOYEE_OF_MONTH_POSITION,
@@ -120,7 +120,17 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
 
   // View mode and filtered data for project-level filtering
   const viewMode = useProjectStore(selectViewMode);
+  const storeProjects = useProjectStore(selectProjects);
   const { sessionIds, boss: filteredBoss, bosses: filteredBosses, todos: filteredTodos } = useFilteredData();
+
+  // Lookup: projectKey → short display name (same as sidebar)
+  const projectDisplayNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of storeProjects) {
+      map.set(p.key, getProjectDisplayName(p));
+    }
+    return map;
+  }, [storeProjects]);
 
   // Compaction animation — in room mode, use the room's key as sessionId
   // (In sessions view, project.key IS the session ID; in projects view, no match = no animation)
@@ -558,7 +568,7 @@ export function OfficeRoom({ textures }: OfficeRoomProps): ReactNode {
               renderBubble={false}
               isTyping={boss.isTyping}
               isAway={false}
-              label={boss.projectKey ? getProjectDisplayName({ name: boss.projectKey, root: null }) : sid.slice(0, 8)}
+              label={boss.projectKey ? (projectDisplayNames.get(boss.projectKey) ?? boss.projectKey) : sid.slice(0, 8)}
             />
           ) : null,
         )

@@ -32,7 +32,7 @@ export interface MultiProjectGameState {
 
 /**
  * Short display name: last directory segment from root path.
- * Falls back to stripping "Projects-" prefix from name when root is null.
+ * Falls back to stripping "Projects-" prefix from name when root is missing.
  */
 export function getProjectDisplayName(project: { name: string; root: string | null }): string {
   if (project.root) {
@@ -41,8 +41,7 @@ export function getProjectDisplayName(project: { name: string; root: string | nu
     if (last) return last;
   }
   const name = project.name;
-  const lower = name.toLowerCase();
-  if (lower.startsWith("projects-")) return name.slice("projects-".length);
+  if (name.startsWith("Projects-")) return name.slice("Projects-".length);
   return name;
 }
 
