@@ -109,6 +109,13 @@ async def build_session_list(db: AsyncSession) -> list[SessionSummary]:
             empty_session_ids.append(rec.id)
             continue
 
+        project = event_processor.project_registry.get_project_for_session(rec.id)
+
+        # Hide completed subagent sessions (no registered project)
+        if rec.status == "completed" and not project:
+            empty_session_ids.append(rec.id)
+            continue
+
         created_utc = (
             rec.created_at.astimezone(UTC)
             if rec.created_at.tzinfo
@@ -119,8 +126,6 @@ async def build_session_list(db: AsyncSession) -> list[SessionSummary]:
             if rec.updated_at.tzinfo
             else rec.updated_at.replace(tzinfo=UTC)
         )
-
-        project = event_processor.project_registry.get_project_for_session(rec.id)
         sessions.append(
             {
                 "id": rec.id,
