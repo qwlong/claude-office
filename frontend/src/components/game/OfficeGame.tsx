@@ -173,11 +173,32 @@ export function OfficeGame(): ReactNode {
   }, [projects, gameAgents, storeSessions]);
 
   // Agent count drives canvas height for single-office mode
-  const agentCount = useGameStore((s) => s.agents.size);
+  // Use filtered count for project/session views (not all agents from __all__)
+  const allAgentCount = useGameStore((s) => s.agents.size);
+  const filteredAgentCount = useMemo(() => {
+    if (viewMode === "office") return allAgentCount;
+    // For project/session views, count only agents matching the view's sessions
+    const sessionToProject = new Map<string, string>();
+    for (const s of storeSessions) {
+      if (s.projectKey) sessionToProject.set(s.id, s.projectKey);
+    }
+    let count = 0;
+    for (const agent of gameAgents.values()) {
+      if (!agent.sessionId) continue;
+      if (viewMode === "project" && activeRoomKey) {
+        if (sessionToProject.get(agent.sessionId) === activeRoomKey) count++;
+      } else if (viewMode === "session" && activeRoomKey) {
+        if (agent.sessionId === activeRoomKey) count++;
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }, [viewMode, activeRoomKey, allAgentCount, gameAgents, storeSessions]);
   const canvasHeight = useMemo(() => {
-    const deskCount = Math.max(8, Math.ceil(agentCount / 4) * 4);
+    const deskCount = Math.max(8, Math.ceil(filteredAgentCount / 4) * 4);
     return getCanvasHeight(deskCount);
-  }, [agentCount]);
+  }, [filteredAgentCount]);
 
   // Canvas dimensions for multi-room view
   // "project" mode now uses single OfficeRoom, not MultiRoomCanvas
