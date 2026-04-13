@@ -977,6 +977,26 @@ class EventProcessor:
             if not project_name:
                 project_name = derive_project_name_from_path(project_root or source_dir)
 
+            # Subagent inheritance: if this session's project_root is a subdirectory
+            # of an existing active session's project_root, inherit the parent's project_name.
+            if project_root:
+                for sid, sm in self.sessions.items():
+                    if sid == event.session_id:
+                        continue
+                    parent_result = await db.execute(
+                        select(SessionRecord.project_name, SessionRecord.project_root)
+                        .where(SessionRecord.id == sid)
+                    )
+                    parent_row = parent_result.one_or_none()
+                    if parent_row and parent_row.project_root:
+                        if project_root.startswith(parent_row.project_root + "/") or \
+                           parent_row.project_root.startswith(project_root + "/"):
+                            # Use the shorter path's project name (the parent)
+                            if len(parent_row.project_root) <= len(project_root):
+                                project_name = parent_row.project_name
+                                project_root = parent_row.project_root
+                            break
+
             # Check for existing session first.
             result = await db.execute(
                 select(SessionRecord).where(SessionRecord.id == event.session_id)
